@@ -15,14 +15,16 @@ usage()
 V=${1:-0.17.7}
 DB=${2:-demo_0_17_7}
 DODEMO=${3:-yes}
+MYNAME=`realpath $0`
+MYDIR=`dirname $MYNAME`
 
 cd "$HOME/RackTables-$V" || exit 2
 
 echo "DROP DATABASE IF EXISTS $DB; CREATE DATABASE $DB CHARACTER SET utf8 COLLATE utf8_general_ci;" | mysql information_schema
 echo "source install/init-structure.sql" | mysql $DB
 echo "source install/init-dictbase.sql" | mysql $DB
-echo "source $HOME/init-auth-$V.sql" | mysql $DB
-$HOME/bin/dictdump.php | mysql $DB
+echo "source $MYDIR/init-auth-$V.sql" | mysql $DB
+$MYDIR/dictdump.php | mysql $DB
 
 [ "$DODEMO" = "yes" ] || exit
 echo "source install/init-sample-racks.sql" | mysql $DB
