@@ -13,7 +13,8 @@ usage()
 }
 
 V=${1:-0.17.7}
-DB=${2:-demo_0_17_7}
+Vu=${V//./_}
+DB=${2:-demo_$Vu}
 DODEMO=${3:-yes}
 MYNAME=`realpath $0`
 MYDIR=`dirname $MYNAME`
