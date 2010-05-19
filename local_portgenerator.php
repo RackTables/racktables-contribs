@@ -109,16 +109,20 @@ if (!defined("_portGeneratorNumberOfPorts")) {
 //
 // Check whether the table exists. If not, create it
 //
-$result = useSelectBlade ("SHOW TABLES LIKE '{$tablePortGenerator}'", __FUNCTION__);
-if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
-if (!($row = $result->fetch (PDO::FETCH_NUM))) {
-  $q = "CREATE TABLE IF NOT EXISTS `{$tablePortGenerator}` (
-  `dict_key` int(11) NOT NULL,
-  `autoportconfig` text NOT NULL,
-  UNIQUE KEY `dict_key` (`dict_key`)
-  ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
-  $result = useSelectBlade ($q, __FUNCTION__);
+function checkForTable ()
+{
+  global $tablePortGenerator;
+  $result = useSelectBlade ("SHOW TABLES LIKE '{$tablePortGenerator}'", __FUNCTION__);
   if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
+  if (!($row = $result->fetch (PDO::FETCH_NUM))) {
+    $q = "CREATE TABLE IF NOT EXISTS `{$tablePortGenerator}` (
+    `dict_key` int(11) NOT NULL,
+    `autoportconfig` text NOT NULL,
+    UNIQUE KEY `dict_key` (`dict_key`)
+    ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
+    $result = useSelectBlade ($q, __FUNCTION__);
+    if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
+  }
 }
 
 //
@@ -145,6 +149,7 @@ function localtrigger_PortGenerator()
 // (and if necessary for the hardware type id which is found as attribute id _portGeneratorHWType
 function localverify_PortGenerator($object) {
   global $tablePortGenerator, $errorText, $lookFor, $portList, $genText, $valueConfiguration, $searchIt;
+  checkForTable();
   $foundError = true;
   $record = getObjectPortsAndLinks ($object['id']);
   //
@@ -414,6 +419,7 @@ $msgcode['updateconfig_PortGenerator']['ERR'] = 100;
 function updateconfig_PortGenerator()
 {
   global $tablePortGenerator;
+  checkForTable();
   $q = "SELECT autoportconfig FROM {$tablePortGenerator} WHERE dict_key={$_REQUEST['yId']} ";
   $result = useSelectBlade ($q, __FUNCTION__);
   if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
