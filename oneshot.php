@@ -12,31 +12,14 @@ http://example.com/racktables/index.php?page=oneshot&q=myserver
 (This would instantly redirect the user to myserver's page in
 RackTables, if "myserver" exists.)
 
-This extension has been tested to work with RackTables 0.17.x.
+This revision of extension has been tested to work with RackTables 0.18.x.
 
 */
 
-// Return entity ID, if its named column equals to provided string, or NULL
-// otherwise (nothing found or more, than one row returned by query).
-function lookupEntityByString ($realm, $value, $column = 'name')
-{
-	global $SQLSchema;
-	if (!isset ($SQLSchema[$realm]))
-		return NULL;
-	$SQLinfo = $SQLSchema[$realm];
-	$query = "SELECT ${SQLinfo['keycolumn']} as id FROM ${SQLinfo['table']} WHERE ${SQLinfo['table']}.${column} = '${value}' limit 2";
-	$result = useSelectBlade ($query, __FUNCTION__);
-	$rows = $result->fetchAll (PDO::FETCH_ASSOC);	
-	unset ($result);
-	if (count ($rows) != 1)
-		return NULL;
-	return $rows[0]['id'];
-}
-
 function handleOneShotRequest ()
 {
-	assertStringArg ('realm', __FUNCTION__);
-	assertStringArg ('q', __FUNCTION__);
+	assertStringArg ('realm');
+	assertStringArg ('q');
 	switch ($_REQUEST['realm'])
 	{
 	case 'object':
