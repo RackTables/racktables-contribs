@@ -1,12 +1,13 @@
 <?php
 //
 // Objectlog
-// Version 0.4
+// Version 0.5
 //
 // Created by Ernest Shaffer
 //
 // The purpose is to keep notes for future reference like case numbers
 // History
+// Version 0.5:  Updated queries to be compatible with 0.17 & 0.18 Branches
 // Version 0.4:  Bug fix removed blank line at end of file that caused Rack images to not display
 // Version 0.4:  Fixed typo finshPortlet to finishPortlet
 // Version 0.3:  Auto create Object table if not exist
@@ -45,6 +46,7 @@ $ophandler['object']['objectlog']['deleteLog'] = 'deleteLog';
 // Set variables
 //
 
+$Version = "0.5";
 $username = $_SERVER['PHP_AUTH_USER'];
 $nextorder['odd'] = 'even';
 $nextorder['even'] = 'odd';
@@ -59,8 +61,9 @@ $objectid = $_POST['objectid'];
 //
 function tableCheck($tableName)
 {
+global $dbxlink;
 $result = NULL;
-$result = useSelectBlade ("SHOW TABLES LIKE '{$tableName}'", __FUNCTION__);
+$result = $dbxlink->query("SHOW TABLES LIKE '{$tableName}'");
 if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
 if (!($row = $result->fetch (PDO::FETCH_NUM))) {
   $q = "CREATE TABLE IF NOT EXISTS `{$tableName}` (
@@ -71,7 +74,7 @@ if (!($row = $result->fetch (PDO::FETCH_NUM))) {
   	`content` text NOT NULL,
   	PRIMARY KEY  (`id`)
   	) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=0 ;";
-  $result = useSelectBlade ($q, __FUNCTION__);
+  $result = $dbxlink->query($q);
   if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
 }
 }
@@ -85,6 +88,7 @@ $msgcode['deleteLog']['ERR'] = 100;
 //
 function deleteLog ()
 {
+    global $dbxlink;
     global $logentry;
     global $objectid;
     global $username;
@@ -92,7 +96,7 @@ function deleteLog ()
     $log = emptyLog();
     $query = "DELETE FROM `Objectlog` WHERE `id` = ".$logid." LIMIT 1";
     $result = NULL;
-    $result = useSelectBlade ($query, __FUNCTION__);
+    $result = $dbxlink->exec($query);
     $log = mergeLogs ($log, oneLiner (77, array ('log entry')));
     return buildWideRedirectURL ($log);
 }
@@ -102,6 +106,7 @@ function deleteLog ()
 //
 function addObjectlog ()
 {
+	global $dbxlink;
     global $logentry;
     global $objectid;
     global $username;
@@ -110,7 +115,7 @@ function addObjectlog ()
     $query= "INSERT INTO  `Objectlog` (`object_id`,`user`,`date`,`content`) VALUES(";
     $query .= "'$objectid',  '$username',  '$datetime',  '$logentry');";
     $result = NULL;
-	$result = useSelectBlade ($query, __FUNCTION__);
+	$result = $dbxlink->exec($query);
     $log = mergeLogs ($log, oneLiner (80, array ('log entry')));
     return buildWideRedirectURL ($log);
 }
@@ -122,13 +127,15 @@ function ObjectLogs ()
 {
 
     tableCheck("Objectlog"); // check if table exists if not create
+  	global $dbxlink;
     global $nextorder;
     global $username;
     global $logentry;
+    global $Version;
     $object = $_REQUEST['object_id'];
     $query = "SELECT o.id as logid, r.name, o.content, o.date, o.user, r.id as object_id FROM Objectlog o Left JOIN RackObject r ON o.object_id = r.id WHERE r.id = $object ORDER BY o.date DESC";
 	$result = NULL;
-    $result = useSelectBlade ($query, __FUNCTION__);
+    $result = $dbxlink->query($query);
 
     echo "<style type='text/css'>\n";
     echo "tr.has_problems {\n";
@@ -137,12 +144,12 @@ function ObjectLogs ()
     echo "</style>\n";
 
     startPortlet ('Add Object Log');
-    echo "<table align=center border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
+    echo "<table with=80% align=center border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
     echo "<th align=left>Enter new log</th>";
     echo "<form method=post name=addOjectlog action='process.php?page=object&tab=objectlog&op=addObjectlog&object_id=".$object."'>";
     echo "<tr>";
     echo "<input type=hidden value=$object name=objectid>";
-    echo "<td align=left><textarea name=logentry rows=3 cols=40></textarea>&nbsp;&nbsp;<input type=submit name=got_very_fast_data value='Go!'></td></tr>";
+    echo "<td align=left><table border=0 cellpadding=0 cellspacing=0><tr><td colspan=2><textarea name=logentry rows=3 cols=80></textarea></td><tr><td align=left><font size=1em color=gray>version ${Version}</font></td><td align=right><input type=submit name=got_very_fast_data value='Post'></td></tr></table></td></tr>";
     echo "</form>";
     echo "</table>";
     finishPortlet ();
@@ -183,13 +190,15 @@ function allObjectLogs ()
 {
     tableCheck("Objectlog"); // check if table exists if not create
     $serverSelect = getNarrowObjectList();
+	global $dbxlink;
     global $nextorder;
     global $username;
     global $logentry;
     global $objectid;
+    global $Version;
     $query = "SELECT o.id as logid, r.name, o.content, o.date, o.user, r.id as object_id FROM Objectlog o Left JOIN RackObject r ON o.object_id = r.id ORDER BY o.date DESC";
     $result = NULL;
-    $result = useSelectBlade ($query, __FUNCTION__);
+    $result = $dbxlink->query($query);
     echo "<style type='text/css'>\n";
     echo "tr.has_problems {\n";
     echo "background-color: #ffa0a0;\n";
@@ -197,16 +206,15 @@ function allObjectLogs ()
     echo "</style>\n";
 
     startPortlet('Add Object Log');
-    echo "<table align=center border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
-    echo "<th align=left>Name</th>";
-    echo "<th align=left>Log</th>";
+    echo "<table with=80% align=center border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
     echo "<form method=post name=addOjectlog action='process.php?page=depot&tab=objectlog&op=addObjectlog'>";
-    echo "<tr><td valign=top align=left>";
+    echo "<th align=left>Name";
     echo "<select name=objectid>";
     foreach ($serverSelect as $k => $v) { echo "<option value=$k>$v</option>"; }
     echo "</select>";
-    echo "</td>";
-    echo "<td align=left><textarea name=logentry rows=3 cols=40></textarea>&nbsp;&nbsp;<input type=submit name=got_very_fast_data value='Go!'></td></tr>";
+    echo "</th>";
+    echo "<tr><td align=left><table with=100% border=0 cellpadding=0 cellspacing=0><tr><td colspan=2><textarea name=logentry rows=3 cols=80></textarea></td></tr>";
+    echo "<tr><td align=left><font size=1em color=gray>version ${Version}</font></td><td align=right><input type=submit name=got_very_fast_data value='Post'></td></tr></table></td></tr>";
     echo "</form>";
     echo "</table>";
     finishPortlet();
