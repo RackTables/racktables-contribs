@@ -1,0 +1,42 @@
+rc_pingreply:
+Author: Tommy Botten Jensen <tommybjensen@gmail.com>
+
+The plugin uses fping to ping through a subnet reporting on hosts which reply to
+ICMP ping. It lists IP allocation, name and response for ech IP giving you a way
+of verifying your network map.
+
+Note that the racktables instance must be able to reach the IPs with ICMP ping
+for this plugin to be useful.
+
+This work was heavily based upon the work done on live PTR records.
+
+
+Installation:
+- Copy the ping.php file into the inc/ folder of racktables.
+- Add include to inc/local.php: include("ping.php");
+- Install the fping from your favorite repository
+- Adjust the ping timeout variable in ping.php if needed.
+
+In use:
+After installation, log into racktables and access a IPv4 network instance and
+click on the "Ping overview" tab. Here you will be presented with a list of IPs
+and their respective names, ICMP ping responses as well as a stats overview.
+
+Known issues:
+
+- The application doesn't do input sanitation and has not been tested for SQL
+injections or filesystem scan attacks. You must, however be logged in to gain
+access to the import plugin.
+
+- Since fping is done in serial, a run through a huge network will be slow. It
+takes about 6 seconds for a /24 network, and 12 for a /23 network. As far as I
+can see it seems to scale linearly.
+
+
+Caveats:
+- I could not find any way that the regular linux ping (iputils package) could
+have a sub second timeout. This is why fping is needed. Its easy to change it
+to use any tool such as regular ping, nmap etc.
+
+- Even if you have set pagination active the entire subnet will be scanned for
+each time you change page.
