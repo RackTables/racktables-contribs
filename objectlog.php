@@ -7,6 +7,7 @@
 //
 // The purpose is to keep notes for future reference like case numbers
 // History
+// Version 0.7:  Added if isset for $logentry and $objectid to stop warnings
 // Version 0.6:  Updated message code to display better success/failure notices
 //               Global Object logs tab name link goes directly to that object's logs tab
 //               Added URL detection to enable clickable links in logs
@@ -50,14 +51,13 @@ $ophandler['object']['objectlog']['deleteLog'] = 'deleteLog';
 // Set variables
 //
 
-$Version = "0.6";
+$Version = "0.7";
 $username = $_SERVER['PHP_AUTH_USER'];
 $nextorder['odd'] = 'even';
 $nextorder['even'] = 'odd';
 
-$logentry = $_POST['logentry'];
-$objectid = $_POST['objectid'];
-
+if (isset($_POST['logentry'])) $logentry = $_POST['logentry'];
+if (isset($_POST['objectid'])) $objectid = $_POST['objectid'];
 
 //
 // Check whether the table exists. If not, create it
