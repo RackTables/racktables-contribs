@@ -1,12 +1,16 @@
 <?php
 //
 // Objectlog
-// Version 0.5
+// Version 0.6
 //
 // Created by Ernest Shaffer
 //
 // The purpose is to keep notes for future reference like case numbers
 // History
+// Version 0.6:  Updated message code to display better success/failure notices
+//               Global Object logs tab name link goes directly to that object's logs tab
+//               Added URL detection to enable clickable links in logs
+//               Fixed bug double or single quotes now allowed in log entries
 // Version 0.5:  Updated queries to be compatible with 0.17 & 0.18 Branches
 // Version 0.4:  Bug fix removed blank line at end of file that caused Rack images to not display
 // Version 0.4:  Fixed typo finshPortlet to finishPortlet
@@ -46,7 +50,7 @@ $ophandler['object']['objectlog']['deleteLog'] = 'deleteLog';
 // Set variables
 //
 
-$Version = "0.5";
+$Version = "0.6";
 $username = $_SERVER['PHP_AUTH_USER'];
 $nextorder['odd'] = 'even';
 $nextorder['even'] = 'odd';
@@ -88,15 +92,12 @@ $msgcode['deleteLog']['ERR'] = 100;
 //
 function deleteLog ()
 {
-    global $dbxlink;
     global $logentry;
     global $objectid;
     global $username;
     $logid = $_GET['logid'];
     $log = emptyLog();
-    $query = "DELETE FROM `Objectlog` WHERE `id` = ".$logid." LIMIT 1";
-    $result = NULL;
-    $result = $dbxlink->exec($query);
+    $result = usePreparedExecuteBlade("DELETE FROM `Objectlog` WHERE `id` = ".$logid." LIMIT 1");
     $log = mergeLogs ($log, oneLiner (77, array ('log entry')));
     return buildWideRedirectURL ($log);
 }
@@ -104,20 +105,20 @@ function deleteLog ()
 //
 // The ophandler to insert new log
 //
+$msgcode['addObjectlog']['OK'] = 0;
+$msgcode['addObjectlog']['ERR'] = 100;
 function addObjectlog ()
 {
-	global $dbxlink;
     global $logentry;
     global $objectid;
     global $username;
+    $oi = spotEntity ('object', $objectid);
     $log = emptyLog();
     $datetime = date("Y-m-d H:i:s");
-    $query= "INSERT INTO  `Objectlog` (`object_id`,`user`,`date`,`content`) VALUES(";
-    $query .= "'$objectid',  '$username',  '$datetime',  '$logentry');";
-    $result = NULL;
-	$result = $dbxlink->exec($query);
-    $log = mergeLogs ($log, oneLiner (80, array ('log entry')));
-    return buildWideRedirectURL ($log);
+	$result = usePreparedExecuteBlade('INSERT INTO Objectlog SET object_id=?, user=?, date=?, content=?', array($objectid, $username, $datetime, $logentry));
+	$ob_url = makeHref (array ('page' => 'object', 'tab' => 'objectlog', 'object_id' => $objectid));
+    return buildRedirectURL (__FUNCTION__, 'OK', array ("Log entry for <a href=" . ${ob_url} . ">${oi['dname']}</a> added by $username"));
+
 }
 
 //
@@ -136,7 +137,7 @@ function ObjectLogs ()
     $query = "SELECT o.id as logid, r.name, o.content, o.date, o.user, r.id as object_id FROM Objectlog o Left JOIN RackObject r ON o.object_id = r.id WHERE r.id = $object ORDER BY o.date DESC";
 	$result = NULL;
     $result = $dbxlink->query($query);
-
+    $count = $result->rowCount();
     echo "<style type='text/css'>\n";
     echo "tr.has_problems {\n";
     echo "background-color: #ffa0a0;\n";
@@ -144,6 +145,7 @@ function ObjectLogs ()
     echo "</style>\n";
 
     startPortlet ('Add Object Log');
+    echo "<center><a href=?page=depot&tab=objectlog>All Logs</a>";
     echo "<table with=80% align=center border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
     echo "<th align=left>Enter new log</th>";
     echo "<form method=post name=addOjectlog action='process.php?page=object&tab=objectlog&op=addObjectlog&object_id=".$object."'>";
@@ -154,7 +156,7 @@ function ObjectLogs ()
     echo "</table>";
     finishPortlet ();
     
-    startPortlet ('Object Logs');
+    startPortlet ('Object Logs (' . $count . ')');
     echo "<table width=80% align=center border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
 
     echo "<th align=left>Name</th>";
@@ -168,11 +170,11 @@ function ObjectLogs ()
     {
         echo "<tr class=row_${order} valign=top>";
         #echo "<td align=left> id: ".$row['logid']." <a href='".makeHref(array('page'=>'object', 'object_id'=>$row['object_id']))."'>${row['name']}</a></td>";
-        echo "<td align=left><a href='".makeHref(array('page'=>'object', 'object_id'=>$row['object_id']))."'>${row['name']}</a></td>";
-        echo "<td align=left>".nl2br($row['content'])."</td>";
+        echo "<td align=left><a href='".makeHref(array('page'=>'object', 'tab'=>'objectlog', 'object_id'=>$row['object_id']))."'>${row['name']}</a></td>";
+        echo "<td align=left>".nl2br(string_insert_hrefs($row['content']))."</td>";
         echo "<td align=left>".date("m/d/y g:i A",strtotime($row['date']))."</td>";
         echo "<td align=left>".$row['user']."</td>";
-        echo "<td align=left><a href=\"".makeHrefProcess(array('op'=>'deleteLog', 'logid'=>$row['logid'], 'object_id'=>$row['object_id']))."\">";
+		echo "<td align=left><a href=\"".makeHrefProcess(array('op'=>'deleteLog', 'logid'=>$row['logid'], 'object_id'=>$row['object_id']))."\">";
 			printImageHREF ('destroy', 'Delete log entry');
 		echo "</a></td>";
         echo "</tr>\n";
@@ -182,6 +184,8 @@ function ObjectLogs ()
     finishPortlet ();
 
 }
+
+
 
 //
 // Display form and All log entries
@@ -197,8 +201,8 @@ function allObjectLogs ()
     global $objectid;
     global $Version;
     $query = "SELECT o.id as logid, r.name, o.content, o.date, o.user, r.id as object_id FROM Objectlog o Left JOIN RackObject r ON o.object_id = r.id ORDER BY o.date DESC";
-    $result = NULL;
     $result = $dbxlink->query($query);
+    $count = $result->rowCount();
     echo "<style type='text/css'>\n";
     echo "tr.has_problems {\n";
     echo "background-color: #ffa0a0;\n";
@@ -219,7 +223,8 @@ function allObjectLogs ()
     echo "</table>";
     finishPortlet();
 
-    startPortlet('Object Logs');
+    //startPortlet ('Objects (' . count ($objects) . ')');
+    startPortlet('Object Logs (' . $count . ')');
     echo "<table width=80% align=center border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
 
     echo "<th align=left>Name</th>";
@@ -229,11 +234,12 @@ function allObjectLogs ()
     
 
     $order = 'odd';
+
     while ($row = $result->fetch (PDO::FETCH_ASSOC))
     {
         echo "<tr class=row_${order} valign=top>";
-        echo "<td align=left><a href='".makeHref(array('page'=>'object', 'object_id'=>$row['object_id']))."'>${row['name']}</a></td>";
-        echo "<td align=left>".nl2br($row['content'])."</td>";
+        echo "<td align=left><a href='".makeHref(array('page'=>'object', 'tab'=>'objectlog', 'object_id'=>$row['object_id']))."'>${row['name']}</a></td>";
+        echo "<td align=left>".nl2br(string_insert_hrefs($row['content']))."</td>";
         echo "<td align=left>".date("m/d/y g:i A",strtotime($row['date']))."</td>";
         echo "<td align=left>".$row['user']."</td>";
         echo "</tr>\n";
