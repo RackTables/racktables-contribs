@@ -1,29 +1,40 @@
 <?php
-//Warranty by Ernest Shaffer
-$tab['reports']['mytab3'] = 'Warranty Expires';
-$tabhandler['reports']['mytab3'] = 'getMyServers3';
+//
+// Warranty by Ernest Shaffer
+// Version: 2.0
+//
+// Displays objects with pending or expired HW warranty expiration dates
+// Groups them into 4 groups:
+//   HW warranty has expired
+//   HW warranty expires within 30 days
+//   HW warranty expires within 60 days
+//   HW warranty expires within 90 days
+//
 
-function getMyServers3 ()
+$tab['reports']['warranty'] = 'HW Warranty Expires';
+$tabhandler['reports']['warranty'] = 'hwExpireReport';
+
+function hwExpireReport ()
 {
     global $nextorder;
     $query_array;
-    $query_array["0"] = "SELECT a.string_value, r.id, r.name, r.barcode, r.asset_no FROM AttributeValue a Left JOIN RackObject r ON a.object_id = r.id where a.attr_id=22 and STR_TO_DATE(a.string_value, '%m/%d/%Y') <= curdate()";
+    $query_array["0"] = "SELECT a.string_value, r.id, r.name, r.barcode, r.asset_no FROM AttributeValue a Left JOIN RackObject r ON a.object_id = r.id where attr_id=22 and STR_TO_DATE(a.string_value, '%m/%d/%Y') <= curdate()";
 
-    $query_array["30"] = "SELECT a.string_value, r.id, r.name, r.barcode, r.asset_no FROM AttributeValue a Left JOIN RackObject r ON a.object_id = r.id where a.attr_id=22 and STR_TO_DATE(a.string_value, '%m/%d/%Y') BETWEEN curdate() and DATE_ADD(curdate(), INTERVAL 30 DAY)";
+    $query_array["30"] = "SELECT a.string_value, r.id, r.name, r.barcode, r.asset_no FROM AttributeValue a Left JOIN RackObject r ON a.object_id = r.id where attr_id=22 and STR_TO_DATE(a.string_value, '%m/%d/%Y') BETWEEN curdate() and DATE_ADD(curdate(), INTERVAL 30 DAY)";
 
-    $query_array["60"] = "SELECT a.string_value, r.id, r.name, r.barcode, r.asset_no FROM AttributeValue a Left JOIN RackObject r ON a.object_id = r.id where a.attr_id=22 and STR_TO_DATE(a.string_value, '%m/%d/%Y') BETWEEN DATE_ADD(curdate(), INTERVAL 30 DAY) and DATE_ADD(curdate(), INTERVAL 60 DAY)";
+    $query_array["60"] = "SELECT a.string_value, r.id, r.name, r.barcode, r.asset_no FROM AttributeValue a Left JOIN RackObject r ON a.object_id = r.id where attr_id=22 and STR_TO_DATE(a.string_value, '%m/%d/%Y') BETWEEN DATE_ADD(curdate(), INTERVAL 30 DAY) and DATE_ADD(curdate(), INTERVAL 60 DAY)";
 
-    $query_array["90"] = "SELECT a.string_value, r.id, r.name, r.barcode, r.asset_no FROM AttributeValue a Left JOIN RackObject r ON a.object_id = r.id where a.attr_id=22 and STR_TO_DATE(a.string_value, '%m/%d/%Y') BETWEEN DATE_ADD(curdate(), INTERVAL 60 DAY) and DATE_ADD(curdate(), INTERVAL 90 DAY)";
+    $query_array["90"] = "SELECT a.string_value, r.id, r.name, r.barcode, r.asset_no FROM AttributeValue a Left JOIN RackObject r ON a.object_id = r.id where attr_id=22 and STR_TO_DATE(a.string_value, '%m/%d/%Y') BETWEEN DATE_ADD(curdate(), INTERVAL 60 DAY) and DATE_ADD(curdate(), INTERVAL 90 DAY)";
 
-    $title["0"] = "Warranty Has Expired";
-    $title["30"] = "Warranty expires within 30 Days";
-    $title["60"] = "Warranty expires within 60 Days";
-    $title["90"] = "Warranty expires within 90 Days";
+    $title["0"] = "HW warranty has expired";
+    $title["30"] = "HW warranty expires within 30 days";
+    $title["60"] = "HW warranty expires within 60 days";
+    $title["90"] = "HW warranty expires within 90 days";
 
     foreach( $query_array as $days => $query) {
         $count = 0;
         $result = NULL;
-        $result = useSelectBlade ($query, __FUNCTION__);
+        $result = usePreparedSelectBlade ($query);
 
         echo "<style type='text/css'>\n";
         echo "tr.has_problems_even {\n";
@@ -34,8 +45,8 @@ function getMyServers3 ()
         echo "}\n";
         echo "</style>\n";
 
-        echo " <center> <h3> $title[$days] </h3><br>";
-        echo "<table align=center border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
+	startPortlet ($title[$days]);
+        echo "<table align=center width=60% border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
 
         echo "<th align=center>Count</th>";
         echo "<th align=center>Name</th>";
@@ -60,6 +71,7 @@ function getMyServers3 ()
             $order = $nextorder[$order];
         }
         echo "</table>\n";
+	finishPortlet ();
     }
 
 }
