@@ -82,6 +82,44 @@ CREATE TABLE IF NOT EXISTS `AutoPort` (
 // The tab only shows up if there are no ports yet defined
 //
 // The functions referred to in the handlers and trigger are all in this php file
+//-----------------------------------
+//Version 1.2
+//Revised by Jorge Sanchez
+//04-2011
+//------------------------------------
+//Changes:
+//------------------------------------
+//****The php file has been changed to work with 0.18.7 and the 0.19.x**** 
+//
+//****Note: you need to place process.php into the wwwroot directory from 0.18.7 for local_portgenerator to work.****
+//
+//****Also, make sure to include port_generator in the local.php file****
+//
+//First: $result variable no longers equals function useSelectBlade but uses function usePreparedSelectBlade because of the changes since
+//0.17.x files for rendering objects. Also with that, the FUNCTION included with useSelectBlade has been removed
+//
+//Second: The orientation of the table has been altered to have each dictionary entry be rendered
+//in a cell instead of fifteen in one cell. This makes the table look more neat and easier to read
+//
+//Third: Information of how to use the port generator has been added such as an EXAMPLE, an EXPLANATION of the EXAMPLE, and a note to allow port generator to render
+//to port after the link has been pressed. 
+//
+//Fourth: the autoport dialog box has been moved from below the table to the top of the table for easier accessibility
+//
+//Fifth: for some reason, the label would not update when the link was pressed so no labels would be present even if you added them to the Port Generator. To fix this, 
+//at line 443, inside of the commitaddPort variable, needed to add $aPort['label'] to allow it to function correctly
+//----------------------------------
+//Working On
+//----------------------------------
+//One: the padding with whitespace for each needs to be incorperated so that each cell is the same size. This is due to the browser more than anything else.
+//  
+//Version 1.3
+//Revised by Jorge Sanchez
+//04-2011
+//------------------------------------
+//Changes:
+//------------------------------------
+//***No longer needs the process.php file to work. ***
 //
 $tab['object']['portgenerator'] = 'Port generator';
 $trigger['object']['portgenerator'] = 'localtrigger_PortGenerator';
@@ -112,15 +150,15 @@ if (!defined("_portGeneratorNumberOfPorts")) {
 function checkForTable ()
 {
   global $tablePortGenerator;
-  $result = useSelectBlade ("SHOW TABLES LIKE '{$tablePortGenerator}'", __FUNCTION__);
+  $result = usePreparedSelectBlade ("SHOW TABLES LIKE '{$tablePortGenerator}'");
   if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
   if (!($row = $result->fetch (PDO::FETCH_NUM))) {
     $q = "CREATE TABLE IF NOT EXISTS `{$tablePortGenerator}` (
-    `dict_key` int(11) NOT NULL,
+    `dict_key` int(10) unsigned NOT NULL auto_increment,
     `autoportconfig` text NOT NULL,
     UNIQUE KEY `dict_key` (`dict_key`)
     ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
-    $result = useSelectBlade ($q, __FUNCTION__);
+    $result = usePreparedSelectBlade ($q);
     if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
   }
 }
@@ -137,7 +175,8 @@ function localtrigger_PortGenerator()
 	$object = spotEntity ('object', $_REQUEST['object_id']);
   $record = getObjectPortsAndLinks ($object['id']);
   if (count($record)==0 && !in_array($object['objtype_id'],$noPortGenerator)) 
-		return 1;
+		//return 1;
+                return 'std';
 	else
 	{
 		return '';
@@ -162,7 +201,7 @@ function localverify_PortGenerator($object) {
     //
     $lookFor = "Hardware type";
     $q = "SELECT * FROM AttributeMap WHERE attr_id="._portGeneratorHWType." AND objtype_id={$object['objtype_id']} ";
-    $result = useSelectBlade ($q, __FUNCTION__);
+    $result = usePreparedSelectBlade ($q);
     if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
     if ($row = $result->fetch (PDO::FETCH_NUM)) {
       //
@@ -172,7 +211,7 @@ function localverify_PortGenerator($object) {
       //
       $q = "SELECT uint_value, dict_value FROM AttributeValue, Dictionary ";
       $q .= "WHERE attr_id="._portGeneratorHWType." AND object_id={$object['id']} AND dict_key=uint_value ";
-      $result = useSelectBlade ($q, __FUNCTION__);
+      $result = usePreparedSelectBlade ($q);
       if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
       if ($row = $result->fetch (PDO::FETCH_NUM)) {
         $searchIt = $row[0];
@@ -194,7 +233,7 @@ function localverify_PortGenerator($object) {
     }
     $lookFor = "Autoport configuration";
     $q = "SELECT autoportconfig FROM {$tablePortGenerator} WHERE dict_key={$searchIt} ";
-    $result = useSelectBlade ($q, __FUNCTION__);
+    $result = usePreparedSelectBlade ($q);
     if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
     //
     // Check if there is an autoport configuration for the requested key
@@ -206,7 +245,7 @@ function localverify_PortGenerator($object) {
       //
       // Check for the value of the number of ports. If it is not found set it to 0
       //
-      $result = useSelectBlade ($q, __FUNCTION__);
+      $result = usePreparedSelectBlade ($q);
       if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
       if ($valueNumberOfPorts = $result->fetch (PDO::FETCH_NUM)) {
       } else {
@@ -241,7 +280,7 @@ function localverify_PortGenerator($object) {
               }
               if ($thisOrder[1]==1 || strpos($thisOrder[2],"%u")!==false) {
                 $q = "SELECT dict_value FROM Dictionary WHERE dict_key='{$thisOrder[3]}' AND chapter_id=2 ";
-                $result = useSelectBlade ($q, __FUNCTION__);
+                $result = usePreparedSelectBlade ($q);
                 if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
                 if ($row3 = $result->fetch (PDO::FETCH_NUM)) {
                   for ($i=1;$i<=$thisOrder[1];$i++) {
@@ -330,38 +369,21 @@ function localfunc_PortGenerator()
     print "&lt;list1&gt;;&lt;list2&gt;;.... where &lt;listx&gt; is<br>";
     print "&lt;start port #&gt;|&lt;port count, use %n for number of ports&gt;|";
     print "&lt;port name, use %u for number&gt;|&lt;port type id&gt;[|&lt;port label, use %u for number&gt;]<br><br>";
-    print "<table><tr>\n";
-    $isfirst = true;
-    $i = 0;
-    //
-    // List all available port types with their dictionary key
-    //
-    $q = "SELECT dict_key, dict_value FROM Dictionary WHERE chapter_id=2 ORDER BY dict_value ";
-    $result = useSelectBlade ($q, __FUNCTION__);
-    if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
-    while ($row4 = $result->fetch (PDO::FETCH_NUM)) {
-      if (!$isfirst && $i%12==0) {
-        print "</td>";
-      } else {
-        $isfirst = false;
-      }
-      if ($i%12==0) {
-        print "<td align='left'>";
-      }
-      print "<b>{$row4[0]}</b>:{$row4[1]}<br>\n";
-      $i++;
-    }
-    print "</td>\n";
-    print "</tr></table>\n";
+    print "<b>EXAMPLE</b><br><br> 1|15|eth%u|24; <br><br>"; //an example of how to use port generator 
+    print "<b>EXPLANATION</b><br><br> <b>1</b> = starting number, 
+    <b>15</b> = number of generated ports,  
+    <b>eth%u</b> = will begin with <b>starting number</b> and create up to the <b>number of generated ports</b>, 
+    <b>24</b> = the dictionary value displayed on the chart below <b>in bold</b><br><br>"; //explains example
+    print "<b>PLEASE NOTE</b><br><br> If you do not add the port that is selected <b>(dictionary value)</b> to the default list in the <b>Ports</b> Tab,  
+    you will get a <b>foriegn key violation</b> error. 
+    You must go to the <b>Configuration</b> area on the main page, go to <b>Enable port types</b>
+    and hit the <b>Edit</b> tab to place the selected port in either <b>GBIC</b>, <b>hardwired</b>, or any other configuration 
+    on the page so that the error is not recieved.<br><br><br>"; //Very important to have a sucessful implementation of port generator 
     //
     // The form that can update the configuration
-    //
-    print "<form action='process.php' method='GET'>\n";
-    print "<input type='hidden' name='page' value='object'>\n";
-    print "<input type='hidden' name='tab' value='portgenerator'>\n";
-    print "<input type='hidden' name='op' value='updateportgenerator'>\n";
-    print "<input type='hidden' name='object_id' value='{$_REQUEST['object_id']}'>\n";
-    print "<input type='hidden' name='yId' value='{$searchIt}'>\n";
+    // On top of the table of ports avialabe instead of beneath it
+	//
+    printOpFormIntro ('updateportgenerator', array ('yId' => $searchIt));
     print "Autoport Configuration : <input type='text' size='60' name='yConfig' value='";
     if ($valueConfiguration) {
       print $valueConfiguration[0];
@@ -375,7 +397,37 @@ function localfunc_PortGenerator()
     }
     print "'>\n";
     print "</form>\n";
-    print "</center>";
+    print "</center><br>";
+     
+    print "<table border='2' rules=all>\n<tr>";
+    $isfirst = true;
+    $i = 0;
+    //
+    // List all available port types with their dictionary key
+    //
+    $q = "SELECT dict_key, dict_value FROM Dictionary WHERE chapter_id=2 ORDER BY dict_value ";
+    $result = usePreparedSelectBlade ($q);//Changed for new configeration in versions after 0.17.x
+    if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
+    while ($row4 = $result->fetch (PDO::FETCH_NUM)) {
+      if (!$isfirst && $i%10==0) { //Change from %12 to %10 to render table evenly
+        print "</td></tr>\n"; //Change to </td></tr> so that each dictionary entry is nestled in its own cell
+      } else {
+      $isfirst = false;
+      }
+      if ($i%10==0) {
+        print "<td align='left'></td>";
+        $i=0;
+     }
+      $length = strlen($row4[1]);
+   
+      $padded_row = str_pad($row4[1], 32, " ", STR_PAD_RIGHT);//Does not work yet, will make each cell the same size
+      print "<td><b>{$row4[0]}</b>:";//seperated values to make them easier to read
+      print "{$padded_row}\n</td>"; 
+      $i++;
+    }
+    print "</td>\n";
+    print "</tr></table>\n";
+   
     finishPortlet();
   }
 }
@@ -383,8 +435,8 @@ function localfunc_PortGenerator()
 //
 // The actual port generator
 //
-$msgcode['localexecute_PortGenerator']['OK'] = 0;
-$msgcode['localexecute_PortGenerator']['ERR'] = 100;
+//$msgcode['localexecute_PortGenerator']['OK'] = 0;
+//$msgcode['localexecute_PortGenerator']['ERR'] = 100;
 
 function localexecute_PortGenerator()
 {
@@ -396,7 +448,7 @@ function localexecute_PortGenerator()
     if (localverify_PortGenerator($object)) {
       $cnt = 0;
       foreach ($portList as $aPort) {
-        commitAddPort($_REQUEST['object_id'],$aPort['name'],$aPort['port_id'],"","");
+        commitAddPort($_REQUEST['object_id'],$aPort['name'],$aPort['port_id'],$aPort['label'],"");
         $cnt++;
       }
     }
@@ -404,36 +456,40 @@ function localexecute_PortGenerator()
     $errorText = "Port generator not allowed";
   }
   if ($linkok) {
-    return buildRedirectURL (__FUNCTION__, 'OK', array ("Successfully added {$cnt} ports"));
+    //return buildRedirectURL (__FUNCTION__, 'OK', array ("Successfully added {$cnt} ports"));
+    return setMessage ('success', $message="Successfully added {$cnt} ports");
   } else {
-    return buildRedirectURL (__FUNCTION__, 'ERR', array ("Error adding the ports ({$errorText})"));
+    //return buildRedirectURL (__FUNCTION__, 'ERR', array ("Error adding the ports ({$errorText})"));
+    return setMessage ('error', $message="Error adding the ports ({$errorText})");
   }
 }
 
 //
 // Update the configuration scheme
 //
-$msgcode['updateconfig_PortGenerator']['OK'] = 0;
-$msgcode['updateconfig_PortGenerator']['ERR'] = 100;
+//$msgcode['updateconfig_PortGenerator']['OK'] = 0;
+//$msgcode['updateconfig_PortGenerator']['ERR'] = 100;
+
 
 function updateconfig_PortGenerator()
 {
   global $tablePortGenerator;
   checkForTable();
   $q = "SELECT autoportconfig FROM {$tablePortGenerator} WHERE dict_key={$_REQUEST['yId']} ";
-  $result = useSelectBlade ($q, __FUNCTION__);
+  $result = usePreparedSelectBlade ($q);
   if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
   if ($row = $result->fetch (PDO::FETCH_NUM)) {
     $q = "UPDATE {$tablePortGenerator} SET autoportconfig='{$_REQUEST['yConfig']}' WHERE dict_key={$_REQUEST['yId']} ";
   } else {
     $q = "INSERT INTO {$tablePortGenerator} (dict_key,autoportconfig) VALUES ({$_REQUEST['yId']},'{$_REQUEST['yConfig']}') ";
   }
-  $result = useSelectBlade ($q, __FUNCTION__);
+  $result = usePreparedSelectBlade ($q);
   if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
   if (true) {
-    return buildRedirectURL (__FUNCTION__, 'OK', array ("Successfully updated auto port configuration"));
+    return setMessage('success',$message="Successfully updated auto port configuration");
   } else {
-    return buildRedirectURL (__FUNCTION__, 'ERR', array ("Error update auto port configuration"));
+     print "false";
+    return setMessage ('error', $message="Error in update to auto port configuration");
   }
 }
 

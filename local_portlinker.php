@@ -123,15 +123,28 @@ $ophandler['object']['default']['linknow'] = 'execute_PortLinker';
 //
 // Check whether the variables are set or otherwise set the default values.
 // This is for this extension rather useless because you need extra port types that represent the cables at the back of the patch panel
+//------------------------
+//Version 1.2
+//Revised by Jorge Sanchez
+//04-2011
+//------------------------
+//Changes
+//------------------------
+//Only one change has been added to this file. The $result variable is no longer equal to useSelectBlade($q,__FUNCTION__); but to usePreparedSelectBlade($q); 
+//This is due to the changes since 0.17.x to 0.18.7 to the rendering of objects
 //
+
 global $portLinkerPortTypes;
 if (!isset($portLinkerPortTypes)) {
-  $portLinkerPortTypes = array();
+  $portLinkerPortTypes = array(50015);
 }
+
+
 global $portLinkerObjectTypes;
 if (!isset($portLinkerObjectTypes)) {
   $portLinkerObjectTypes = array(9);
 }
+
 
 function determinePortSplit ($object_label,$portCount) {
   $labels = explode(" ",$object_label);
@@ -169,7 +182,7 @@ function countPorts ($object_id) {
   $record = getObjectPortsAndLinks($object_id);
   $count = 0;
   foreach ($record as $aPort) {
-    if (in_array($aPort['type_id'],$portLinkerPortTypes)) {
+    if (in_array($aPort['oif_id'],$portLinkerPortTypes)) {
       $count++;
     }
   }
@@ -214,7 +227,7 @@ function getPorts ($object_id, $portCount, $portStart) {
   $record = getObjectPortsAndLinks($object_id);
   $foundPorts = array();
   foreach ($record as $aPort) {
-    if (in_array($aPort['type_id'],$portLinkerPortTypes) && strlen($aPort['reservation_comment'])==0 && $aPort['remote_id']==0) {
+    if (in_array($aPort['oif_id'],$portLinkerPortTypes) && strlen($aPort['reservation_comment'])==0 && $aPort['remote_id']==0) {
       $num = str2int($aPort['name']);
       if ($num>=$portStart && $num<$portStart+$portCount) {
         $foundPorts[$num] = array();
@@ -272,7 +285,7 @@ function determine_PortLinker() {
       foreach ($localSplit as $aKey=>$aValue) {
         if (strlen($errorText)==0) {
           $q = "SELECT id FROM RackObject WHERE name='{$aKey}' ";
-          $result = useSelectBlade ($q, __FUNCTION__);
+          $result = usePreparedSelectBlade ($q);
           if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
           if ($row = $result->fetch (PDO::FETCH_NUM)) {
             $remotePortCount[$aKey] = countPorts($row[0]);
@@ -360,7 +373,7 @@ function localpretrigger_PortLinker() {
   if (count($record)>0) {
     $linkok = 1;
     foreach ($record as $aPort) {
-      if (in_array($aPort['type_id'],$portLinkerPortTypes)) {
+      if (in_array($aPort['oif_id'],$portLinkerPortTypes)) {
         if ($linkok==1) {
           $linkok = 2;
         }
@@ -374,6 +387,7 @@ function localpretrigger_PortLinker() {
   }
   return $linkok;
 }
+
 
 function localtrigger_PortLinker()
 {
@@ -391,5 +405,11 @@ function localtrigger_PortLinker()
   {
     return '';
   }
+}
+
+function test_debug()
+{
+global $portLinkerObjectTypes;
+print $portLinkerObjectTypes;
 }
 ?>
