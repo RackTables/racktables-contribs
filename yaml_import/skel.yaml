@@ -1,0 +1,16 @@
+--- this line must be here and will be ignored ; filename must be hostname ; fqdn: must contain full fqdn ; $Id: skel.yaml 105 2011-05-20 10:09:22Z gruiick $
+name: 
+parameters:
+  fqdn: 
+  productname: 
+  serialnumber: 
+  uuid: 
+  operatingsystem: 
+  operatingsystemrelease: 
+  hypervisor: Yes|No 
+  interfaces: i1,i2,i3
+  macaddress_i1:
+  macaddress_i3:
+  ipaddress_i1:
+  ipaddress_i2:
+  ipaddress_i3:
