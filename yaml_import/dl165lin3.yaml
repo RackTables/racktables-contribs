@@ -1,0 +1,17 @@
+--- this line must be here and will be ignored
+  name: dl165lin3 
+  parameters:
+    fqdn: dl165lin3.ens-lyon.fr
+    productname: ProLiant DL165 G5
+    serialnumber: GB8905H5X7
+    uuid: 00591336-D21D-B211-8000-001F29E77084
+    operatingsystem: CentOS release 5.4 (Final) 
+    operatingsystemrelease: 5.4
+    interfaces: "eth0,eth1,ib0"
+    macaddress_eth0: 00:1F:29:E7:70:84
+    macaddress_eth1: 00:1F:29:E7:70:85
+    macaddress_ib0: 
+    ipaddress_eth0: 172.16.165.3
+    ipaddress_eth1: 10.20.165.3
+    ipaddress_ib0: 10.50.165.3
+
