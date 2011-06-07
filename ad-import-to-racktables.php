@@ -66,6 +66,7 @@ try {
       echo "Warning: No records affected by UPDATE statement!";
     }
 
+    $dbh->exec ('UPDATE Script SET script_text = NULL WHERE script_name = "RackCodeCache"');
     $dbh = null;
     }
 catch(PDOException $e)
