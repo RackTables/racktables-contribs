@@ -10,19 +10,18 @@
 // History
 // Version 0.1:  Initial release
 // Version 0.2:  Adaptation to 0.19.x, with additionnal specs from PSMN (see skel.yaml)
-// $Id: yaml_import.php 106 2011-05-24 09:51:36Z gruiick $
+// $Id: yaml_import.php 110 2011-06-10 10:09:57Z gruiick $
 //
 // Installation:
 // 1)  Copy script to inc folder as yaml_import.php
 // 2)  Add include to inc/local.php: include("yaml_import.php");
 // 3)  Include the 'spyc.php' into inc/ . Get it from http://code.google.com/p/spyc/
 
-# YAML Parser library.
+// YAML Parser library.
 require_once 'inc/spyc.php';
 
-
 // Depot Tab for objects.
-$tab['depot']['yaml_import'] = 'Import objects';
+$tab['depot']['yaml_import'] = 'Import yaml objects';
 $tabhandler['depot']['yaml_import'] = 'ImportTab';
 $ophandler['depot']['yaml_import']['RunImport'] = 'RunImport';
 //$ophandler['depot']['addmore']['addLotOfObjects'] = 'addLotOfObjects'; # ref
@@ -36,16 +35,17 @@ $nextorder['even'] = 'odd';
 // The ophandler to insert objects (if any)
 function RunImport()
 {
+  $taglist = isset ($_REQUEST['taglist']) ? $_REQUEST['taglist'] : array();
   $objectnames = $_POST['objectname'];
 
   global $dbxlink;
   global $username;
-//  global $taglist;
-  $taglist = isset ($_REQUEST['taglist']) ? $_REQUEST['taglist'] : array();
+  
   $log = emptyLog();
 
   foreach($objectnames as $objectname) 
   {
+
   // FIXME: This reads the entire directory for each object. Not very efficient.
     if ($handle = opendir('./yamls/'))
     {
@@ -88,7 +88,7 @@ function RunImport()
             // Object does not exist. Create new.
             // Syntax: commitAddObject ($new_name, $new_label, $new_type_id, $new_asset_no, $taglist = array())
             // Type is 4, server, by default.
-            $new_yamlobject = commitAddObject ($yaml_name,'',4,$yaml_file_array['serialnumber'],$taglist = array());
+            $new_yamlobject = commitAddObject ($yaml_name,'',4,$yaml_file_array['serialnumber'],$taglist);
 
             // Hardware type (i.e. ProLiant DL380 G6a), Dict Chapter ID is '11';
             $hw_dict_key = getdict($hw=$yaml_file_array['productname'], $chapter=11 );
@@ -213,9 +213,10 @@ function ImportTab()
   }
   </style>
 
+  <!--Legend-->
   <table align=right>
-  <tr class=trerror><td>Unknown object</td></tr>
-  <tr class=row_odd><td>Existing object</td></tr>
+  <tr class=trerror><td colspan=2>Unknown object</td></tr>
+  <tr><td class=row_even>Existing </td><td class=row_odd> object</td></tr>
   </table>
 
   <center><h1>Import yaml objects </h1><h2>from /yamls/</h2></center>
@@ -223,13 +224,14 @@ function ImportTab()
   startPortlet();
   echo "<table with=90% align=center border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
 
-// add taglist on display - left handed
-//  echo "<tr><th align=center>Assign tags</th></tr><tr><td rowspan=\"0\">";
-//  renderNewEntityTags('object');
-//  echo "</td></tr>";
 
   echo "<form method=post name=ImportObject action='?module=redirect&page=depot&tab=yaml_import&op=RunImport'>";
-  echo "<tr valign=top><th align=center>Name</th><th align=center>Import ?</th></tr>";
+  echo "<tr valign=top><th>Assign tags</th><th align=center>Name</th><th align=center>Import ?</th></tr>";
+
+// taglist on display - left handed
+  echo "<tr valign=top><td rowspan=\"0\">";
+  renderNewEntityTags('object');
+  echo "</td></tr>";
 
   $order = 'odd';
   # Find and read loop through all .yaml files in the yaml directory.
@@ -276,6 +278,10 @@ function ImportTab()
       }
     }
   }
+// tags ?
+//  echo "<tr><td rowspan=\"0\">";
+//  renderNewEntityTags('object');
+//  echo "</td></tr>";
 
   echo "<tr><td align=left><font size=1em color=gray>version ${Version}</font></td><td align=right><input type=submit name=got_very_fast_data value='Import selected items'></td><td></td></tr></table></td></tr>";
   echo "</form>";
