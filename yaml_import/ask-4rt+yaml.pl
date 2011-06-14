@@ -1,10 +1,10 @@
 #!/usr/bin/perl
 #
 # Copyright (C) 2011 PSMN / ENS de Lyon - LT
-# Ce script est régi par la licence CeCILL, voir le fichier
-# COPYING ou http://www.cecill.info/
+# This script is licenced under CeCILL, see COPYING 
+# or http://www.cecill.info/ (french GPL v2 equivalent)
 #
-# $Id: ask-4rt+yaml.pl 105 2011-05-20 10:09:22Z gruiick $
+# $Id: ask-4rt+yaml.pl 112 2011-06-14 13:50:09Z gruiick $
 #
 # Authors
 #  . Loïs Taulelle <lois dot taulelle at ens-lyon dot fr>
@@ -13,7 +13,9 @@
 #  [hostbase] : the base of hostname (ex: dl165lin)
 #  [start] : numerotation start (ex: 10)
 #  [end] : the end... this is the end (ex: 82)
-#  => generate a list from dl165lin10 to dl165lin82
+# => process a list from dl165lin10 to dl165lin82
+# or
+#  [hostname] & --uniq : when there's only one host to deal with
 #
 # Environment:
 #  Unix only, need following CPAN modules: 
@@ -45,6 +47,7 @@ my $scriptname = basename($0, ".pl");
 my $hostbase = "";
 my $start = "";
 my $end = "";
+my $uniqueness = "";
 my @hostArray =();
 my $dmi_decoder = Parse::DMIDecode->new();
 my $yaml = YAML::Tiny->new;
@@ -59,7 +62,7 @@ if ( $log eq "yes" )
 }
 else 
 {
-# TODO verbose and shutup mode ?
+# TODO verbose and silent mode ?
   $logfile = "/dev/null";
   print ("no logs! \n");
 }
@@ -68,7 +71,7 @@ my $date = &getDate();
 $logline->log_print("\t Job start at $date \n");
 
 # init debug
-if ($debug eq "yes")
+if ( $debug eq "yes" )
 {
   use Data::Dumper;
   $logline->log_print("\t DEBUG MODE ON \n");
@@ -78,15 +81,40 @@ if ($debug eq "yes")
 ## main program
 # proceeding arguments
 if ( $#ARGV == -1 or $#ARGV != 2 )
-# TODO special mode for one host only, with no number in its name
 {
-  $logline->log_print("\n\t TOO FEW OR MANY ARGUMENTS! \n");
-  $logline->fail("Usage: $scriptname.pl [hostbase] [start] [end] \n");
+  if ( $#ARGV == 1 )
+  {
+    if ( $ARGV[1] eq "--uniq" )
+    {
+
+      if ( $debug eq "yes" )
+      {
+        print ("Arguments: \n");
+        print Dumper(@ARGV);
+      }
+      if ( $log eq "yes" )
+      {
+        $logline->log_print("$scriptname called with: @ARGV \n");
+      }
+
+      $uniqueness = "1";
+      $hostArray[0] = $ARGV[0];
+      &main();
+    }
+    else
+    {
+      &printUsage();
+    }
+  }
+  else
+  {
+    &printUsage();
+  }
 }
 else # assuming $#ARGV == 2
 {
 
-  if ($debug eq "yes")
+  if ( $debug eq "yes" )
   {
     print ("Arguments: \n");
     print Dumper(@ARGV);
@@ -99,17 +127,42 @@ else # assuming $#ARGV == 2
   $hostbase = $ARGV[0];
   $start = $ARGV[1];
   $end = $ARGV[2];
+  $uniqueness = "0";
   &setHostList();
-  foreach my $i ($start .. $end)
-  {
-    my $host_os = &getOS($hostArray[$i]);
-    &getSMBios($hostArray[$i],$host_os);
-    &getIfConfig($hostArray[$i],$host_os);
-    &writeYaml($hostArray[$i]);
-  }
+  &main();
 }
 
 ## subs
+
+sub main
+{
+  if ( $uniqueness eq "0" )
+  {
+    foreach my $i ($start .. $end)
+    {
+      my $host_os = &getOS($hostArray[$i]);
+      &getSMBios($hostArray[$i],$host_os);
+      &getIfConfig($hostArray[$i],$host_os);
+      &writeYaml($hostArray[$i]);
+    }
+  }
+  elsif ( $uniqueness eq "1" )
+  {
+    my $host_os = &getOS($hostArray[0]);
+    &getSMBios($hostArray[0],$host_os);
+    &getIfConfig($hostArray[0],$host_os);
+    &writeYaml($hostArray[0]);
+  }
+}
+
+sub printUsage
+{
+  $logline->log_print("\n\t TOO FEW OR MANY ARGUMENTS! \n");
+  $logline->log_print("Usage: $scriptname.pl [hostbase] [start] [end]");
+  $logline->log_print("or");
+  $logline->fail("Usage: $scriptname.pl [hostname] --uniq");
+}
+
 
 sub writeYaml
 # generate the yaml structures, and write it to yaml file
@@ -121,7 +174,7 @@ sub writeYaml
   $yaml->[0]->{parameters}->{fqdn} = "$host.$fqdn";
   $yaml->write( "$filename.yaml" ) || $logline->fail("\t cannot write $filename!");
 
-  if ($debug eq "yes")
+  if ( $debug eq "yes" )
   {
     print ("$filename.yaml writed successfully \n");
   }
@@ -139,7 +192,7 @@ sub setHostList
   {
     $hostArray[$i] = "$hostbase$i";
 
-    if ($debug eq "yes")
+    if ( $debug eq "yes" )
     {
       print ("\t $hostArray[$i] \n");
     }
@@ -155,25 +208,25 @@ sub getOS
   my $release = "";
   my @release_internal = qx(ssh $host cat /etc/release); # have to start with something
 
-  if ($release_internal[0] eq "")
+  if ( $release_internal[0] eq "" )
   {
     @release_internal = qx(ssh $host cat /etc/redhat-release);
 # TODO debian ? others ? BSD's ? LSB ?
 # Xen/kvm/vmware/vbox has something to deal with:
 # $yaml->[0]->{parameters}->{hypervisor} = "No|Yes";
 
-    if ($release_internal[0] =~ /CentOS/i)
+    if ( $release_internal[0] =~ /CentOS/i )
     {
       $os_internal = "centos";
       $release = $release_internal[0];
     }
-    elsif ($release_internal[0] =~ /Red Hat/i)
+    elsif ( $release_internal[0] =~ /Red Hat/i )
     {
       $os_internal = "redhat";
       $release = $release_internal[0];
     }
   }
-  elsif ($release_internal[0] =~ /Solaris/i)
+  elsif ( $release_internal[0] =~ /Solaris/i )
   {
     $os_internal = "sun";
     $release = $release_internal[0];
@@ -186,7 +239,7 @@ sub getOS
   $yaml->[0]->{parameters}->{operatingsystemrelease} = $digits;
   $yaml->[0]->{parameters}->{hypervisor} = "No"; # fixed, for now
   
-  if ($debug eq "yes")
+  if ( $debug eq "yes" )
   {
     print ("$release, $digits\n");
   }
@@ -208,7 +261,7 @@ sub getSMBios
   my $serial_number = "";
   my $uuid = "";
 
-  if ($os eq "sun")
+  if ( $os eq "sun" )
 # Parse::dmidecode doesn't parse Oracle/Sun smbios output, so back to basics.
   {
     my @bios_raw = qx(ssh uroot\@$host smbios);
@@ -217,14 +270,14 @@ sub getSMBios
 
     foreach $biosLine (@bios_raw)
     {
-      if ($biosLine =~ /Product:/)
+      if ( $biosLine =~ /Product:/ )
       {
-        if ($pn_state == "0")
+        if ( $pn_state == "0" )
         {
           $product_name = $biosLine;
           $product_name =~ s/\s+Product:\s+//; chomp $product_name; # cleanup
           
-          if ($debug eq "yes")
+          if ( $debug eq "yes" )
           {
             print ("$product_name \n");
           }
@@ -232,14 +285,14 @@ sub getSMBios
         }
         else {next;} # don't waste time with other lines
       }
-      elsif ($biosLine =~ /Serial Number:/)
+      elsif ( $biosLine =~ /Serial Number:/ )
       {
-        if ($sn_state == "0")
+        if ( $sn_state == "0" )
         {
           $serial_number = $biosLine;
           $serial_number =~ s/\s+Serial Number:\s+//; chomp $serial_number;
           
-          if ($debug eq "yes")
+          if ( $debug eq "yes" )
           {
             print ("$serial_number \n");
           }
@@ -247,14 +300,14 @@ sub getSMBios
         }
         else {next;} # don't waste time with other lines
       }
-      elsif ($biosLine =~ /UUID:/)
+      elsif ( $biosLine =~ /UUID:/ )
       {
-        if ($uu_state == "0")
+        if ( $uu_state == "0" )
         {
           $uuid = $biosLine;
           $uuid =~ s/\s+UUID:\s+//; chomp $uuid;
 
-          if ($debug eq "yes")
+          if ( $debug eq "yes" )
           {
             print ("$uuid \n");
           }
@@ -277,7 +330,7 @@ sub getSMBios
   $yaml->[0]->{parameters}->{serialnumber} = $serial_number;
   $yaml->[0]->{parameters}->{uuid} = $uuid;
   
-  if ($debug eq "yes")
+  if ( $debug eq "yes" )
   {
     print ("$host: $product_name ; $serial_number ; $uuid ; $os \n");
   }
@@ -300,23 +353,23 @@ sub getIfConfig
   my $ifNstate = (my $ifIstate = (my $ifTstate = (my $ifMstate = "0")));
   my @ifconfigRaw = ();
   my $ifconfigLine = "";
-  my $ifylist = "";
+  my $ifTlist = "";
 
-  if ($os eq "sun")
+  if ( $os eq "sun" )
 # specific sort/regexp for SunOS, ifconfig output's not "standard"
   {
     @ifconfigRaw = qx(ssh uroot\@$host ifconfig -a);
 
     foreach $ifconfigLine (@ifconfigRaw)
     {
-      if ($ifconfigLine =~ /^(\S+)\:/)
+      if ( $ifconfigLine =~ /^(\S+)\:/ )
       { 
-        if ($ifconfigLine =~ /^lo/) 
+        if ( $ifconfigLine =~ /^lo/ ) 
         # interface is local, don't keep
         {
           next;
         }
-        elsif ($ifconfigLine =~ /^(\S+\:[0-9]{1})\:(\s+)/)
+        elsif ( $ifconfigLine =~ /^(\S+\:[0-9]{1})\:(\s+)/ )
         # interface is an alias, doesn't have MAC
         {
           $ifname[$ifNstate] = $1;
@@ -324,7 +377,7 @@ sub getIfConfig
           $iftype[$ifTstate] = "Ethernet";
           $ifmac[$ifMstate] = $ifmac[$ifMstate-1];
 
-          if ($debug eq "yes")
+          if ( $debug eq "yes" )
           {
             print ("$host: $ifname[$ifNstate] \n");
             print ("$host: $iftype[$ifTstate] = $ifmac[$ifMstate] \n");
@@ -343,7 +396,7 @@ sub getIfConfig
         {
           $ifname[$ifNstate] = $1;
 
-          if ($debug eq "yes")
+          if ( $debug eq "yes" )
           {
             print ("$host: $ifname[$ifNstate] \n");
           }
@@ -354,9 +407,9 @@ sub getIfConfig
           $ifNstate++;
         }
       }
-      elsif ($ifconfigLine =~ /inet (?:addr\:)?(\d+(?:\.\d+){3})/ )
+      elsif ( $ifconfigLine =~ /inet (?:addr\:)?(\d+(?:\.\d+){3})/ )
       {
-        if ($1 =~ /127\.0\.0\.1/)
+        if ( $1 =~ /127\.0\.0\.1/ )
         # IP is local, don't keep
         {
           next;
@@ -365,7 +418,7 @@ sub getIfConfig
         {
           $ifip[$ifIstate] = $1;
 
-          if ($debug eq "yes")
+          if ( $debug eq "yes" )
           {
             print ("$host: $ifip[$ifIstate] \n");
           }
@@ -376,7 +429,7 @@ sub getIfConfig
           $ifIstate++;
         }
       }
-      elsif ($ifconfigLine =~ /(\s+)ether(\s+)/)
+      elsif ( $ifconfigLine =~ /(\s+)ether(\s+)/ )
       # real interface have MAC
       {
         $iftype[$ifTstate] = "Ethernet";
@@ -384,7 +437,7 @@ sub getIfConfig
         $ifmac[$ifMstate] = $ifconfigLine;
         $ifmac[$ifMstate] =~ s/\s+$//; # remove trailing spaces, chomp does not make it.
 
-        if ($debug eq "yes")
+        if ( $debug eq "yes" )
         {
           print ("$host: $iftype[$ifTstate] = $ifmac[$ifMstate] \n");
         }
@@ -406,20 +459,20 @@ sub getIfConfig
 
     foreach $ifconfigLine (@ifconfigRaw)
     {
-      if ($ifconfigLine =~ /^(\S+)/)
+      if ( $ifconfigLine =~ /^(\S+)/ )
       {
-        if ($ifconfigLine =~ /^lo/)
+        if ( $ifconfigLine =~ /^lo/ )
         # interface is local, don't keep
         {
           next;
         }
-        elsif ($ifconfigLine =~ /^(\S+(?:\:)?[0-9]{1}) (\s+)/ )
+        elsif ( $ifconfigLine =~ /^(\S+(?:\:)?[0-9]{1}) (\s+)/ )
         # interface is real or alias
         {
           $ifname[$ifNstate] = $1;
           $ifname[$ifNstate] =~ s/\:/\./; # ":" is yaml reserved, so we use "."
 
-          if ($ifconfigLine =~ /Link encap:(.+)\s+HWaddr\s+(\S+)/ )
+          if ( $ifconfigLine =~ /Link encap:(.+)\s+HWaddr\s+(\S+)/ )
           # hardware address
           {
             $iftype[$ifTstate] = $1; chomp $iftype[$ifTstate];
@@ -427,7 +480,7 @@ sub getIfConfig
             $ifmac[$ifMstate] = $2;
           }
 
-          if ($debug eq "yes")
+          if ( $debug eq "yes" )
           {
             print ("$host: $ifname[$ifNstate] \n");
             print ("$host: $iftype[$ifTstate] = $ifmac[$ifMstate] \n");
@@ -442,9 +495,9 @@ sub getIfConfig
           $ifMstate++;
         }
       }
-      elsif ($ifconfigLine =~ /inet (?:addr\:)?(\d+(?:\.\d+){3})/ )
+      elsif ( $ifconfigLine =~ /inet (?:addr\:)?(\d+(?:\.\d+){3})/ )
       {
-        if ($1 =~ /127\.0\.0\.1/)
+        if ( $1 =~ /127\.0\.0\.1/ )
         # do not want local IP
         {
           next;
@@ -453,7 +506,7 @@ sub getIfConfig
         {
           $ifip[$ifIstate] = $1;
           
-          if ($debug eq "yes")
+          if ( $debug eq "yes" )
           {
             print ("$host: $ifip[$ifIstate] \n");
           }
@@ -469,7 +522,7 @@ sub getIfConfig
     }
   }
 
-  if ($debug eq "yes")
+  if ( $debug eq "yes" )
   {
     print Dumper(@ifname);
     print Dumper(@ifip);
@@ -482,25 +535,19 @@ sub getIfConfig
 # other network parameters are {interfaces} dependant
   foreach my $i (0 .. $#ifname)
   {
-    $ifylist = "$ifylist"."${ifname[$i]},";
-    print ("$ifylist \n");
+    $ifTlist = "$ifTlist"."${ifname[$i]},";
+    print ("$ifTlist \n");
     my $foo = "ipaddress_"."${ifname[$i]}";
     $yaml->[0]->{parameters}->{$foo} = $ifip[$i];
     my $bar = "macaddress_"."${ifname[$i]}";
     $yaml->[0]->{parameters}->{$bar} = $ifmac[$i];
   }
-  $ifylist =~ s/,$//; # remove trailing comma
-  $yaml->[0]->{parameters}->{interfaces} = $ifylist ;
+  $ifTlist =~ s/,$//; # remove trailing comma
+  $yaml->[0]->{parameters}->{interfaces} = $ifTlist ;
 
-  if ($debug eq "yes")
+  if ( $debug eq "yes" )
   {
     print Dumper($yaml);
-  }
-  if ( $log eq "yes" )
-  {
-  # TODO rewrite this, no need to dump in logs
-  my $yodump = Dumper($yaml);
-  $logline->log_print("$host: $yodump");
   }
 }
 
