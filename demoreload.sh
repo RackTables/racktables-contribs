@@ -61,12 +61,12 @@ do_version_16()
 do_version_19()
 {
 	[ -s "$MYDIR/init-full-$V.sql" ] || {
-		echo "Dump file install/init-full-$V.sql doesn't exist"
+		echo "Dump file $MYDIR/init-full-$V.sql doesn't exist"
 		exit 2
 	}
 	if [ "$DODEMO" = "yes" ]; then
 		[ -s $HOME/RackTables-$V/scripts/init-sample-racks.sql ] || {
-			echo "Dump file install/init-sample-racks.sql doesn't exist"
+			echo "Dump file $HOME/RackTables-$V/scripts/init-sample-racks.sql doesn't exist"
 			exit 7
 		}
 	fi
