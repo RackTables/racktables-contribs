@@ -3214,8 +3214,7 @@ CREATE TABLE `Script` (
 
 LOCK TABLES `Script` WRITE;
 /*!40000 ALTER TABLE `Script` DISABLE KEYS */;
-INSERT INTO `Script` VALUES ('RackCode','allow {$userid_1}');
-INSERT INTO `Script` VALUES ('RackCodeCache','YToyOntzOjY6InJlc3VsdCI7czozOiJBQ0siO3M6NDoibG9hZCI7YToxOntpOjA7YTo0OntzOjQ6InR5cGUiO3M6MTA6IlNZTlRfR1JBTlQiO3M6NjoibGluZW5vIjtpOjE7czo4OiJkZWNpc2lvbiI7czo5OiJMRVhfQUxMT1ciO3M6OToiY29uZGl0aW9uIjthOjM6e3M6NDoidHlwZSI7czoxMToiTEVYX0FVVE9UQUciO3M6NDoibG9hZCI7czo5OiIkdXNlcmlkXzEiO3M6NjoibGluZW5vIjtpOjE7fX19fQ==');
+INSERT INTO Script VALUES ('RackCode', '# Keep admin password immutable by means of special (and also immutable) RackCode.\ndeny {$op_updateUser} or {$op_saveRackCode}\nallow {$userid_1}\n');
 /*!40000 ALTER TABLE `Script` ENABLE KEYS */;
 UNLOCK TABLES;
 
