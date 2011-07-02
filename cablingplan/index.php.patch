@@ -1,0 +1,15 @@
+===================================================================
+--- wwwroot/index.php	(Revision 212)
++++ wwwroot/index.php	(Revision 215)
+@@ -190,6 +190,11 @@
+ 		require_once 'inc/install.php';
+ 		renderInstallerHTML();
+ 		break;
++    case 'rendercablingplan' == $_REQUEST['module']:
++        require_once 'inc/database.php';
++        require_once 'inc/cablingplan.php';
++        renderCablingPlan();
++        break;
+ 	default:
+ 		throw new InvalidRequestArgException ('module', $_REQUEST['module']);
+ 	}
