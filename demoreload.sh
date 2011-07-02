@@ -72,7 +72,7 @@ do_version_19()
 	fi
 	SQLFILE=`mktemp /tmp/demoreload.XXXXXX`
 	cat "$MYDIR/init-full-$V.sql" > "$SQLFILE"
-	cat $HOME/RackTables-$V/scripts/init-sample-racks.sql >> "$SQLFILE"
+	[ "$DODEMO" = "yes" ] && cat $HOME/RackTables-$V/scripts/init-sample-racks.sql >> "$SQLFILE"
 	echo "DROP DATABASE IF EXISTS $DB; CREATE DATABASE $DB CHARACTER SET utf8 COLLATE utf8_general_ci;" | mysql information_schema
 	mysql $DB < "$SQLFILE"
 	rm -f "$SQLFILE"
