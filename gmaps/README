@@ -1,0 +1,30 @@
+Google Maps RackTables plugin (c) Koen Vanherck
+-----------------------------------------------
+
+
+I made a plugin so you can position your Rackspaces on a google maps page
+
+I made a extra table for the coordinates
+
+CREATE TABLE `maps` (
+  `id` int(11) NOT NULL auto_increment,
+  `lat` varchar(50) NOT NULL,
+  `lng` varchar(50) NOT NULL,
+  `html` text NOT NULL,
+  `RackRow_id` int(11) NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=13 ;
+
+in the zip file you find 3 files
+maps.php
+data.php
+DB.php
+
+make a folder in on your website add the 3 files
+
+you have to change in maps.php the google maps key at line 9
+you can get them for free at http://code.google.com/intl/nl/apis/maps/signup.html
+
+DB.php you have to change the database credentials at line 2
+
+I'm not responsible for errors in the code or if it not works.
