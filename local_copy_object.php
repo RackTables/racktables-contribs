@@ -1,68 +1,62 @@
 <?php
 
-# "object copier" plugin by Manon Goo
+
+// I need this in local.php
+// define ('TABLE_BORDER',	0);
+// require_once "local_copy_object.php";
+// (c)2011 Manon Goo <manon@dg-i.net>
 
 $tab['object']['objectcopier'] = 'Object Copier ';
-$trigger['object']['objectcopier'] = 'localtrigger_ObjectCopier';
 $tabhandler['object']['objectcopier'] = 'localfunc_ObjectCopier';
-$ophandler['object']['objectcopier']['updateobjectcopier'] = 'updateconfig_ObjectCopier';
-$ophandler['object']['copyobject'] = 'localexecute_ObjectCopier';
-$ophandler['object']['objectcopier']['copyObjects'] = 'copyMultipleObjects';
+// $ophandler['object']['objectcopier']['updateobjectcopier'] = 'updateconfig_ObjectCopier';
 $ophandler['object']['objectcopier']['copyLotOfObjects'] = 'copyLotOfObjects';
-
-//
-// function to check whether a ObjectCopier generator should be shown
-//
-function localtrigger_ObjectCopier()
-{
-	return 'std';
-}
-
-function localexecute_ObjectCopier()
-{
-	echo "<h1>localexecute_ObjectCopier</h1>";
-}
 
 function localfunc_ObjectCopier($object_id)
 {
 	$object = spotEntity ('object', $object_id );
 	amplifyCell($object);
-
-
-	global $virtual_obj_types;
+	global $virtual_obj_types, $tagtree, $taglist, $target_given_tags;
 	$typelist = readChapter (CHAP_OBJTYPE, 'o');
 	$typelist[0] = 'select type...';
 	$typelist = cookOptgroups ($typelist);
 	$max = getConfigVar ('MASSCOUNT');
 	$tabindex = 100;
 
-
 	echo "\n";
 	echo "\n<!-- printOpFormIntro ('copyLotOfObjects') -->\n";
 	printOpFormIntro ('copyLotOfObjects');
 	echo "\n";
-	startPortlet ('Same type, same tags');
-	echo "\n" . '<table border=0 align=center>';
-	echo "\n" . '<tr><th>name or "name","label","asset_no" (no csv escaping) </th><th>type</th></tr>';
+	startPortlet ('Make many copies of this object');
+	echo "\n" . sprintf('<table border=%s align=center>', TABLE_BORDER);
+	echo "\n" . '<tr><th align=left>name or "name","label","asset_no" (no csv escaping)<br><br>';
+	echo 'Example:<br> "server.example.com","server.example.com","12345"<br>www.example.com<br>testmachine<br>';
+	echo  '</th><th>Tags</th></tr>';
 	echo "<tr><td><input type=submit name=got_very_fast_data value='Go!'></td><td></td></tr>\n";
-	echo "\n" . "<tr><td><textarea name=namelist cols=60 rows=40>\n</textarea></td>";
+	echo "\n" . "<tr><td valign=top ><textarea name=namelist cols=60 rows=40>\n</textarea></td>";
 	echo "<td valign=top>";
 	printf ("<input type=hidden name=global_type_id value='%s'>\n", $object['objtype_id']);
-	renderNewEntityTags ('object');
+	renderNewPreseclectedEntityTags ('Tag Tree', $tagtree, $target_given_tags, 'object');
 	echo "</td></tr>";
 	echo "<tr><td colspan=2><input type=submit name=got_very_fast_data value='Go!'></td></tr></table>\n";
 	echo "</form>\n";
 	finishPortlet();
-	// EOF_Stolen
-	/*
-	startPortlet ('debug');
- 	var_dump (getPortListPrefs() );
- 	var_dump (getNewPortTypeOptions() );
-	echo "</pre>";
-	finishPortlet();
-	*/
 
 }
+
+function renderNewPreseclectedEntityTags ($title, $tags, $preselect = array (), $for_realm = '' ) 
+{
+	global $taglist;
+	if (!count ($taglist))
+	{
+		echo "No tags defined";
+		return;
+	}
+	printf ('<table border=%s align=center cellspacing=0 class="tagtree">', TABLE_BORDER);
+	foreach ($tags as $taginfo)
+		renderTagCheckbox ('taglist', $preselect , $taginfo, $for_realm);
+	echo '</table>';
+}
+
 function copyLotOfObjects($template_object)
 {
 	global $dbxlink;
@@ -93,22 +87,22 @@ function copyLotOfObjects($template_object)
 			else
 				$names2[] = rtrim ($parts[0]);
 		}
-		foreach ($names2 as $name)
+		foreach ($names2 as $name_or_csv)
 		{
 			$label = '';
 			$asset_no = '';
 			$object_name = '';
 			$regexp='/^\"([^\"]*)\","([^\"]*)\","([^\"]*)\"/';
-			$object_name = htmlspecialchars_decode($name, ENT_QUOTES);	
-			error_log( "$regexp $object_name" );
-			if (preg_match($regexp, $object_name, $matches) ) 
+			$object_name_or_csv = htmlspecialchars_decode($name_or_csv, ENT_QUOTES);	
+			// error_log( "$regexp $object_name" );
+			if (preg_match($regexp, $object_name_or_csv, $matches) ) 
 			{
 				$object_name = $matches[1];
 				$label = $matches[2];
 				$asset_no = $matches[3];
 			} 
 			else 
-				$object_name = $name;
+				$object_name = $name_or_csv;
 			try
 			{
 				$object_id = commitAddObject ($object_name, $label, $global_type_id, $asset_no, $taglist);
@@ -141,16 +135,16 @@ function copyLotOfObjects($template_object)
 				{
 					foreach ($info['ports'] as $existing_port) 
 					{
-						foreach ( array( BACKEND_PROT_ID) as $link_type)
+						foreach ( array( BACKEND_PROT_ID, 0 ) as $link_type)
 						{
 							$name_by_id[$existing_port['name']] = $existing_port['id'];
-							if ( $source_port[$link_type]['remote_object_id'] == $source_object_id )
-							{
-								if ($existing_port['name'] == $source_port[$link_type]['remote_name'] ) 
-								{
-									linkPorts($existing_port['id'], $name_by_id[$source_port['name']], $source_port[$link_type][cabelid], $link_type);
-								}
-							}
+							if ( $source_port[$link_type]['remote_object_id'] == $source_object_id &&
+									$existing_port['name'] == $source_port[$link_type]['remote_name'] ) 
+								linkPorts($existing_port['id'],
+									$name_by_id[$source_port['name']],
+									$source_port[$link_type][cabelid],
+									$link_type
+								);
 						}
 					}
 				}
@@ -172,24 +166,19 @@ function copyLotOfObjects($template_object)
 					}
 					
 					if (permitted (NULL, NULL, NULL, array (array ('tag' => '$attr_' . $record['id'] ))))
-					{
 						if (empty($value))
-						{
 							commitUpdateAttrValue ($object_id, $record['id'] );
-						}
 						else
-						{
 							commitUpdateAttrValue ($object_id, $record['id'], $value ) ;
-						}
-					}
 					else
-					{
 						showError ('Permission denied, "' . $record['id'] . '"can not be set');
-					}
 
 				}
 
-				$log = mergeLogs ($log, oneLiner (5, array ('<a href="' . makeHref (array ('page' => 'object', 'tab' => 'default', 'object_id' => $object_id)) . '">' . $info['dname'] . '</a>')));
+				$log = mergeLogs ($log, oneLiner (5, array ('<a href="' . 
+					makeHref (array ('page' => 'object', 'tab' => 'default', 'object_id' => $object_id)) .
+					'">' . $info['dname'] . '</a>'))
+				);
 			}
 			catch (RTDatabaseError $e)
 			{
@@ -197,19 +186,13 @@ function copyLotOfObjects($template_object)
 				$dbrollback = 1;
 				$dbxlink->rollBack();
 				$log = mergeLogs ($log, oneLiner (147, array ($object_name)));
-				throw new RTDatabaseError ($e);
+				throw new RTDatabaseError ( $e->getMessage() . sprintf(' (%s)', $name_or_csv  ));
 			}
 		}
 	}
 	if (! $dbrollback )
 		$dbxlink->commit();
 	return buildWideRedirectURL ($log);
-}
-
-
-function updateconfig_ObjectCopier()
-{
-	true;
 }
 
 ?>
