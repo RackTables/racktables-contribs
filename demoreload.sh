@@ -5,6 +5,12 @@
 # 2a. init-auth annex files and dictdump.php helper script (normally
 #    already present in contribs directory) for versions 0.16~0.18
 # 2b. init-full annex file in contribs directory for version 0.19
+#
+# init-full files are produced by installing RackTables from scratch
+# with HTTP installer and then dumping the database this way:
+# mysqldump --extended-insert=FALSE --order-by-primary racktables_db > init-full-X.Y.Z.sql
+# (after that make sure, that Script table is filled with values
+# appropriate for the demo).
 
 usage()
 {
