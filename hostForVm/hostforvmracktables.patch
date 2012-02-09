@@ -1,0 +1,146 @@
+Index: wwwroot/inc/ajax-interface.php
+===================================================================
+--- wwwroot/inc/ajax-interface.php	(revision 260)
++++ wwwroot/inc/ajax-interface.php	(working copy)
+@@ -31,6 +31,35 @@
+     
+ }
+ 
++function ajaxvm2host($mode, $name) {
++    
++    global $vm2host_server, $vm2host_username, $vm2host_password, $vm2host_python, $vm2host_hostforvmpy;
++    
++    if (! in_array($mode, array("v","h"))) {
++        
++        echo "Mode must be v or h";
++        return;
++        
++    }
++    
++    if (!preg_match("/[a-zA-Z0-9-_.]/", $name)) {
++        
++        echo "Invalid host";
++        return;
++        
++    }
++    
++    $command = $vm2host_python . " " . $vm2host_hostforvmpy . " --server ".$vm2host_server.
++        " --username " . $vm2host_username .
++        " --password " . $vm2host_password .
++        " --mode " . $mode .
++        " --name " . $name .
++        " | sort";
++
++    system($command);
++    
++}
++
+ // retrieves ports link status from switch and formats results to dynamic-HTML
+ // returns array which could be packed into json and passed to client's browser
+ function formatPortLinkHints ($object_id)
+@@ -205,6 +234,9 @@
+     case 'search':
+         ajaxSearch($_REQUEST['term']);
+         break;
++    case 'vm2host':
++        ajaxvm2host($_REQUEST['mode'], $_REQUEST['name']);
++        break;
+ 	default:
+ 		throw new InvalidRequestArgException ('ac', $_REQUEST['ac']);
+ 	}
+Index: wwwroot/inc/secret.php
+===================================================================
+--- wwwroot/inc/secret.php	(revision 260)
++++ wwwroot/inc/secret.php	(working copy)
+@@ -39,4 +39,13 @@
+ $nagios_attribute_name = "Nagios Hostname";
+ $nagios_url = "http://linagios3.ic-zedach.de/nagios/cgi-bin/status.cgi?host=%%NAGIOS%%";
+ 
++// vm2host configuration
++
++$vm2host_type = 1504;
++$vm2host_python = "/opt/python27/bin/python2.7";
++$vm2host_server = "vcenter-rz.zedach.intern";
++$vm2host_username = "service.esxbackup";
++$vm2host_password = "pEw6vechAK7q";
++$vm2host_hostforvmpy = "../scripts/hostForVm.py";
++
+ ?>
+Index: wwwroot/inc/interface.php
+===================================================================
+--- wwwroot/inc/interface.php	(revision 260)
++++ wwwroot/inc/interface.php	(working copy)
+@@ -669,7 +669,7 @@
+ 
+ function renderRackObject ($object_id)
+ {
+-	global $nextorder, $aac, $virtual_obj_types, $nagios_attribute_name, $nagios_url;
++	global $nextorder, $aac, $virtual_obj_types, $nagios_attribute_name, $nagios_url, $vm2host_type;
+ 	$info = spotEntity ('object', $object_id);
+ 	amplifyCell ($info);
+ 	// Main layout starts.
+@@ -725,6 +725,8 @@
+ 		echo "<tr><td colspan=2 class=msg_error>Has problems</td></tr>\n";
+ 		
+ 	$nagios_hostname = "";
++	$fqdn = "";
++	$isHypervisor = false;
+ 	
+ 	foreach (getAttrValues ($object_id) as $record) {
+ 	    
+@@ -738,12 +740,55 @@
+                 $nagios_hostname = $record['value'];
+                 
+             } 
++            if ($record['name'] == "FQDN") {
++                $fqdn = $record['value'];                
++            }
++            if ($record['name'] == "Hypervisor") {
++
++                if ($record['value'] == "Yes") {
++                    
++                    $isHypervisor = true;
++                    
++                }
++                
++            }
+ 			echo "<tr><th width='50%' class=sticker>${record['name']}:</th><td class=sticker>" .
+ 				formatAttributeValue ($record) . "</td></tr>";
+                 
+         }
+         
+     }
++    
++    // Add vm2host for VMs
++
++    if (($info['objtype_id'] == $vm2host_type) ||
++        ($isHypervisor)
++    ) {
++    
++        echo "<tr><th width='50%' class=sticker>on ESX-Host:</th><td class=sticker>";
++        echo "<div id=\"vm2host_esx\"><img src=\"pix/ajax-loader.gif\"/></div>";
++        echo "</td></tr>";
++        echo "<script type=\"text/javascript\">\n";
++        echo "function getvm2host(dnsname) {\n";
++        echo "  jQuery.ajax({\n";
++        echo "    url: \"index.php?module=ajax&ac=vm2host&mode=";
++        
++        if ($info['objtype_id'] == $vm2host_type) {
++            echo "v";
++        } else {
++            echo "h";
++        }
++        
++        echo "&name=\" + dnsname,\n";
++        echo "    success: function(data, textStatus, jqXHR) {\n";
++        echo '      $("#vm2host_esx")[0].innerHTML=data.replace(/\n/g,"<br />");' . "\n";
++        echo "    }\n";
++        echo "  });\n";
++        echo "}\n";
++        echo "window.setTimeout('getvm2host(\"" . $fqdn. "\")', 1000);\n";
++        echo "</script>\n";
++        
++    }
+ 
+ 	printTagTRs
+ 	(
