@@ -53,6 +53,13 @@ eth1link of type 50198 (the type we use for utpLink cable)
 ....
 ethxlink of type 50198 (where x is the number of ports defined in the attribute)
 
+Example for a Port Innerinterface + Outerinterface: 
+1|2|G%u|4-1077|gigabitEthernet0/%u
+
+This will generate the following ports:
+G1 of inner Type 4 and outer type 1077 (SFP-1000 with empty SFP-1000 inside)
+G2 of inner Type 4 and outer type 1077 (SFP-1000 with empty SFP-1000 inside)
+
 */
 
 //
@@ -121,6 +128,15 @@ CREATE TABLE IF NOT EXISTS `AutoPort` (
 //------------------------------------
 //***No longer needs the process.php file to work. ***
 //
+//Version 1.4
+//Revised by Marian Stetina, Viktor Daniel
+//02-2012
+//------------------------------------
+//Changes:
+//------------------------------------
+//*** Added support for PortInnterInterface ***
+//
+
 $tab['object']['portgenerator'] = 'Port generator';
 $trigger['object']['portgenerator'] = 'localtrigger_PortGenerator';
 $tabhandler['object']['portgenerator'] = 'localfunc_PortGenerator';
@@ -279,7 +295,11 @@ function localverify_PortGenerator($object) {
                 $thisOrder[1] = $valueNumberOfPorts[0];
               }
               if ($thisOrder[1]==1 || strpos($thisOrder[2],"%u")!==false) {
-                $q = "SELECT dict_value FROM Dictionary WHERE dict_key='{$thisOrder[3]}' AND chapter_id=2 ";
+               if (preg_match ('/^([[:digit:]]+)-([[:digit:]]+)$/', $thisOrder[3], $matches)) 
+                         $oif_id = $matches[2];
+               else 
+                  $oif_id = $thisOrder[3];
+                $q = "SELECT dict_value FROM Dictionary WHERE dict_key='$oif_id' AND chapter_id=2 ";
                 $result = usePreparedSelectBlade ($q);
                 if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
                 if ($row3 = $result->fetch (PDO::FETCH_NUM)) {
@@ -368,7 +388,7 @@ function localfunc_PortGenerator()
     print $genText."<p>\n";
     print "&lt;list1&gt;;&lt;list2&gt;;.... where &lt;listx&gt; is<br>";
     print "&lt;start port #&gt;|&lt;port count, use %n for number of ports&gt;|";
-    print "&lt;port name, use %u for number&gt;|&lt;port type id&gt;[|&lt;port label, use %u for number&gt;]<br><br>";
+    print "&lt;port name, use %u for number&gt;|[&lt;port innerinterface id&gt;-]&lt;port type id&gt;[|&lt;port label, use %u for number&gt;]<br><br>";
     print "<b>EXAMPLE</b><br><br> 1|15|eth%u|24; <br><br>"; //an example of how to use port generator 
     print "<b>EXPLANATION</b><br><br> <b>1</b> = starting number, 
     <b>15</b> = number of generated ports,  
