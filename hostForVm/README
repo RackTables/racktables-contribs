@@ -1,0 +1,11 @@
+It tells the user on which host a vm currently lies and what vms a host currently provides.
+
+The script is available here:
+  https://github.com/dploeger/hostForVm
+
+Steps to include hostforvm into racktables:
+  * Install all necessary things for hostforvm, put the hostforvm.py-script into a directory available to the webserver process
+  * Put the ajax-loader.gif into the pix-subdirectory of the www-root
+  * Apply the included patch
+
+https://sourceforge.net/apps/mantisbt/racktables/view.php?id=517
