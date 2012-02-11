@@ -7,14 +7,17 @@ internal ID of that object. This is mainly intended to be used
 together with other systems like Nagios, which only share
 object's name in common with RackTables. For example:
 
-http://example.com/racktables/index.php?page=oneshot&q=myserver
+http://example.com/racktables/index.php?page=oneshot&realm=object&q=myserver
 
 (This would instantly redirect the user to myserver's page in
 RackTables, if "myserver" exists.)
 
-This revision of extension has been tested to work with RackTables 0.18.x.
+This revision of extension has been tested to work with RackTables
+versions 0.18.x and 0.19.x.
 
 */
+
+$page['oneshot']['handler'] = 'handleOneShotRequest';
 
 function handleOneShotRequest ()
 {
