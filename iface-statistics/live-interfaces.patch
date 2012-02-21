@@ -1,0 +1,19 @@
+*** gateways/deviceconfig/ios12.connector	2010-12-25 23:07:25.000000000 +0100
+--- gateways/deviceconfig/ios12.connector	2012-02-13 14:32:48.000000000 +0100
+***************
+*** 68,73 ****
+--- 68,81 ----
+  	printf 'term len 0\nshow mac address-table dynamic\n' >> "$SESSION"
+  	outfile="$WORKFILE"
+  	;;
++ getuptime)
++ 	printf 'show version | in uptime\n' >> "$SESSION"
++ 	outfile="$WORKFILE"
++ 	;;
++ getinterfaces)
++ 	printf 'term len 0\nshow interfaces\n' >> "$SESSION"
++ 	outfile="$WORKFILE"
++ 	;;
+  deploy)
+  	cat "$WORKFILE" >> "$SESSION"
+  	outfile=/dev/null
