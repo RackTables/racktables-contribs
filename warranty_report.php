@@ -17,6 +17,14 @@ $tabhandler['reports']['warranty'] = 'hwExpireReport';
 function hwExpireReport ()
 {
     global $nextorder;
+    addCSS ('
+tr.has_problems_even {
+background-color: #ffa0a0;
+}
+tr.has_problems_odd {
+background-color: #ffd0d0;
+}
+', TRUE);
     $query_array;
     $query_array["0"] = "SELECT a.string_value, r.id, r.name, r.asset_no FROM AttributeValue a Left JOIN RackObject r ON a.object_id = r.id where attr_id=22 and STR_TO_DATE(a.string_value, '%m/%d/%Y') <= curdate()";
 
@@ -35,15 +43,6 @@ function hwExpireReport ()
         $count = 0;
         $result = NULL;
         $result = usePreparedSelectBlade ($query);
-
-        echo "<style type='text/css'>\n";
-        echo "tr.has_problems_even {\n";
-        echo "background-color: #ffa0a0;\n";
-        echo "}\n";
-        echo "tr.has_problems_odd {\n";
-        echo "background-color: #ffd0d0;\n";
-        echo "}\n";
-        echo "</style>\n";
 
 	startPortlet ($title[$days]);
         echo "<table align=center width=60% border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
