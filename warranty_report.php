@@ -14,6 +14,21 @@
 $tab['reports']['warranty'] = 'HW Warranty Expires';
 $tabhandler['reports']['warranty'] = 'hwExpireReport';
 
+function scanAttrRelativeDays ($attr_id, $date_format, $not_before_days, $not_after_days)
+{
+	$attrmap = getAttrMap();
+	if ($attrmap[$attr_id]['type'] != 'string')
+		throw new InvalidArgException ('attr_id', $attr_id, 'attribute cannot store dates');
+	return usePreparedSelectBlade
+	(
+		'SELECT a.string_value, r.id, r.name, r.asset_no ' .
+		'FROM AttributeValue a LEFT JOIN RackObject r ON a.object_id = r.id ' .
+		'WHERE attr_id=? and STR_TO_DATE(a.string_value, ?) BETWEEN '.
+		'DATE_ADD(curdate(), INTERVAL ? DAY) and DATE_ADD(curdate(), INTERVAL ? DAY)',
+		array ($attr_id, $date_format, $not_before_days, $not_after_days)
+	);
+}
+
 function hwExpireReport ()
 {
     global $nextorder;
@@ -25,26 +40,23 @@ tr.has_problems_odd {
 background-color: #ffd0d0;
 }
 ', TRUE);
-    $query_array;
-    $query_array["0"] = "SELECT a.string_value, r.id, r.name, r.asset_no FROM AttributeValue a Left JOIN RackObject r ON a.object_id = r.id where attr_id=22 and STR_TO_DATE(a.string_value, '%m/%d/%Y') <= curdate()";
 
-    $query_array["30"] = "SELECT a.string_value, r.id, r.name, r.asset_no FROM AttributeValue a Left JOIN RackObject r ON a.object_id = r.id where attr_id=22 and STR_TO_DATE(a.string_value, '%m/%d/%Y') BETWEEN curdate() and DATE_ADD(curdate(), INTERVAL 30 DAY)";
+    $breakdown = array
+    (
+        array ('from' => -365, 'to' => 0, 'title' => 'HW warranty has expired'),
+        array ('from' => 0, 'to' => 30, 'title' => 'HW warranty expires within 30 days'),
+        array ('from' => 30, 'to' => 60, 'title' => 'HW warranty expires within 60 days'),
+        array ('from' => 60, 'to' => 90, 'title' => 'HW warranty expires within 90 days'),
+    );
 
-    $query_array["60"] = "SELECT a.string_value, r.id, r.name, r.asset_no FROM AttributeValue a Left JOIN RackObject r ON a.object_id = r.id where attr_id=22 and STR_TO_DATE(a.string_value, '%m/%d/%Y') BETWEEN DATE_ADD(curdate(), INTERVAL 30 DAY) and DATE_ADD(curdate(), INTERVAL 60 DAY)";
-
-    $query_array["90"] = "SELECT a.string_value, r.id, r.name, r.asset_no FROM AttributeValue a Left JOIN RackObject r ON a.object_id = r.id where attr_id=22 and STR_TO_DATE(a.string_value, '%m/%d/%Y') BETWEEN DATE_ADD(curdate(), INTERVAL 60 DAY) and DATE_ADD(curdate(), INTERVAL 90 DAY)";
-
-    $title["0"] = "HW warranty has expired";
-    $title["30"] = "HW warranty expires within 30 days";
-    $title["60"] = "HW warranty expires within 60 days";
-    $title["90"] = "HW warranty expires within 90 days";
-
-    foreach( $query_array as $days => $query) {
+    foreach ($breakdown as $section)
+    {
         $count = 0;
-        $result = NULL;
-        $result = usePreparedSelectBlade ($query);
+	$result = scanAttrRelativeDays (22, '%m/%d/%Y', $section['from'], $section['to']);
+	if (! count ($result))
+		continue;
 
-	startPortlet ($title[$days]);
+	startPortlet ($section['title']);
         echo "<table align=center width=60% border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
 
         echo "<th align=center>Count</th>";
