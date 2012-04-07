@@ -1,7 +1,7 @@
 <?php
 //
 // Warranty by Ernest Shaffer
-// Version: 2.1
+// Version: 3.0 (merged into RackTables 0.19.12)
 //
 // Displays objects with pending or expired HW warranty expiration dates
 // Groups them into 4 groups:
@@ -14,19 +14,21 @@
 $tab['reports']['warranty'] = 'HW Warranty Expires';
 $tabhandler['reports']['warranty'] = 'hwExpireReport';
 
+# Return list of rows for objects, which have the date stored in the given
+# attribute belonging to the given range (relative to today's date).
 function scanAttrRelativeDays ($attr_id, $date_format, $not_before_days, $not_after_days)
 {
 	$attrmap = getAttrMap();
 	if ($attrmap[$attr_id]['type'] != 'string')
 		throw new InvalidArgException ('attr_id', $attr_id, 'attribute cannot store dates');
-	return usePreparedSelectBlade
+	$result = usePreparedSelectBlade
 	(
-		'SELECT a.string_value, r.id, r.name, r.asset_no ' .
-		'FROM AttributeValue a LEFT JOIN RackObject r ON a.object_id = r.id ' .
-		'WHERE attr_id=? and STR_TO_DATE(a.string_value, ?) BETWEEN '.
+		'SELECT string_value, object_id FROM AttributeValue ' .
+		'WHERE attr_id=? and STR_TO_DATE(string_value, ?) BETWEEN '.
 		'DATE_ADD(curdate(), INTERVAL ? DAY) and DATE_ADD(curdate(), INTERVAL ? DAY)',
 		array ($attr_id, $date_format, $not_before_days, $not_after_days)
 	);
+	return $result->fetchAll (PDO::FETCH_ASSOC);
 }
 
 function hwExpireReport ()
@@ -43,42 +45,39 @@ background-color: #ffd0d0;
 
 	$breakdown = array
 	(
-		array ('from' => -365, 'to' => 0, 'title' => 'HW warranty has expired'),
-		array ('from' => 0, 'to' => 30, 'title' => 'HW warranty expires within 30 days'),
-		array ('from' => 30, 'to' => 60, 'title' => 'HW warranty expires within 60 days'),
-		array ('from' => 60, 'to' => 90, 'title' => 'HW warranty expires within 90 days'),
+		array ('from' => -365, 'to' => 0, 'class' => 'has_problems_', 'title' => 'HW warranty has expired within last year'),
+		array ('from' => 0, 'to' => 30, 'class' => 'row_', 'title' => 'HW warranty expires within 30 days'),
+		array ('from' => 30, 'to' => 60, 'class' => 'row_', 'title' => 'HW warranty expires within 60 days'),
+		array ('from' => 60, 'to' => 90, 'class' => 'row_', 'title' => 'HW warranty expires within 90 days'),
 	);
-
 	foreach ($breakdown as $section)
 	{
-		$count = 0;
+		$count = 1;
+		$order = 'odd';
 		$result = scanAttrRelativeDays (22, '%m/%d/%Y', $section['from'], $section['to']);
-		if (! count ($result))
-			continue;
 
 		startPortlet ($section['title']);
 		echo "<table align=center width=60% border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
-
 		echo "<th align=center>Count</th>";
 		echo "<th align=center>Name</th>";
-		echo "<th align=center>Assett Tag</th>";
-		echo "<th align=center>Date Warranty <br> Expires</th>";
+		echo "<th align=center>Asset Tag</th>";
+		echo "<th align=center>Date Warranty <br> Expires</th></tr>\n";
 
-		$order = 'odd';
-		while ($row = $result->fetch (PDO::FETCH_ASSOC))
-		{
-			if ($days == 0) {
-				echo "<tr class=has_problems_${order} valign=top>";
-			} else {
-				echo "<tr class=row_${order} valign=top>";
+		if (! count ($result))
+			echo '<tr><td colspan=4>(none)</td></tr>';
+		else
+			foreach ($result as $row)
+			{
+				$object = spotEntity ('object', $row['object_id']);
+				echo '<tr class=' . $section['class'] . $order . ' valign=top>';
+				echo "<td>${count}</td>";
+				echo '<td>' . mkA ($object['dname'], 'object', $object['id']) . '</td>';
+				echo "<td>${object['asset_no']}</td>";
+				echo "<td>${row['string_value']}</td>";
+				echo "</tr>\n";
+				$order = $nextorder[$order];
+				$count++;
 			}
-			printf("<td>%s</td>", $count += 1);
-			echo "<td><a href='".makeHref(array('page'=>'object', 'object_id'=>$row['id']))."'>${row['name']}</a></td>";
-			printf("<td>%s</td>", $row['asset_no']);
-			printf("<td>%s</td>", $row['string_value']);
-			echo "</tr>\n";
-			$order = $nextorder[$order];
-		}
 		echo "</table>\n";
 		finishPortlet ();
 	}
