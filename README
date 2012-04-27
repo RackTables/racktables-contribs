@@ -5,3 +5,9 @@ plugin                        RackTables release
 ***************************   ******************
 ObjectLog                     0.19.0
 HW warranty report            0.19.12
+
+--------------------------------------------------------------------------
+A note to the repository editors. When you are committing someone's work
+(either a new file or a change), consider giving the credits using
+contributor's full name, not email. This makes the contribution searchable
+and reduces amount of spam received by the contributor.
