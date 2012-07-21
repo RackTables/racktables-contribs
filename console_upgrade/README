@@ -1,0 +1,18 @@
+From bug #556...
+
+<snip>
+Hi,
+
+we're currently building a capistrano based deployment process for racktables.
+
+To upgrade the database from the console, i've developed a small php console application which can do the upgrade from the console. The application uses Composer and the Symfony2 console.
+
+To use it:
+
+  Install composer:
+    $> curl -s http://getcomposer.org/installer [^] | php
+  Install dependencies:
+    $> php composer.phar install
+  Run the console:
+    $> php console.php
+</snip>

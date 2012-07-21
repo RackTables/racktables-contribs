@@ -1,0 +1,6 @@
+{
+    "name": "racktables/racktables",
+    "require": {
+        "symfony/console": "v2.0.12"
+    }
+}

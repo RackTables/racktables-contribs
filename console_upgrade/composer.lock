@@ -1,0 +1,13 @@
+{
+    "hash": "ea0ca025f3f4d8d690f0b385f2ca9bd5",
+    "packages": [
+        {
+            "package": "symfony/console",
+            "version": "v2.0.12"
+        }
+    ],
+    "packages-dev": null,
+    "aliases": [
+
+    ]
+}
