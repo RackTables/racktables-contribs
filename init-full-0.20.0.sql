@@ -8192,9 +8192,7 @@ UNLOCK TABLES;
 /*!50001 SET character_set_client      = utf8 */;
 /*!50001 SET character_set_results     = utf8 */;
 /*!50001 SET collation_connection      = utf8_general_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`alan`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `Location` AS select `O`.`id` AS `id`,`O`.`name` AS `name`,`O`.`has_problems` AS `has_problems`,`O`.`comment` AS `comment`,`P`.`id` AS `parent_id`,`P`.`name` AS `parent_name` from (`Object` `O` left join (`Object` `P` join `EntityLink` `EL` on(((`EL`.`parent_entity_id` = `P`.`id`) and (`P`.`objtype_id` = 1562) and (`EL`.`parent_entity_type` = 'location') and (`EL`.`child_entity_type` = 'location')))) on((`EL`.`child_entity_id` = `O`.`id`))) where (`O`.`objtype_id` = 1562) */;
+/*!50001 CREATE VIEW `Location` AS select `O`.`id` AS `id`,`O`.`name` AS `name`,`O`.`has_problems` AS `has_problems`,`O`.`comment` AS `comment`,`P`.`id` AS `parent_id`,`P`.`name` AS `parent_name` from (`Object` `O` left join (`Object` `P` join `EntityLink` `EL` on(((`EL`.`parent_entity_id` = `P`.`id`) and (`P`.`objtype_id` = 1562) and (`EL`.`parent_entity_type` = 'location') and (`EL`.`child_entity_type` = 'location')))) on((`EL`.`child_entity_id` = `O`.`id`))) where (`O`.`objtype_id` = 1562) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -8211,9 +8209,7 @@ UNLOCK TABLES;
 /*!50001 SET character_set_client      = utf8 */;
 /*!50001 SET character_set_results     = utf8 */;
 /*!50001 SET collation_connection      = utf8_general_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`alan`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `Rack` AS select `O`.`id` AS `id`,`O`.`name` AS `name`,`O`.`asset_no` AS `asset_no`,`O`.`has_problems` AS `has_problems`,`O`.`comment` AS `comment`,`AV_H`.`uint_value` AS `height`,`AV_S`.`uint_value` AS `sort_order`,`RT`.`thumb_data` AS `thumb_data`,`R`.`id` AS `row_id`,`R`.`name` AS `row_name` from (((((`Object` `O` left join `AttributeValue` `AV_H` on(((`O`.`id` = `AV_H`.`object_id`) and (`AV_H`.`attr_id` = 27)))) left join `AttributeValue` `AV_S` on(((`O`.`id` = `AV_S`.`object_id`) and (`AV_S`.`attr_id` = 29)))) left join `RackThumbnail` `RT` on((`O`.`id` = `RT`.`rack_id`))) left join `EntityLink` `EL` on(((`O`.`id` = `EL`.`child_entity_id`) and (`EL`.`parent_entity_type` = 'row') and (`EL`.`child_entity_type` = 'rack')))) join `Object` `R` on((`R`.`id` = `EL`.`parent_entity_id`))) where (`O`.`objtype_id` = 1560) */;
+/*!50001 CREATE VIEW `Rack` AS select `O`.`id` AS `id`,`O`.`name` AS `name`,`O`.`asset_no` AS `asset_no`,`O`.`has_problems` AS `has_problems`,`O`.`comment` AS `comment`,`AV_H`.`uint_value` AS `height`,`AV_S`.`uint_value` AS `sort_order`,`RT`.`thumb_data` AS `thumb_data`,`R`.`id` AS `row_id`,`R`.`name` AS `row_name` from (((((`Object` `O` left join `AttributeValue` `AV_H` on(((`O`.`id` = `AV_H`.`object_id`) and (`AV_H`.`attr_id` = 27)))) left join `AttributeValue` `AV_S` on(((`O`.`id` = `AV_S`.`object_id`) and (`AV_S`.`attr_id` = 29)))) left join `RackThumbnail` `RT` on((`O`.`id` = `RT`.`rack_id`))) left join `EntityLink` `EL` on(((`O`.`id` = `EL`.`child_entity_id`) and (`EL`.`parent_entity_type` = 'row') and (`EL`.`child_entity_type` = 'rack')))) join `Object` `R` on((`R`.`id` = `EL`.`parent_entity_id`))) where (`O`.`objtype_id` = 1560) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -8230,9 +8226,7 @@ UNLOCK TABLES;
 /*!50001 SET character_set_client      = utf8 */;
 /*!50001 SET character_set_results     = utf8 */;
 /*!50001 SET collation_connection      = utf8_general_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`alan`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `RackObject` AS select `Object`.`id` AS `id`,`Object`.`name` AS `name`,`Object`.`label` AS `label`,`Object`.`objtype_id` AS `objtype_id`,`Object`.`asset_no` AS `asset_no`,`Object`.`has_problems` AS `has_problems`,`Object`.`comment` AS `comment` from `Object` where (`Object`.`objtype_id` not in (1560,1561,1562)) */;
+/*!50001 CREATE VIEW `RackObject` AS select `Object`.`id` AS `id`,`Object`.`name` AS `name`,`Object`.`label` AS `label`,`Object`.`objtype_id` AS `objtype_id`,`Object`.`asset_no` AS `asset_no`,`Object`.`has_problems` AS `has_problems`,`Object`.`comment` AS `comment` from `Object` where (`Object`.`objtype_id` not in (1560,1561,1562)) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -8249,9 +8243,7 @@ UNLOCK TABLES;
 /*!50001 SET character_set_client      = utf8 */;
 /*!50001 SET character_set_results     = utf8 */;
 /*!50001 SET collation_connection      = utf8_general_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`alan`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `Row` AS select `O`.`id` AS `id`,`O`.`name` AS `name`,`L`.`id` AS `location_id`,`L`.`name` AS `location_name` from ((`Object` `O` left join `EntityLink` `EL` on(((`O`.`id` = `EL`.`child_entity_id`) and (`EL`.`parent_entity_type` = 'location') and (`EL`.`child_entity_type` = 'row')))) left join `Object` `L` on(((`EL`.`parent_entity_id` = `L`.`id`) and (`L`.`objtype_id` = 1562)))) where (`O`.`objtype_id` = 1561) */;
+/*!50001 CREATE VIEW `Row` AS select `O`.`id` AS `id`,`O`.`name` AS `name`,`L`.`id` AS `location_id`,`L`.`name` AS `location_name` from ((`Object` `O` left join `EntityLink` `EL` on(((`O`.`id` = `EL`.`child_entity_id`) and (`EL`.`parent_entity_type` = 'location') and (`EL`.`child_entity_type` = 'row')))) left join `Object` `L` on(((`EL`.`parent_entity_id` = `L`.`id`) and (`L`.`objtype_id` = 1562)))) where (`O`.`objtype_id` = 1561) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;

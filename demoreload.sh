@@ -98,7 +98,7 @@ case $Vx in
 	0.16.x|0.17.x|0.18.x)
 		do_version_16
 		;;
-	0.19.x)
+	0.19.x|0.20.x)
 		do_version_19
 		;;
 	*)
