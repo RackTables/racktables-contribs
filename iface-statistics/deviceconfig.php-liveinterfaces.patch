@@ -1,0 +1,15 @@
+--- /home/bgomoluch/racktables/RackTables-0.20.1/wwwroot/inc//deviceconfig.php	2012-10-04 14:06:14.000000000 +0200
++++ deviceconfig.php	2012-12-20 13:53:40.169196177 +0100
+@@ -1319,6 +1319,12 @@
+ 		case 'getmaclist':
+ 			$ret .= "show mac address-table dynamic\n";
+ 			break;
++		case 'getuptime':
++			$ret .= "show version | in uptime\n";
++			break;
++		case 'getinterfaces':
++			$ret .= "term len 0\nshow interfaces\n";
++			break;
+ 		case 'getallconf':
+ 			$ret .= "show running-config\n";
+ 			break;

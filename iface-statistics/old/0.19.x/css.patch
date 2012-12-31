@@ -1,0 +1,52 @@
+--- /home/bgomoluch/racktables/RackTables-0.19.12/wwwroot/css/pi.css	2012-04-07 12:03:55.000000000 +0200
++++ ../css/pi.css	2012-05-31 13:27:13.796929815 +0200
+@@ -686,3 +686,49 @@
+ 	font-family: monospace;
+ 	color: black;
+ }
++
++
++
++
++/* Live Interfaces */
++.text_green {
++    color: #00cc00;
++}
++
++.text_yellow {
++    color: #ff9900;
++}
++
++.text_red {
++    color: #ff0000;
++}
++
++
++/* Shinken tab colors */
++#foldertab li a.ok {
++    border-bottom: none;
++    background: #80FF80;
++}
++
++#foldertab li a.critical {
++    border-bottom: none;
++    background: #ff8080;
++}
++
++#foldertab li a.warning {
++    border-bottom: none;
++    background: #FFFF80;
++}
++
++
++#foldertab li a.unknown {
++    border-bottom: none;
++    background: #ffa500;
++}
++
++.state_Tok  	  { background-color: #0fdb00; }
++.state_Twarning   { background-color: #cfcf21; }
++.state_Tcritical  { background-color: #bf6060; }
++.state_Thok 	  { background-color: #88ed80; }
++.state_Thwarning  { background-color: #e7e791; }
++.state_Thcritical { background-color: #db231d; }

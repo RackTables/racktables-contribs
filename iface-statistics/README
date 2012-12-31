@@ -1,0 +1,11 @@
+Live Interfaces
+
+Show live interface statistics from Cisco switches. Display uptime and per port info: name, status, last input, last clear, in/out packets, description.
+
+INSTALL:
+(Tested with Racktables 0.20.3)
+* Put liveinterfaces.php to Racktables plugins/ dir.
+* Apply patches to approperiate files.
+
+
+
