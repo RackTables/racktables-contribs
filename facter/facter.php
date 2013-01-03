@@ -216,7 +216,7 @@ function Update()
 	}
 
 	//Generic to read in from file	
-	$manifest_file = fopen("manifest", "r") or die("Could not open manifest, make sure it is in the websrv root and called manifest \n");
+	$manifest_file = fopen("../plugins/manifest", "r") or die("Could not open manifest, make sure it is in the websrv root and called manifest \n");
 	while ( ! feof ($manifest_file)) {
 		$tmp_line = fgets($manifest_file);
 		if (!empty($tmp_line) && !preg_match("/\/\//",$tmp_line)) {
@@ -319,8 +319,6 @@ function Update()
 				unset($id);
 				$ipcheck=$resultarray;
 			}
-	
-	
 			// Check if it's been configured a port already
 			$query = "SELECT id,iif_id FROM Port where object_id=$newmachine and name=\"$nics[$i]\"";
 			unset($result);
@@ -346,8 +344,6 @@ function Update()
 			} else {
 				//We've got a complex port, don't touch it, it raises an error with 'Database error: foreign key violation'
 			}
-
-			// Add/update ip #Disabled for 20.1
 			if (count($ipcheck) == 1 ) {
 				if( $ip ) {
 					updateAddress(ip_parse($ip) , $newmachine, $nics[$i],'regular');
@@ -365,21 +361,20 @@ function Update()
 			unset($mac);
 		}
 	}
+	//uncomment to start using auto tags
+	//addTagToObject($facter, $newmachine);
 	return buildRedirectURL ();
 }
 
 // Display the import page.
 function ViewHTML()
 {
-
 	startPortlet();
-
 	echo "<table with=90% align=center border=0 cellpadding=5 cellspacing=0 align=center class=cooltable><tr valign=top>";
 	echo "<form method=post enctype=\"multipart/form-data\" action='index.php?module=redirect&page=depot&tab=facter&op=Update'>";
 	echo "<input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"30000\" />";
 	echo "Upload a facter file: <input name=\"userfile\" type=\"file\" /><br />";
 	echo "<input type=\"submit\" value=\"Upload File\" />";
-
 	echo "</td></tr></table></td></tr>";
 	echo "</form>";
 	echo "</table>";
@@ -421,7 +416,7 @@ function getdict ($hw,$chapter) {
 	}
 }
 
-//new check to make sure the obkject type allows the string
+//new check to make sure the object type allows the string
 function valid ($type_id, $id) {
 	//Check to see if this combination exists in the AttributeMap
 	$valid = "SELECT * from AttributeMap WHERE objtype_id = '$type_id' AND attr_id = '$id' LIMIT 1";
@@ -464,6 +459,16 @@ function addVmToParent ($vms, $newmachine) {
 		}
 	} else {
 		echo "WARNING: The $vms VM does not exist for this Parent \n";
+	}
+}
+
+//Auto Tagging
+//Must enable this function in Update function and ensure "$facter[KEY]" exists
+function addTagToObject ($facter, $newmachine) {
+	$tags = array($facter['machinetype'], $facter['domain']);
+	$count_tags = count($tags);
+	for ($i = 0; $i < $count_tags; $i++) {
+		rebuildTagChainForEntity ('object', $newmachine, array (getTagByName($tags[$i])));
 	}
 }
 ?>
