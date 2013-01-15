@@ -1,7 +1,7 @@
 <SearchPlugin xmlns="http://www.mozilla.org/2006/browser/search/"
 xmlns:os="http://a9.com/-/spec/opensearch/1.1/">
-<os:ShortName>Racktables</os:ShortName>
-<os:Description>Racktables search</os:Description>
+<os:ShortName>RackTables</os:ShortName>
+<os:Description>RackTables search</os:Description>
 <os:InputEncoding>UTF-8</os:InputEncoding>
 <os:Image width="16"
 height="16">data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAG7AAABuwBHnU4NQAAAAd0SU1FB9kLEwYDFPnj1SsAAAEiSURBVDjL1ZMtiwJhFIWfd93yCqJJ/4FhsFsUm9E83WKymwWZYBMmWJzgP5joV9TgBEGjTh6rYhDhbNoFF2HXNe0TD/ceLvfcaySJF3jjRV42eAfwfZ/L5YIxhlwuR7VapVgsAjCZTNhsNg+ba7UaRpIKhQLlcplsNkuSJERRxGg0otFoEAQB8/kcgOVySSaToVQqAeC6LkhSPp/XdrvVJ/1+X/V6Xd9pNpvq9Xp32sMdpNNprLW/3wFAGIas12viOGY8HhMEwfMG1lpWqxVhGFKpVJ6LcTgcMp1O6Xa7dDodzufz3+6g3W7jOA6tVovb7fa8QSqVYjAYsN/v8Tzv5xEkabFY6HQ63cVzPB41m810vV6/tN1up8PhcFdn/v8zfQCNwsNu0ZJW4QAAAABJRU5ErkJggg==</os:Image>
