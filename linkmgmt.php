@@ -122,7 +122,7 @@ $ajaxhandler['lm_mapinfo'] = 'linkmgmt_ajax_mapinfo';
 
 /* ------------------------------------------------- */
 
-Const MULTILINK = TRUE;
+define('LM_MULTILINK',TRUE);
 
 /* -------------------------------------------------- */
 
@@ -1402,8 +1402,8 @@ function linkmgmt_oplinkPort() {
 		{
 			$link_list[] = "${porta}_${portb}";
 
-			/* with no MULTILINK process first value only */
-			if(!MULTILINK)
+			/* with no LM_MULTILINK process first value only */
+			if(!LM_MULTILINK)
 				break;
 		}
 	} else
@@ -1454,7 +1454,7 @@ function linkmgmt_linkPorts ($porta, $portb, $linktype, $cable = NULL)
 	if($linktype == 'back')
 	{
 		$table = 'LinkBackend';
-		$multilink = MULTILINK;
+		$multilink = LM_MULTILINK;
 	}
 	else
 	{
@@ -1792,7 +1792,7 @@ function linkmgmt_renderPopupPortSelector()
 	$object_id = $_REQUEST['object_id'];
         $port_info = getPortInfo ($port_id);
 
-	$multilink = MULTILINK && $linktype == 'back' && in_array($port_info['oif_id'], $lm_multilink_port_types);
+	$multilink = LM_MULTILINK && $linktype == 'back' && in_array($port_info['oif_id'], $lm_multilink_port_types);
 
         if(isset ($_REQUEST['in_rack']))
 		$in_rack = $_REQUEST['in_rack'] != 'off';
@@ -2158,7 +2158,7 @@ class portlist {
 
 	private $allback = FALSE;
 
-	private $multilink = MULTILINK;
+	private $multilink = LM_MULTILINK;
 
 	const B2B_LINK_BGCOLOR = '#d8d8d8';
 	const CURRENT_PORT_BGCOLOR = '#ffff99';
@@ -2435,7 +2435,7 @@ class portlist {
 
 		global $lm_multilink_port_types;
 
-		$multilink = MULTILINK;
+		$multilink = LM_MULTILINK;
 
 	if(!isset($this->list[$dst_port_id]))
 	{
