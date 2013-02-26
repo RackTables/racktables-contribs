@@ -973,9 +973,6 @@ class linkmgmt_gvmap {
 			$this->_add($gv, $object['container_id'], NULL);
 		}
 
-		$clusterattr['id'] = "$object_id----"; /* used for js context menu */
-
-		$gv->addCluster($cluster_id, $clustertitle, $clusterattr, $embedin);
 
 		if($this->back != 'front' || $port_id === NULL || $this->allports)
 		$front = $this->_getObjectPortsAndLinks($object_id, 'front', $port_id, $this->allports);
@@ -1002,7 +999,12 @@ class linkmgmt_gvmap {
 						'shape' => 'point',
 						'style' => 'invis',
 						), $cluster_id);
+			return;
 		}
+
+		$clusterattr['id'] = "$object_id----"; /* used for js context menu */
+
+		$gv->addCluster($cluster_id, $clustertitle, $clusterattr, $embedin);
 
 		foreach($ports as $key => $port) {
 
