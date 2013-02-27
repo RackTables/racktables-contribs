@@ -1194,7 +1194,7 @@ class linkmgmt_gvmap {
 					$join .= "LEFT JOIN Link as FrontLink on Port.id in (FrontLink.porta ,FrontLink.portb)
 						  LEFT JOIN Link as FrontRemoteLink on remotePort.id in (FrontRemoteLink.porta, FrontRemoteLink.portb)
 						";
-					$where .= " AND FrontLink.porta is not NULL AND FrontRemoteLink.porta is not NULL";
+					$where .= " AND ( FrontLink.porta is not NULL OR FrontRemoteLink.porta is not NULL )";
 				}
 			}
 		}
