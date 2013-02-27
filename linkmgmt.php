@@ -490,7 +490,8 @@ function linkmgmt_opmap() {
 	{
 		$hl = 'o';
 		$object_id = $_REQUEST['hl_object_id'];
-		unset($_REQUEST['object_id']);
+		$_REQUEST['object_id'] = $object_id;
+		unset($_REQUEST['hl_object_id']);
 		unset($_REQUEST['hl_port_id']);
 		unset($_REQUEST['port_id']);
 	}
@@ -510,7 +511,8 @@ function linkmgmt_opmap() {
 	{
 		$hl = 'p';
 		$port_id = $_REQUEST['hl_port_id'];
-		unset($_REQUEST['port_id']);
+		$_REQUEST['port_id'] = $port_id;
+		unset($_REQUEST['hl_port_id']);
 	}
 
 	if(isset($_REQUEST['allports']))
@@ -752,8 +754,9 @@ class linkmgmt_gvmap {
 	function __construct($object_id = NULL, $port_id = NULL, $allports = false, $hl = NULL, $remote_id = NULL) {
 		$this->allports = $allports;
 
-		$hl_object_id = NULL;
-		$hl_port_id = NULL;
+		$this->object_id = $object_id;
+		$this->port_id = $port_id;
+		$this->remote_id = $remote_id;
 
 		$hllabel = "";
 
@@ -780,32 +783,9 @@ class linkmgmt_gvmap {
 
 		$this->gv = new Image_GraphViz(true, $graphattr, "map".$object_id);
 
-		switch($hl)
-		{
-			case 'p':
-			case 'port':
-				$hllabel = " (Port highlight)";
-				$hl_object_id = $object_id;
-				$hl_port_id = $port_id;
-				$port_id = NULL;
-				$this->alpha = '30';
-				break;
-			case 'o':
-			case 'object':
-				$hllabel = " (Object highlight)";
-				$hl_object_id = $object_id;
-				$object_id = NULL;
-				$this->alpha = '30';
-				break;
-
-		}
-
-		$this->object_id = $object_id;
-		$this->port_id = $port_id;
-		$this->remote_id = $remote_id;
-
 		if($object_id === NULL)
 		{
+			/* all objects ! */
 			unset($_GET['all']);
 			$_GET['hl'] = 'o';
 
@@ -819,6 +799,8 @@ class linkmgmt_gvmap {
 
 			foreach($objects as $obj)
 				$this->_add($this->gv, $obj['id'], NULL);
+
+			return;
 		}
 		else
 		{
@@ -830,7 +812,7 @@ class linkmgmt_gvmap {
 						)
 				);
 
-			$this->_add($this->gv, $object_id, ($this->allports ? NULL : $port_id));
+			$this->_add($this->gv, $object_id, $port_id);
 
 			$children = getEntityRelatives ('children', 'object', $object_id); //'entity_id'
 
@@ -838,51 +820,32 @@ class linkmgmt_gvmap {
 				$this->_add($this->gv, $child['entity_id'], NULL);
 		}
 
-		/* highlight object/port */
-		if($hl !== NULL)
+		switch($hl)
 		{
+			case 'p':
+			case 'port':
+				$hllabel = " (Port highlight)";
+				$this->alpha = '30';
+				$this->_add($this->gv, $object_id, NULL);
+				break;
+			case 'o':
+			case 'object':
+				$hllabel = " (Object highlight)";
+				$this->alpha = '30';
+				/* all objects */
+				$objects = listCells('object');
 
-			$this->alpha = 'ff';
+				foreach($objects as $obj)
+					$this->_add($this->gv, $obj['id'], NULL);
 
-			$this->ports = array();
-			$this->back = NULL;
-
-			$this->object_id = $hl_object_id;
-			$this->port_id = $hl_port_id;
-
-			$hlgv = new Image_GraphViz(true, $graphattr);
-
-			$this->_add($hlgv, $hl_object_id , $hl_port_id);
-
-			/* merge higlight graph */
-			// edgedfrom - from - to - id
-			foreach($hlgv->graph['edgesFrom'] as $from => $nodes) {
-				foreach($nodes as $to => $ports) {
-				// TODO ports id
-
-				if(isset($this->gv->graph['edgesFrom'][$from][$to]))
-					$this->gv->graph['edgesFrom'][$from][$to] = $hlgv->graph['edgesFrom'][$from][$to];
-				else
-					if(isset($this->gv->graph['edgesFrom'][$to][$from]))
-					{
-						unset($this->gv->graph['edgesFrom'][$to][$from]);
-						$this->gv->graph['edgesFrom'][$from][$to] = $hlgv->graph['edgesFrom'][$from][$to];
-					}
-				}
-			}
-			// leads to duplicate edges from->to and to->from
-			//$this->gv->graph['edgesFrom'] = $hlgv->graph['edgesFrom'] + $this->gv->graph['edgesFrom'];
-
-			/* merge nodes */
-			foreach($hlgv->graph['nodes'] as $cluster => $node)
-			{
-				$this->gv->graph['nodes'][$cluster] = $hlgv->graph['nodes'][$cluster] + $this->gv->graph['nodes'][$cluster];
-			}
-
-			$this->gv->graph['clusters'] = $hlgv->graph['clusters'] + $this->gv->graph['clusters'];
-			$this->gv->graph['subgraphs'] = $hlgv->graph['subgraphs'] + $this->gv->graph['subgraphs'];
+				break;
 
 		}
+
+		/* add hl label */
+		$this->gv->addAttributes(array(
+			'label' =>  $this->gv->graph['attributes']['label'].$hllabel,
+				));
 
 	//	portlist::var_dump_html($this->gv);
 
@@ -903,76 +866,76 @@ class linkmgmt_gvmap {
 		 */
 		$cluster_id = "c$object_id";
 
-		if($port_id === NULL)
-		{
-			if(
-				isset($gv->graph['clusters'][$cluster_id]) ||
-				isset($gv->graph['subgraphs'][$cluster_id])
-			)
-			return;
-		}
-		else
-		{
-			if(isset($this->ports[$port_id]))
+		if($port_id !== NULL) {
+			if(isset($this->ports[$port_id])) {
 				return;
+			}
 		}
 
-		$object = spotEntity ('object', $object_id);
-	//	$object['attr'] = getAttrValues($object_id);
+		if($object_id !== NULL)
+			if(
+				!isset($gv->graph['clusters'][$cluster_id]) &&
+				!isset($gv->graph['subgraphs'][$cluster_id])
+			) {
 
-		$clusterattr = array();
 
-		$this->_getcolor('cluster', 'default', $this->alpha, $clusterattr, 'color');
-		$this->_getcolor('cluster', 'default', $this->alpha, $clusterattr, 'fontcolor');
+				$object = spotEntity ('object', $object_id);
+			//	$object['attr'] = getAttrValues($object_id);
 
-		if($this->object_id == $object_id)
-		{
-			$clusterattr['rank'] = 'source';
+				$clusterattr = array();
 
-			$this->_getcolor('cluster', 'current', $this->alpha, $clusterattr, 'color');
-			$this->_getcolor('cluster', 'current', $this->alpha, $clusterattr, 'fontcolor');
-		}
+				$this->_getcolor('cluster', 'default', $this->alpha, $clusterattr, 'color');
+				$this->_getcolor('cluster', 'default', $this->alpha, $clusterattr, 'fontcolor');
 
-		$clustertitle = "${object['dname']}";
-		$clusterattr['tooltip'] = $clustertitle;
+				if($this->object_id == $object_id)
+				{
+					$clusterattr['rank'] = 'source';
 
-		unset($_GET['module']); // makeHrefProcess adds this
-		unset($_GET['port_id']);
-		unset($_GET['remote_id']);
-		$_GET['object_id'] = $object_id;
-		//$_GET['hl'] = 'o';
+					$this->_getcolor('cluster', 'current', $this->alpha, $clusterattr, 'color');
+					$this->_getcolor('cluster', 'current', $this->alpha, $clusterattr, 'fontcolor');
+				}
 
-		$clusterattr['URL'] = makeHrefProcess($_GET);
+				$clustertitle = "${object['dname']}";
+				$clusterattr['tooltip'] = $clustertitle;
 
-		//has_problems
-		if($object['has_problems'] != 'no')
-		{
-			$clusterattr['style'] = 'filled';
-			$this->_getcolor('cluster', 'problem', $this->alpha, $clusterattr, 'fillcolor');
-		}
+				unset($_GET['module']); // makeHrefProcess adds this
+				unset($_GET['port_id']);
+				unset($_GET['remote_id']);
+				$_GET['object_id'] = $object_id;
+				//$_GET['hl'] = 'o';
 
-		if(!empty($object['container_name']))
-			$clustertitle .= "<BR/>${object['container_name']}";
+				$clusterattr['URL'] = makeHrefProcess($_GET);
 
-		if($object['rack_id'])
-		{
-			$rack = spotEntity('rack', $object['rack_id']);
+				//has_problems
+				if($object['has_problems'] != 'no')
+				{
+					$clusterattr['style'] = 'filled';
+					$this->_getcolor('cluster', 'problem', $this->alpha, $clusterattr, 'fillcolor');
+				}
 
-			if(!empty($rack['row_name']) || !empty($rack['name']))
-				$clustertitle .= "<BR/>${rack['row_name']} / ${rack['name']}";
-		}
+				if(!empty($object['container_name']))
+					$clustertitle .= "<BR/>${object['container_name']}";
 
-		$embedin = $object['container_id'];
-		if(empty($embedin))
-			$embedin = 'default';
-		else
-		{
-			$embedin = "c$embedin"; /* see cluster_id */
+				if($object['rack_id'])
+				{
+					$rack = spotEntity('rack', $object['rack_id']);
 
-			/* add container / cluster if not already exists */
-			$this->_add($gv, $object['container_id'], NULL);
-		}
+					if(!empty($rack['row_name']) || !empty($rack['name']))
+						$clustertitle .= "<BR/>${rack['row_name']} / ${rack['name']}";
+				}
 
+				$embedin = $object['container_id'];
+				if(empty($embedin))
+					$embedin = 'default';
+				else
+				{
+					$embedin = "c$embedin"; /* see cluster_id */
+
+					/* add container / cluster if not already exists */
+					$this->_add($gv, $object['container_id'], NULL);
+				}
+
+			} // isset cluster_id
 
 		if($this->back != 'front' || $port_id === NULL || $this->allports)
 		$front = $this->_getObjectPortsAndLinks($object_id, 'front', $port_id, $this->allports);
@@ -999,57 +962,70 @@ class linkmgmt_gvmap {
 						'shape' => 'point',
 						'style' => 'invis',
 						), $cluster_id);
-			return;
+
+			/* show objects without ports */
+			if($object_id === NULL)
+				return;
 		}
 
-		$clusterattr['id'] = "$object_id----"; /* used for js context menu */
+		if(
+			!isset($gv->graph['clusters'][$cluster_id]) &&
+			!isset($gv->graph['subgraphs'][$cluster_id])
+		) {
 
-		$gv->addCluster($cluster_id, $clustertitle, $clusterattr, $embedin);
+			$clusterattr['id'] = "$object_id----"; /* used for js context menu */
+
+			$gv->addCluster($cluster_id, $clustertitle, $clusterattr, $embedin);
+		}
 
 		foreach($ports as $key => $port) {
 
 			$this->back = $port['linktype'];
 
-			$nodelabel = "${port['name']}";
+			if(!isset($this->ports[$port['id']])) {
 
-			if($port['iif_id'] != '1' )
-				$nodelabel .= "<BR/><FONT POINT-SIZE=\"8\">${port['iif_name']}</FONT>";
 
-			$nodelabel .= "<BR/><FONT POINT-SIZE=\"8\">${port['oif_name']}</FONT>";
+				$nodelabel = "${port['name']}";
 
-			$nodeattr = array(
-						'label' => $nodelabel,
-					);
+				if($port['iif_id'] != '1' )
+					$nodelabel .= "<BR/><FONT POINT-SIZE=\"8\">${port['iif_name']}</FONT>";
 
-			$this->_getcolor('port', 'default',$this->alpha, $nodeattr, 'fontcolor');
-			$this->_getcolor('oif_id', $port['oif_id'],$this->alpha, $nodeattr, 'color');
+				$nodelabel .= "<BR/><FONT POINT-SIZE=\"8\">${port['oif_name']}</FONT>";
 
-			if($this->port_id == $port['id']) {
-				$nodeattr['style'] = 'filled';
-				$nodeattr['fillcolor'] = $this->_getcolor('port', 'current', $this->alpha);
-			}
+				$nodeattr = array(
+							'label' => $nodelabel,
+						);
 
-			if($this->remote_id == $port['id']) {
-				$nodeattr['style'] = 'filled';
-				$nodeattr['fillcolor'] = $this->_getcolor('port', 'remote', $this->alpha);
-			}
+				$this->_getcolor('port', 'default',$this->alpha, $nodeattr, 'fontcolor');
+				$this->_getcolor('oif_id', $port['oif_id'],$this->alpha, $nodeattr, 'color');
 
-			$nodeattr['tooltip'] = "${port['name']}";
+				if($this->port_id == $port['id']) {
+					$nodeattr['style'] = 'filled';
+					$nodeattr['fillcolor'] = $this->_getcolor('port', 'current', $this->alpha);
+				}
 
-			unset($_GET['module']);
-			unset($_GET['remote_id']);
-			$_GET['object_id'] = $port['object_id'];
-			$_GET['port_id'] = $port['id'];
-			$_GET['hl'] = 'p';
+				if($this->remote_id == $port['id']) {
+					$nodeattr['style'] = 'filled';
+					$nodeattr['fillcolor'] = $this->_getcolor('port', 'remote', $this->alpha);
+				}
 
-			$nodeattr['URL'] = makeHrefProcess($_GET);
-			$nodeattr['id'] = "${port['object_id']}-${port['id']}--"; /* for js context menu */
+				$nodeattr['tooltip'] = "${port['name']}";
 
-			$gv->addNode($port['id'],
+				unset($_GET['module']);
+				unset($_GET['remote_id']);
+				$_GET['object_id'] = $port['object_id'];
+				$_GET['port_id'] = $port['id'];
+				$_GET['hl'] = 'p';
+
+				$nodeattr['URL'] = makeHrefProcess($_GET);
+				$nodeattr['id'] = "${port['object_id']}-${port['id']}--"; /* for js context menu */
+
+				$gv->addNode($port['id'],
 						$nodeattr,
 						"c${port['object_id']}"); /* see cluster_id */
 
-			$this->ports[$port['id']] = true;
+				$this->ports[$port['id']] = true;
+			} /* isset port */
 
 			if(!empty($port['remote_id'])) {
 
