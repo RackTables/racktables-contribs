@@ -764,7 +764,7 @@ class linkmgmt_gvmap {
 		 * output would corrupt image data
 		 */
 		$this->errorlevel = error_reporting();
-		error_reporting($this->errorlevel & !E_STRICT);
+		error_reporting($this->errorlevel & ~E_STRICT);
 
 		$graphattr = array(
 					'rankdir' => 'RL',
