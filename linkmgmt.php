@@ -747,7 +747,7 @@ class linkmgmt_gvmap {
 	private $allports = false;
 	private $back = NULL;
 
-	private $alpa = 'ff';
+	private $alpha = 'ff';
 
 	private $errorlevel = NULL;
 
