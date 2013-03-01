@@ -92,6 +92,8 @@ ALTER TABLE LinkBackend DROP INDEX portb;
  * - code cleanups
  * - bug fixing
  *
+ * - speed up gvmap by calling dot only once with e.g "-Tgif -Tcmapx"
+ *
  * - fix loopdectect for multiport
  *	MAX_LOOP_COUNT
  *	loop highlight gv map
@@ -461,6 +463,122 @@ function linkmgmt_opmap() {
 
 	require_once 'Image/GraphViz.php';
 
+/*
+ *
+ */
+class lm_Image_GraphViz extends Image_GraphViz {
+
+	/* extend renderDotFile with additional output file
+	 */
+    function renderDotFile($dotfile, $outputfile, $format = 'svg',
+                           $command = null, $outputfile2 = null, $format2 = null)
+    {
+        if (!file_exists($dotfile)) {
+            if ($this->_returnFalseOnError) {
+                return false;
+            }
+            $error = PEAR::raiseError('Could not find dot file');
+            return $error;
+        }
+
+        $oldmtime = file_exists($outputfile) ? filemtime($outputfile) : 0;
+
+        switch ($command) {
+        case 'dot':
+        case 'neato':
+            break;
+        default:
+            $command = $this->graph['directed'] ? 'dot' : 'neato';
+        }
+        $command_orig = $command;
+
+        $command = $this->binPath.(($command == 'dot') ? $this->dotCommand
+                                                       : $this->neatoCommand);
+
+        $command .= ' -T'.escapeshellarg($format)
+                    .' -o'.escapeshellarg($outputfile)
+                    .($format2 !== null && $outputfile2 !== null ? ' -T'.escapeshellarg($format2).' -o'.escapeshellarg($outputfile2) : '')
+                    .' '.escapeshellarg($dotfile)
+                    .' 2>&1';
+
+        exec($command, $msg, $return_val);
+
+        clearstatcache();
+        if (file_exists($outputfile) && filemtime($outputfile) > $oldmtime
+            && $return_val == 0) {
+            return true;
+        } elseif ($this->_returnFalseOnError) {
+            return false;
+        }
+        $error = PEAR::raiseError($command_orig.' command failed: '
+                                  .implode("\n", $msg));
+        return $error;
+    }
+    // renderDotFile
+
+
+	/*
+	 */
+    function fetch($format = 'svg', $command = null, $format2 = null, &$data2 = null)
+    {
+
+        $file = $this->saveParsedGraph();
+        if (!$file || PEAR::isError($file)) {
+            return $file;
+        }
+
+        $outputfile = $file . '.' . $format;
+
+	if($format2 != null && $data2 !== null)
+		$outputfile2 = $file . '.' . $format2;
+	else
+		$outputfile2 = null;
+
+        $rendered = $this->renderDotFile($file, $outputfile, $format,
+                                         $command, $outputfile2, $format2);
+        if ($rendered !== true) {
+            return $rendered;
+        }
+
+        @unlink($file);
+
+	if($format2 !== null && $data2 !== null) {
+		$fp = fopen($outputfile2, 'rb');
+
+		if ($fp) {
+			$data = fread($fp, filesize($outputfile2));
+			fclose($fp);
+			@unlink($outputfile2);
+
+			$data2 = $data;
+		} else {
+			return $error;
+		}
+	}
+
+
+        $fp = fopen($outputfile, 'rb');
+
+        if (!$fp) {
+            if ($this->_returnFalseOnError) {
+                return false;
+            }
+            $error = PEAR::raiseError('Could not read rendered file');
+            return $error;
+        }
+
+        $data = fread($fp, filesize($outputfile));
+        fclose($fp);
+        @unlink($outputfile);
+
+        return $data;
+    }
+    // fetch
+
+
+
+} /* class lm_Image_GraphViz */
+
 	error_reporting($errorlevel);
 
 	$object_id = NULL;
@@ -707,12 +825,16 @@ function linkmgmt_opmap() {
 				<ul id=\"link\" style=\"list-style-type:none\"></ul>
 			</div>";
 
-		echo $gvmap->fetch('cmapx', $command);
+		$data2 = '';
+		$data = $gvmap->fetch($type, $command, 'cmapx', $data2);
+
+		//echo $gvmap->fetch('cmapx', $command);
+		echo $data2;
 
 		if($debug) echo "-- after map gvmap --<br>";
 
 		echo "<img src=\"data:$ctype;base64,".
-			base64_encode($gvmap->fetch($type, $command)).
+			base64_encode($data).
 			"\" usemap=#map$object_id />";
 
 		if($debug)
@@ -781,7 +903,8 @@ class linkmgmt_gvmap {
 
 		unset($_GET['all']);
 
-		$this->gv = new Image_GraphViz(true, $graphattr, "map".$object_id);
+		//$this->gv = new Image_GraphViz(true, $graphattr, "map".$object_id);
+		$this->gv = new lm_Image_GraphViz(true, $graphattr, "map".$object_id);
 
 		if($object_id === NULL)
 		{
@@ -849,7 +972,7 @@ class linkmgmt_gvmap {
 
 	//	portlist::var_dump_html($this->gv);
 
-	//	echo $this->gv->parse();
+	//	$this->gv->saveParsedGraph('/tmp/graph.txt');
 	//	error_reporting( E_ALL ^ E_NOTICE);
 	 } /* __construct */
 
@@ -1108,8 +1231,12 @@ class linkmgmt_gvmap {
 	//	portlist::var_dump_html($port);
 	}
 
-	function fetch($type = 'png', $command = NULL) {
-		$ret = $this->gv->fetch($type, $command);
+	function fetch($type = 'png', $command = NULL, $format2 = NULL, &$data2 = NULL) {
+
+		$tmpdata = $data2;
+		$ret = $this->gv->fetch($type, $command, $format2, $tmpdata);
+		if($data2 !== NULL)
+			$data2 = $tmpdata;
 		return $ret;
 	}
 
