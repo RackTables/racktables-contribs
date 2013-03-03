@@ -92,8 +92,6 @@ ALTER TABLE LinkBackend DROP INDEX portb;
  * - code cleanups
  * - bug fixing
  *
- * - speed up gvmap by calling dot only once with e.g "-Tgif -Tcmapx"
- *
  * - fix loopdectect for multiport
  *	MAX_LOOP_COUNT
  *	loop highlight gv map
@@ -984,23 +982,53 @@ class linkmgmt_gvmap {
 	function _add($gv, $object_id, $port_id = NULL) {
 		global $lm_multilink_port_types;
 
-		/* used only for Graphviz ...
-		 * !! numeric ids cause Image_Graphviz problems on nested clusters !!
-		 */
-		$cluster_id = "c$object_id";
-
 		if($port_id !== NULL) {
 			if(isset($this->ports[$port_id])) {
 				return;
 			}
 		}
 
-		if($object_id !== NULL)
+		if($this->back != 'front' || $port_id === NULL || $this->allports)
+		$front = $this->_getObjectPortsAndLinks($object_id, 'front', $port_id, $this->allports);
+		else
+		$front = array();
+
+		if($this->back != 'back' || $port_id === NULL || $this->allports)
+		$backend = $this->_getObjectPortsAndLinks($object_id, 'back', $port_id, $this->allports);
+		else
+		$backend = array();
+
+		$ports = array_merge($front,$backend);
+
+		if(empty($ports))
+		{
+			/* needed because of  gv_image empty cluster bug (invalid foreach argument) */
+			$gv->addNode('dummy', array(
+					//	'label' =>'No Ports found/connected',
+						'label' =>'',
+						'fontsize' => 0,
+						'size' => 0,
+						'width' => 0,
+						'height' => 0,
+						'shape' => 'point',
+						'style' => 'invis',
+						), $cluster_id);
+
+			/* show objects without ports */
+			if($object_id === NULL)
+				return;
+		}
+
+		if($object_id !== NULL) {
+			/* used only for Graphviz ...
+			 * !! numeric ids cause Image_Graphviz problems on nested clusters !!
+			 */
+			$cluster_id = "c$object_id";
+
 			if(
 				!isset($gv->graph['clusters'][$cluster_id]) &&
 				!isset($gv->graph['subgraphs'][$cluster_id])
 			) {
-
 
 				$object = spotEntity ('object', $object_id);
 			//	$object['attr'] = getAttrValues($object_id);
@@ -1058,48 +1086,12 @@ class linkmgmt_gvmap {
 					$this->_add($gv, $object['container_id'], NULL);
 				}
 
-			} // isset cluster_id
+				$clusterattr['id'] = "$object_id----"; /* used for js context menu */
 
-		if($this->back != 'front' || $port_id === NULL || $this->allports)
-		$front = $this->_getObjectPortsAndLinks($object_id, 'front', $port_id, $this->allports);
-		else
-		$front = array();
+				$gv->addCluster($cluster_id, $clustertitle, $clusterattr, $embedin);
 
-		if($this->back != 'back' || $port_id === NULL || $this->allports)
-		$backend = $this->_getObjectPortsAndLinks($object_id, 'back', $port_id, $this->allports);
-		else
-		$backend = array();
-
-		$ports = array_merge($front,$backend);
-
-		if(empty($ports))
-		{
-			/* needed because of  gv_image empty cluster bug (invalid foreach argument) */
-			$gv->addNode('dummy', array(
-					//	'label' =>'No Ports found/connected',
-						'label' =>'',
-						'fontsize' => 0,
-						'size' => 0,
-						'width' => 0,
-						'height' => 0,
-						'shape' => 'point',
-						'style' => 'invis',
-						), $cluster_id);
-
-			/* show objects without ports */
-			if($object_id === NULL)
-				return;
-		}
-
-		if(
-			!isset($gv->graph['clusters'][$cluster_id]) &&
-			!isset($gv->graph['subgraphs'][$cluster_id])
-		) {
-
-			$clusterattr['id'] = "$object_id----"; /* used for js context menu */
-
-			$gv->addCluster($cluster_id, $clustertitle, $clusterattr, $embedin);
-		}
+			} /* isset cluster_id */
+		} /* object_id !== NULL */
 
 		foreach($ports as $key => $port) {
 
@@ -1148,11 +1140,10 @@ class linkmgmt_gvmap {
 						"c${port['object_id']}"); /* see cluster_id */
 
 				$this->ports[$port['id']] = true;
+
 			} /* isset port */
 
 			if(!empty($port['remote_id'])) {
-
-				//$this->_add($gv, $port['remote_object_id'], ($port_id === NULL ? NULL : $port['remote_id']));
 
 				$this->_add($gv, $port['remote_object_id'], $port['remote_id']);
 
