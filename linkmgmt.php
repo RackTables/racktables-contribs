@@ -1145,7 +1145,8 @@ class linkmgmt_gvmap {
 
 			if(!empty($port['remote_id'])) {
 
-				$this->_add($gv, $port['remote_object_id'], $port['remote_id']);
+				if($this->object_id !== NULL)
+					$this->_add($gv, $port['remote_object_id'], $port['remote_id']);
 
 				if(
 					!isset($gv->graph['edgesFrom'][$port['id']][$port['remote_id']]) &&
