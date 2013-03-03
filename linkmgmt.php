@@ -1000,6 +1000,11 @@ class linkmgmt_gvmap {
 
 		$ports = array_merge($front,$backend);
 
+		/* used only for Graphviz ...
+		 * !! numeric ids cause Image_Graphviz problems on nested clusters !!
+		 */
+		$cluster_id = "c$object_id";
+
 		if(empty($ports))
 		{
 			/* needed because of  gv_image empty cluster bug (invalid foreach argument) */
@@ -1020,11 +1025,6 @@ class linkmgmt_gvmap {
 		}
 
 		if($object_id !== NULL) {
-			/* used only for Graphviz ...
-			 * !! numeric ids cause Image_Graphviz problems on nested clusters !!
-			 */
-			$cluster_id = "c$object_id";
-
 			if(
 				!isset($gv->graph['clusters'][$cluster_id]) &&
 				!isset($gv->graph['subgraphs'][$cluster_id])
