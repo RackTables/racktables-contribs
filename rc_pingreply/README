@@ -12,8 +12,7 @@ This work was heavily based upon the work done on live PTR records.
 
 
 Installation:
-- Copy the ping.php file into the inc/ folder of racktables.
-- Add include to inc/local.php: include("ping.php");
+- Copy the ping.php file into the plugins/ folder of racktables.
 - Install the fping from your favorite repository
 - Adjust the ping timeout variable in ping.php if needed.
 
