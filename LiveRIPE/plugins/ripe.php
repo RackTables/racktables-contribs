@@ -100,7 +100,7 @@ function ripeTab($id) {
 		echo "<input type=submit value='Import RIPE records in to comments'></center></div>";
 		echo "</form>";
 	};
-	echo '<em>'.$ripe_query.'</em>';
+	// echo '<em>'.$ripe_query.'</em>';
 	echo "<table border=0 width='100%'><tr><td class=pcleft>";
 	
 	$filedir = realpath (dirname (__FILE__) );
