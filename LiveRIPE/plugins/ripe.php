@@ -106,7 +106,11 @@ function ripeTab($id) {
 	$filedir = realpath (dirname (__FILE__) );
 	$ripe_xsl = simplexml_load_file($filedir.'/ripe_html.xsl');
 	
+<<<<<<< HEAD
 	startPortlet ("RIPE Information Datatbase<br>${ripe_inetnum_str}");	
+=======
+	startPortlet ('RIPE Information Datatbase');	
+>>>>>>> upstream/master
     $proc = new XSLTProcessor();
     $proc->importStyleSheet( $ripe_xsl );
     echo '<div class=commentblock>'.trim($proc->transformToXML( $ripe_result )).'</div>';
