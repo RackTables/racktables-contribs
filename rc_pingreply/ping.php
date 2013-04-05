@@ -23,12 +23,6 @@
 // 3)  Adjust the $pingtimeout value below to match your network.
 
 
-// Set variables
-$Version = "0.2.1";
-$username = $_SERVER['PHP_AUTH_USER'];
-$nextorder['odd'] = 'even';
-$nextorder['even'] = 'odd';
-
 // Depot Tab for objects.
 $tab['ipv4net']['ping'] = 'Ping overview';
 $tabhandler['ipv4net']['ping'] = 'PingTab';

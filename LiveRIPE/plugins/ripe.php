@@ -16,12 +16,6 @@
 // 1)  Copy script to plugins folder as ripe.php
 
 
-// Set variables
-$Version = "0.1";
-$username = $_SERVER['PHP_AUTH_USER'];
-$nextorder['odd'] = 'even';
-$nextorder['even'] = 'odd';
-
 // Depot Tab for objects.
 $tab['ipv4net']['ripe'] = 'Live RIPE';
 $tabhandler['ipv4net']['ripe'] = 'ripeTab';

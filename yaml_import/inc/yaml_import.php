@@ -28,9 +28,6 @@ $ophandler['depot']['yaml_import']['RunImport'] = 'RunImport';
 
 // Set variables
 $Version = "0.2";
-$username = $_SERVER['PHP_AUTH_USER'];
-$nextorder['odd'] = 'even';
-$nextorder['even'] = 'odd';
 
 // The ophandler to insert objects (if any)
 function RunImport()
@@ -39,7 +36,6 @@ function RunImport()
   $objectnames = $_POST['objectname'];
 
   global $dbxlink;
-  global $username;
   
   $log = emptyLog();
 
@@ -201,7 +197,6 @@ function RunImport()
 function ImportTab()
 {
   global $nextorder;
-  global $username;
   global $Version;
   global $taglist;
 ?>
