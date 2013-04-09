@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 
-# This script outputs a list of functions, which are used in local.php
+# This script outputs a list of functions that are used in local.php
 # file, but don't belong to it. It requires a working php-pecl-parsekit
 # package installation.
 
