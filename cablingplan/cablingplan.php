@@ -45,10 +45,11 @@ function showCablingPlanSvg ()
 function renderCablingPlan ()
 {
     // Build cabling plan
-    connectDB();
 
     // Select edges
-    $sql = "select `oa`.`id` AS `source`,`ob`.`id` AS `target`,concat(`pa`.`name`,_utf8' <> ',`pb`.`name`) AS `label`,0 AS `weight` from ((`Link` `l` join `Port` `pa` on((`l`.`porta` = `pa`.`id`))) join `RackObject` `oa` on `pa`.`object_id` = `oa`.`id` join `Port` `pb` on((`l`.`portb` = `pb`.`id`)) join `RackObject` `ob` on `pb`.`object_id` = `ob`.`id`)";
+    $sql = "SELECT oa.id AS source, ob.id AS target, CONCAT(pa.name, _utf8' <> ', pb.name) AS label, 0 AS weight " .
+    "FROM ((Link l JOIN Port pa ON l.porta = pa.id) JOIN RackObject oa ON pa.object_id = oa.id " .
+    "JOIN Port pb ON l.portb = pb.id JOIN RackObject ob ON pb.object_id = ob.id)";
 
     $result = usePreparedSelectBlade($sql); 
     $edges = array();
@@ -69,12 +70,12 @@ function renderCablingPlan ()
     }
 
     // Select nodes
-    $sql = "select distinct `o`.`id` AS `id`,`o`.`name` AS `label`, '' as `url` from `Port` `p` join `RackObject` `o` on `p`.`object_id` = `o`.`id` where (`p`.`id` in (select `Link`.`porta` AS `porta` from `Link`) or `p`.`id` in (select `Link`.`portb` AS `portb` from `Link`))";
+    $sql = "SELECT DISTINCT o.id AS id, o.name AS label, '' AS url " .
+    "FROM Port p JOIN RackObject o ON p.object_id = o.id " .
+    "WHERE (p.id IN (SELECT Link.porta AS porta FROM Link) OR p.id IN " .
+    "(SELECT Link.portb AS portb FROM Link))";
     $result = usePreparedSelectBlade($sql); 
-    $nodes = array();
-    while ($row = $result->fetch (PDO::FETCH_ASSOC)) {
-        $nodes[] = $row;
-    }
+    $nodes = $result->fetchAll (PDO::FETCH_ASSOC);
 
     $graph = new Image_GraphViz(
         true, 
