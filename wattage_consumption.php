@@ -14,9 +14,7 @@
 $tab['reports']['watts_per_row'] = 'Enviromental Totals';
 $tabhandler['reports']['watts_per_row'] = 'getWattsPerRow';
 if ( function_exists('registerPortletHandler') )
-{
 	registerPortletHandler( 'rack', 'default', 'left', 'Wattage Consumption', 'renderPortletWattConsumption');
-}
 
 function getWattsPerRow ()
 {
@@ -32,9 +30,7 @@ function getWattsPerRow ()
 		$row_toshow = $_REQUEST['row_id'];
 	}
 	else
-	{
 		$row_toshow = -1;
-	}
 
 	//from renderRackspace(), interface.php:151
 	$found_racks = array();
@@ -47,14 +43,15 @@ function getWattsPerRow ()
 	{
 		$rackList = filterCellList (listCells ('rack', $row_id), $cellfilter['expression']);
 		$found_racks = array_merge ($found_racks, $rackList);
-		$rows[] = array (
+		$rows[] = array
+		(
 			'location_id' => $rowInfo['location_id'],
 			'location_name' => $rowInfo['location_name'],
 			'row_id' => $row_id,
 			'row_name' => $rowInfo['name'],
 			'racks' => $rackList
 		);
-		$rackCount += count($rackList);
+		$rackCount += count ($rackList);
 	}
 
 	// Main layout starts.
@@ -72,14 +69,10 @@ function getWattsPerRow ()
 		$rackList = $row['racks'];
 
 		echo "<tr class=row_${order}><td width='20%'></td><td class=tdleft>";
-		if (!count ($rackList))
-		{
+		if (! count ($rackList))
 			echo "${row_location} - ${row_name} (empty row)";
-		}
 		else
-		{
-			echo "<a href='" . makeHref(array('page'=>'reports', 'tab'=>'watts_per_row', 'row_id'=>$row_id)) . "'>${row_location} - ${row_name}</a>";
-		}
+			echo "<a href='" . makeHref (array ('page' => 'reports', 'tab' => 'watts_per_row', 'row_id' => $row_id)) . "'>${row_location} - ${row_name}</a>";
 		echo "<td><tr>\n";
 		$order = $nextorder[$order];
 	}
@@ -91,20 +84,19 @@ function getWattsPerRow ()
 	echo "</td><td class=pcright>";
 
 	// Right Portlet: Draw the racks in the selected row
-	if ( $row_toshow > -1 )
+	if ($row_toshow > -1)
 	{
 		$rowInfo = getRowInfo ($row_toshow);
 		$cellfilter = getCellFilter();
 		$rackList = filterCellList (listCells ('rack', $row_toshow), $cellfilter['expression']);
 
-		global $nextorder;
 		$rackwidth = getRackImageWidth() * getConfigVar ('ROW_SCALE');
 		// Maximum number of racks per row is proportionally less, but at least 1.
 		$maxPerRow = max (floor (getConfigVar ('RACKS_PER_ROW') / getConfigVar ('ROW_SCALE')), 1);
 		$rackListIdx = 0;
 		$rowTotalWattage = 0;
 		$order = 'odd';
-		startPortlet ('Racks within '. $rowInfo['name'] . ' (' . count($rackList) . ')' );
+		startPortlet ('Racks within ' . $rowInfo['name'] . ' (' . count($rackList) . ')' );
 		echo "<table border=0 cellspacing=5 align='center'><tr>";
 		foreach ($rackList as $rack)
 		{
@@ -118,20 +110,13 @@ function getWattsPerRow ()
 				$objectData = spotEntity ('object', $object);
 				amplifyCell ($objectData);
 				foreach (getAttrValues ($objectData['id']) as $record)
-				{
 					if ($record['name'] == 'Wattage consumption')
-					{
 						$rackTotalWattage += $record['value'];
-					}
-				}
 			}
 			if ($rackListIdx % $maxPerRow == 0)
-			{
-				if ($rackListIdx > 0)
-					echo '</tr>';
-				echo '<tr>';
-			}
-			echo "<td align=center class=row_${order}><a href='".makeHref(array('page'=>'rack', 'rack_id'=>$rack['id']))."'>";
+				echo $rackListIdx > 0 ? '</tr><tr>' : '<tr>';
+			echo "<td align=center class=row_${order}><a href='" . makeHref (array( 'page' => 'rack', 'rack_id' => $rack['id'])) . "'>";
+
 			echo "<img border=0 width=${rackwidth} height=" . (getRackImageHeight ($rack['height']) * getConfigVar ('ROW_SCALE'));
 			echo " title='${rack['height']} units'";
 			echo "src='?module=image&img=minirack&rack_id=${rack['id']}'>";
@@ -142,7 +127,7 @@ function getWattsPerRow ()
 		}
 
 		echo "</tr><tr><td align=center colspan=";
-		print (count($rackList));
+		print (count ($rackList));
 		echo "><br><b>The row total for attribute Wattage consuption is:  $rowTotalWattage</b></td>\n";
 
 		echo "</tr></table>\n";
@@ -151,7 +136,7 @@ function getWattsPerRow ()
 	echo "</td></tr></table>";
 }
 
-function renderPortletWattConsumption ( $info )
+function renderPortletWattConsumption ($info)
 {
 	$rackTotalWattage = 0;
 	$rackData = spotEntity ('rack', $info['id']);
@@ -162,12 +147,8 @@ function renderPortletWattConsumption ( $info )
 		$objectData = spotEntity ('object', $object);
 		amplifyCell ($objectData);
 		foreach (getAttrValues ($objectData['id']) as $record)
-		{
 			if ($record['name'] == 'Wattage consumption')
-			{
 				$rackTotalWattage += $record['value'];
-			}
-		}
 	}
 	startPortlet ('Wattage Consumption' );
 	echo "<table border=0 cellspacing=5 align='center'><tr>";
