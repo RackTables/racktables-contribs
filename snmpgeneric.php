@@ -1286,7 +1286,10 @@ function snmpgeneric_list($object_id) {
 			switch($addrtype) {
 				case 'ipv4':
 				case 'ipv4z':
-					$netid = getIPv4AddressNetworkId(ip_parse($ipaddr));
+					if($maskbits == 32)
+						$netid = 'host';
+					else
+						$netid = getIPv4AddressNetworkId(ip_parse($ipaddr));
 					break;
 
 				case 'ipv6':
@@ -1484,6 +1487,9 @@ function snmpgeneric_list($object_id) {
 				switch($addrtype) {
 					case 'ipv4z':
 					case 'ipv4':
+						if($maskbits == 32)
+							$bcast = "host";
+
 						$inputname = 'ip';
 						break;
 
