@@ -194,8 +194,8 @@ $sg_known_sysObjectIDs = array
 	/* Enterasys N3 */
 	'5624.2.1.53' => array
 	(
-		'dict_key' => 50000,
-		'text' => 'N3',
+		'dict_key' => 2021,
+		'text' => 'Matrix N3',
 	),
 
 	'5624.2.2.284' => array
@@ -218,41 +218,47 @@ $sg_known_sysObjectIDs = array
 
 	'5624.2.1.128' => array
 	(
-		'dict_key' => 50001,
-		'text' => 'S-series',
+		'dict_key' => 1970,
+		'text' => 'S-series SSA130',
 	),
 
 	'5624.2.1.129' => array
 	(
-		'dict_key' => 50001,
-		'text' => 'S-series',
+		'dict_key' => 1970,
+		'text' => 'S-series SSA150',
 	),
 
 	'5624.2.1.137' => array
 	(
-		'dict_key' => 50002,
+		'dict_key' => 1987,
 		'text' => 'Securestack B5 POE',
 	),
 
 	/* S3 */
 	'5624.2.1.131' => array
 	(
-		'dict_key' => 50001,
-		'text' => 'S-series',
+		'dict_key' => 1974,
+		'text' => 'S-series S3',
 	),
 
 	/* S4 */
 	'5624.2.1.132' => array
 	(
-		'dict_key' => 50001,
-		'text' => 'S-series'
+		'dict_key' => 1975,
+		'text' => 'S-series S4'
 	),
 
 	/* S8 */
 	'5624.2.1.133' => array
 	(
-		'dict_key' => 50001,
-		'text' => 'S-series'
+		'dict_key' => 1977,
+		'text' => 'S-series S8'
+	),
+
+	'5624.2.1.165' => array
+	(
+		'dict_key' => 1971,
+		'text' => 'S-series Bonded SSA',
 	),
 
 	/* ------------ net-snmp --------------- */
