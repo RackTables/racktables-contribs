@@ -48,15 +48,7 @@
 
 /****
  * INSTALL
- *
- * add to inc/local.php
- *	include 'inc/snmpgeneric.php';
- *
- * or create inc/local.php with content
- *
- *	<?php
- *		include 'inc/snmpgeneric.php';
- *	?>
+ * 	just place file in plugins directory
  *
  */
 
