@@ -56,15 +56,27 @@ function Update()
 	// Fix fqdn since all fields have \n inn them
 	$facter['fqdn']=str_replace("\n","", $facter['fqdn']);
 
+	$asset_no = "";
 	// Check if it's an existing machine
 	// 2011-08-31 <neil.scholten@gamigo.com>
 	// * expanded query to try to match via facter Serialnumber to be able to
 	//   match unnamed HW assets. Serial is more precise and less likely to be changed.
+	// 2013-09-02 James Liu<sydcurie@gmail.com>
+	// * add hostname as visible label 
+	$visible_label = "";
+	if (
+		array_key_exists('hostname', $facter) &&
+		strlen($facter['hostname']) > 0) {
+		$visible_label = $facter['hostname'];
+		}
+	
 	if (
 		array_key_exists('serialnumber', $facter) &&
 		strlen($facter['serialnumber']) > 0 &&
 		$facter['serialnumber'] != 'Not Specified' ) {
 		$query = "select id from RackObject where name = \"$facter[fqdn]\" OR asset_no = \"$facter[serialnumber]\" LIMIT 1";
+		
+		$asset_no = $facter['serialnumber'];
 	} else {
 		$query = "select id from RackObject where name = \"$facter[fqdn]\" LIMIT 1";
 	}
@@ -104,7 +116,8 @@ function Update()
 			}
 		}
 		// Add the new machine
-		$newmachine=commitAddObject($facter['fqdn'],"",$virtual,$value = "");
+		// Fix bug: new machine was added without existed serialnumber(asset_no). 
+		$newmachine=commitAddObject($facter['fqdn'],$visible_label,$virtual,$asset_no);
 		$type_id = getObjectTypeID($newmachine);
 	}
 	// If it's an existing machine
@@ -130,8 +143,11 @@ function Update()
 		if($resultarray) {
 			$id			= $resultarray[0]['id'];
 			$label	= $resultarray[0]['label'];
+
 			// Update FQDN
-			commitUpdateObject($id, $facter['fqdn'], $label, 'no', $facter['serialnumber'], 'Facter Import::Update Common Name');
+			// 2013-09-02 James Liu<sydcurie@gmail.com>
+			// Update visible label with new submitted hostname
+			commitUpdateObject($id, $facter['fqdn'], $visible_label, 'no', $facter['serialnumber'], 'Facter Import::Update Common Name');
 		}
 	}
 
