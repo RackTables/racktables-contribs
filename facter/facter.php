@@ -32,6 +32,11 @@
 * - fixed ip additions for 20.1
 * - added VM auto adding to Parent
 *
+* 2013-09-10 modified by James Liu <sydcurie@gmail.com>
+* - add hostname as visible label
+* - fixed new machine was added without submitted serial number 
+* - update hostname when hostname was changed, identify host by unique serial number
+*
 */
 
 
@@ -116,7 +121,7 @@ function Update()
 			}
 		}
 		// Add the new machine
-		// Fix bug: new machine was added without existed serialnumber(asset_no). 
+		// Fix bug: new machine was added without submitted serialnumber(asset_no). 
 		$newmachine=commitAddObject($facter['fqdn'],$visible_label,$virtual,$asset_no);
 		$type_id = getObjectTypeID($newmachine);
 	}
