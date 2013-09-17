@@ -37,6 +37,9 @@
 * - fixed new machine was added without submitted serial number 
 * - update hostname when hostname was changed, identify host by unique serial number
 *
+* 2013-09-17 modified by James Liu <sydcurie@gmail.com>
+* - use board serial number for product serial number for Supermicro machines
+*
 */
 
 
@@ -68,6 +71,15 @@ function Update()
 	//   match unnamed HW assets. Serial is more precise and less likely to be changed.
 	// 2013-09-02 James Liu<sydcurie@gmail.com>
 	// * add hostname as visible label 
+	// 
+	// 2013-09-17 James Liu<sydcurie@gmail.com>
+	// * use board serial number for Supermicro machines
+	
+	if (array_key_exists('manufacturer', $facter) &&
+		strtolower($facter['manufacturer']) === 'supermicro' ) {
+			$facter['serialnumber'] = $facter['boardserialnumber'];
+		}
+	
 	$visible_label = "";
 	if (
 		array_key_exists('hostname', $facter) &&
