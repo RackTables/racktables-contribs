@@ -5,6 +5,7 @@
 //
 // Written by Tommy Botten Jensen
 // patched for Racktables 0.20.3 by Vladimir Kushnir
+// patched for Racktables 0.20.5 by Rob Walker
 //
 // The purpose of this plugin is to map your IP ranges with the reality of your
 // network using ICMP.
@@ -12,6 +13,7 @@
 // History
 // Version 0.1:  Initial release
 // Version 0.2:  Added capability for racktables 0.20.3
+// Version 0.3:  Fix to use ip instead of ip_bin when calling ipaddress page
 //
 // Requirements:
 // You need 'fping' from your local repo or http://fping.sourceforge.net/
@@ -106,7 +108,7 @@ function PingTab($id) {
 		echo "><td class='tdleft";
 		if (isset ($range['addrlist'][$ip_bin]['class']) and strlen ($range['addrlist'][$ip_bin]['class']))
 			echo ' ' . $range['addrlist'][$ip_bin]['class'];
-		echo "'><a href='".makeHref(array('page'=>'ipaddress', 'ip_bin'=>$straddr))."'>${straddr}</a></td>";
+		echo "'><a href='".makeHref(array('page'=>'ipaddress', 'ip'=>$straddr))."'>${straddr}</a></td>";
 		echo "<td class=tdleft>${addr['name']}</td><td class=tderror>";
 		if (!$pingreply)
 			echo "Yes";
