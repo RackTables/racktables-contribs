@@ -300,7 +300,7 @@ function renderVLANMembership ($object_id)
 	$portcount = count ($portlist);
 	echo "<input type=hidden name=portcount value=" . $portcount . ">\n";
 	$portno = 0;
-	$ports_per_row = getConfigVar ('PORTS_PER_ROW');
+	$ports_per_row = 12;
 	foreach ($portlist as $port)
 	{
 		// Don't let wide forms break our fancy pages.
