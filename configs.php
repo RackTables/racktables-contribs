@@ -18,7 +18,7 @@
 		`object_id` int(10) unsigned NOT NULL,
 		`config` longtext DEFAULT NULL,
 		`comments` longtext DEFAULT NULL,
-		'date' text DEFAULT NULL,
+		`date` text DEFAULT NULL,
 		PRIMARY KEY (`id`),
 		KEY `object_id` (`object_id`),
 		CONSTRAINT `ObjectConfigs-FK-object_id` FOREIGN KEY (`object_id`) REFERENCES 
