@@ -1258,7 +1258,7 @@ class linkmgmt_gvmap {
 				PortInnerInterface.iif_name as iif_name,
 				Dictionary.dict_value as oif_name,
 				Object.id as object_id, Object.name as object_name,
-				LinkTable.cable as cableid,
+				IFNULL(LinkTable_a.cable,LinkTable_b.cable) as cableid,
 				remoteObject.id as remote_object_id, remoteObject.name as remote_object_name,
 				remotePort.id as remote_id, remotePort.name as remote_name,
 				remotePort.type AS remote_oif_id,
@@ -1269,9 +1269,10 @@ class linkmgmt_gvmap {
 		// JOIN
 		$join = "	LEFT JOIN PortInnerInterface on PortInnerInterface.id = Port.iif_id
 				LEFT JOIN Dictionary on Dictionary.dict_key = Port.type
-				LEFT JOIN $linktable as LinkTable on Port.id in (LinkTable.porta, LinkTable.portb)
+				LEFT JOIN $linktable as LinkTable_a on Port.id = LinkTable_a.porta 
+				LEFT JOIN $linktable as LinkTable_b on Port.id = LinkTable_b.portb
 				LEFT JOIN Object on Object.id = Port.object_id
-				LEFT JOIN Port as remotePort on remotePort.id = ((LinkTable.porta ^ LinkTable.portb) ^ Port.id)
+				LEFT JOIN Port as remotePort on remotePort.id = IFNULL(LinkTable_a.portb, LinkTable_b.porta)
 				LEFT JOIN Object as remoteObject on remoteObject.id = remotePort.object_id
 				LEFT JOIN PortInnerInterface as remotePortInnerInterface on remotePortInnerInterface.id = remotePort.iif_id
 				LEFT JOIN Dictionary as remoteDictionary on remoteDictionary.dict_key = remotePort.type
@@ -1287,10 +1288,14 @@ class linkmgmt_gvmap {
 				$where .= " AND remotePort.id is not NULL";
 
 				if($linktype != 'front') {
-					$join .= "LEFT JOIN Link as FrontLink on Port.id in (FrontLink.porta ,FrontLink.portb)
-						  LEFT JOIN Link as FrontRemoteLink on remotePort.id in (FrontRemoteLink.porta, FrontRemoteLink.portb)
+					$join .= "
+						  LEFT JOIN Link as FrontLink_a on Port.id = FrontLink_a.porta
+						  LEFT JOIN Link as FrontLink_b on Port.id = FrontLink_b.portb
+						  LEFT JOIN Link as FrontRemoteLink_a on remotePort.id = FrontRemoteLink_a.porta
+						  LEFT JOIN Link as FrontRemoteLink_b on remotePort.id = FrontRemoteLink_b.portb
 						";
-					$where .= " AND ( FrontLink.porta is not NULL OR FrontRemoteLink.porta is not NULL )";
+					$where .= " AND ( (FrontLink_a.porta is not NULL or FrontLink_b.portb is not NULL )
+						 OR  (FrontRemoteLink_a.porta is not NULL or FrontRemoteLink_b.portb is not NULL) )";
 				}
 			}
 		}
@@ -1305,6 +1310,8 @@ class linkmgmt_gvmap {
 		$order = " ORDER by oif_name, Port.Name";
 
 		$query .= $join.$where.$order;
+
+		//echo "$port_id: $query<br><br>";
 
 		$result = usePreparedSelectBlade ($query, $qparams);
 
@@ -1709,7 +1716,7 @@ function linkmgmt_findSparePorts($port_info, $filter, $linktype, $multilink = fa
 				$arrow = '--';
 
 			$query .= " remotePort.id, CONCAT(IFNULL(remoteObject.name, CONCAT('[',remoteObjectDictionary.dict_value,']')), ' : ', remotePort.name,
-				IFNULL(CONCAT(' $arrow ', IFNULL(infolnk.cable,''), ' $arrow> ', InfoPort.name, ' : ', IFNULL(InfoObject.name,CONCAT('[',InfoObjectDictionary.dict_value,']'))),'') ) as Text";
+				IFNULL(CONCAT(' $arrow ', IFNULL(IFNULL(infolnk_a.cable,infolnk_b.cable),''), ' $arrow> ', InfoPort.name, ' : ', IFNULL(InfoObject.name,CONCAT('[',InfoObjectDictionary.dict_value,']'))),'') ) as Text";
 		}
 
 	$query .= " FROM Port as remotePort";
@@ -1728,9 +1735,11 @@ function linkmgmt_findSparePorts($port_info, $filter, $linktype, $multilink = fa
 		$whereparams[] = $src_object_id;
 
 		/* own port not linked */
-		$join .= " LEFT JOIN $linktable as localLink on localPort.id in (localLink.porta, localLink.portb)";
+		$join .= " LEFT JOIN $linktable as localLink_a on localPort.id = localLink_a.porta";
+		$where .= " AND localLink_a.porta is NULL";
+		$join .= " LEFT JOIN $linktable as localLink_b on localPort.id = localLink_b.portb";
+		$where .= " AND localLink_b.portb is NULL";
 		$join .= " LEFT JOIN Object as localObject on localObject.id = localPort.object_id";
-		$where .= " AND localLink.porta is NULL";
 
 		/* object type name */
 		$join .= " LEFT JOIN Dictionary as localObjectDictionary on (localObject.objtype_id = localObjectDictionary.dict_key  AND localObjectDictionary.chapter_id = 1)";
@@ -1743,8 +1752,9 @@ function linkmgmt_findSparePorts($port_info, $filter, $linktype, $multilink = fa
 		$order .= " ,remotePort.name";
 
 		/* add info to remoteport */
-		$join .= " LEFT JOIN $linkinfotable as infolnk on remotePort.id in (infolnk.porta, infolnk.portb)";
-		$join .= " LEFT JOIN Port as InfoPort on InfoPort.id = ((infolnk.porta ^ infolnk.portb) ^ remotePort.id)";
+		$join .= " LEFT JOIN $linkinfotable as infolnk_a on remotePort.id = infolnk_a.porta";
+		$join .= " LEFT JOIN $linkinfotable as infolnk_b on remotePort.id = infolnk_b.portb";
+		$join .= " LEFT JOIN Port as InfoPort on InfoPort.id = IFNULL(infolnk_a.portb, infolnk_b.porta)";
 		$join .= " LEFT JOIN Object as InfoObject on InfoObject.id = InfoPort.object_id";
 
 		/* object type name */
@@ -1752,8 +1762,15 @@ function linkmgmt_findSparePorts($port_info, $filter, $linktype, $multilink = fa
 	}
 
 	/* only ports which are not linked already */
-	$join .= " LEFT JOIN $linktable as lnk on remotePort.id in (lnk.porta, lnk.portb)";
-	$where .= " AND lnk.porta is NULL";
+	$join .= " LEFT JOIN $linktable as lnk_a on remotePort.id = lnk_a.porta";
+	$where .= " AND lnk_a.porta is NULL";
+	$join .= " LEFT JOIN $linktable as lnk_b on remotePort.id = lnk_b.portb";
+	$where .= " AND lnk_b.portb is NULL";
+
+	if( $linktype != 'back') {
+		/* and also not linked via other side -> Loop! */
+		$where .= " AND infolnk_a.porta is NULL AND infolnk_b.portb is NULL";
+	}
 
 	if($portcompat)
 	{
@@ -2411,8 +2428,8 @@ class portlist {
 				'SELECT Port.id, Link.cable, Port.name, Port.label, Port.type, Port.l2address, Port.object_id,
 				 CONCAT(Link.porta,"_",Link.portb) as link_id from Link
 				 join Port
-				 where (? in (Link.porta,Link.portb)) and ((Link.porta ^ Link.portb) ^ ? ) = Port.id',
-				array($port_id, $port_id)
+				 where (? = Link.porta or ? = Link.portb) and ((Link.porta ^ Link.portb) ^ ? ) = Port.id',
+				array($port_id, $port_id, $port_id)
 		);
 		$frontrow = $result->fetchAll(PDO::FETCH_ASSOC);
 
@@ -2424,8 +2441,8 @@ class portlist {
 				'SELECT Port.id, LinkBackend.cable, Port.name, Port.label, Port.type, Port.l2address, Port.object_id,
 				 CONCAT(LinkBackend.porta,"_",LinkBackend.portb,"_back") as link_id from LinkBackend
 				 join Port
-				 where (? in (LinkBackend.porta,LinkBackend.portb)) and ((LinkBackend.porta ^ LinkBackend.portb) ^ ? ) = Port.id',
-				array($port_id, $port_id)
+				 where (? = LinkBackend.porta or ? = LinkBackend.portb) and ((LinkBackend.porta ^ LinkBackend.portb) ^ ? ) = Port.id',
+				array($port_id, $port_id, $port_id)
 		);
 		$backrow = $result->fetchAll(PDO::FETCH_ASSOC);
 
@@ -2930,7 +2947,8 @@ class portlist {
 		$result = usePreparedSelectBlade
 		(
 				'SELECT count(*) from Port
-				 join LinkBackend on (porta = id or portb = id )
+				 left join LinkBackend as LinkBackend_a on LinkBackend_a.porta = id
+				 left join LinkBackend as LinkBackend_b on LinkBackend_b.portb = id
 				 where object_id = ?',
 				array($object_id)
 		);
