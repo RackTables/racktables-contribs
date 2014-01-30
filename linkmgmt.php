@@ -50,6 +50,7 @@ CREATE TABLE `LinkBackend` (
   `portb` int(10) unsigned NOT NULL DEFAULT '0',
   `cable` char(64) DEFAULT NULL,
   PRIMARY KEY (`porta`,`portb`),
+  KEY `LinkBackend_FK_a` (`porta`),
   KEY `LinkBackend_FK_b` (`portb`),
   CONSTRAINT `LinkBackend_FK_a` FOREIGN KEY (`porta`) REFERENCES `Port` (`id`) ON DELETE CASCADE,
   CONSTRAINT `LinkBackend_FK_b` FOREIGN KEY (`portb`) REFERENCES `Port` (`id`) ON DELETE CASCADE
@@ -76,7 +77,7 @@ ALTER TABLE LinkBackend DROP INDEX portb;
  *	GraphViz_Image 1.3.0
  *	and RackTables <= 0.20.3
  *
- * (c)2012,2013 Maik Ehinger <m.ehinger@ltur.de>
+ * (c)2012-2014 Maik Ehinger <m.ehinger@ltur.de>
  */
 
 /**
