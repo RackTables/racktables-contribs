@@ -1767,11 +1767,6 @@ function linkmgmt_findSparePorts($port_info, $filter, $linktype, $multilink = fa
 	$join .= " LEFT JOIN $linktable as lnk_b on remotePort.id = lnk_b.portb";
 	$where .= " AND lnk_b.portb is NULL";
 
-	if( $linktype != 'back') {
-		/* and also not linked via other side -> Loop! */
-		$where .= " AND infolnk_a.porta is NULL AND infolnk_b.portb is NULL";
-	}
-
 	if($portcompat)
 	{
 		/* port compat */
