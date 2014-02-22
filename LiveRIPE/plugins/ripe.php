@@ -22,7 +22,7 @@ $tabhandler['ipv4net']['ripe'] = 'ripeTab';
 $ophandler['ipv4net']['ripe']['importRipeData'] = 'importRipeData';
 
 function importRipeData() {
-	$ripe_db = "http://apps.db.ripe.net/whois/search.xml?source=ripe&query-string=";
+	$ripe_db = "http://rest.db.ripe.net/search.xml?source=ripe&query-string=";
 	
 	// Prepare update	
 	assertStringArg('ripe_query');
@@ -64,7 +64,7 @@ function importRipeData() {
 
 // Display the ping overview:
 function ripeTab($id) {
-	$ripe_db = "http://apps.db.ripe.net/whois/search.xml?source=ripe&query-string=";
+	$ripe_db = "http://rest.db.ripe.net/search.xml?source=ripe&query-string=";
 	assertUIntArg ('id');
 	$net = spotEntity ('ipv4net', $id);
 	loadIPAddrList ($net);	
