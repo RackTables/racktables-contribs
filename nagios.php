@@ -12,6 +12,9 @@
 $nagios_user = 'nagiosadmin';
 $nagios_password = 'nagios';
 $nagios_url = 'https://localhost/nagios3';
+$attribute_id = 10001;// use attribute id (string) as nagios hostname on remote call,
+                     //useful when your racktables and nagios hosts are not named the same
+                     // remember to assign attribute to specific objects (like server)
 # -----------------------------------------------------------------------------------------
 
 $tab['object']['Nagios'] = 'Nagios';
@@ -25,9 +28,16 @@ function NagiosTabHandler()
  # Load object data
  assertUIntArg ('object_id', __FUNCTION__);
  $object = spotEntity ('object', $_REQUEST['object_id']);
+ 
+ $attributes = getAttrValues ($_REQUEST['object_id']);
+ if(@strlen($attributes[$attribute_id]['value'])) {.
+    $target = $attributes[$attribute_id]['value'];
+ } else {
+    $target = $object['name'];
+ }
 
  $nagios_url_cgi = $nagios_url . '/cgi-bin/status.cgi?host=%%NAGIOS%%';
- $nagios_url_cgi = str_replace("%%NAGIOS%%", urlencode($object['name']), $nagios_url_cgi);
+ $nagios_url_cgi = str_replace("%%NAGIOS%%", urlencode($target), $nagios_url_cgi);
 
  # Curl request
  $ch = curl_init();
