@@ -1,5 +1,11 @@
 <?php
 
+/*
+   This plug-in adds tab 'Spare search' to the IPv4 space page.
+   It is used to search for a spare IP range of the given size
+   in the given subset of parent networks (using tag-based filter).
+*/
+
 $tab['ipv4space']['newiprange'] = 'Spare search';
 registerTabHandler ('ipv4space', 'newiprange', 'renderSearchNewIP4Range');
 
