@@ -90,7 +90,7 @@ END
 
 function renderNetCellForAlloc ($cell, $needed_mask = NULL)
 {
-	if (empty ($cell['spare_ranges']) and $cell['kidc'] == 0)
+	if (empty ($cell['spare_ranges']) and $cell['kidc'] == 0 and $cell['mask'] < 31)
 	{
 		$cell['spare_ranges'][$cell['mask'] + 1][] = $cell['ip_bin'];
 		$cell['spare_ranges'][$cell['mask'] + 1][] = (ip_last ($cell) & ip4_mask ($cell['mask'] + 1));
