@@ -23,7 +23,7 @@ $tabhandler['object']['Nagios'] = 'NagiosTabHandler';
 function NagiosTabHandler()
 {
 
- global $nagios_user, $nagios_password, $nagios_url;
+ global $nagios_user, $nagios_password, $nagios_url, $attribute_id;
 
  # Load object data
  assertUIntArg ('object_id', __FUNCTION__);
