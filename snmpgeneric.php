@@ -1471,6 +1471,8 @@ function snmpgeneric_list($object_id) {
 			$ipaddrcell = '<table>';
 
 			foreach($ipaddresses as $ipaddr => $value) {
+				// fast fix for nasty IPv6 zones (ipv6z), otherwise it ends with invalid ip address exception
+				if(filter_var('127.0.0.1', FILTER_VALIDATE_IP) == false) continue; 
 				$createipaddr = FALSE;
 				$disableipaddr = FALSE;
 				$ipaddrhref = '';
@@ -2169,7 +2171,7 @@ class mySNMP extends SNMPgeneric implements Iterator {
 
 			$trace = debug_backtrace();
 			trigger_error(
-					'Undefinierte Eigenschaft für __call(): ' . $name .
+					'Undefinierte Eigenschaft fï¿½r __call(): ' . $name .
 					' in ' . $trace[0]['file'] .
 					' Zeile ' . $trace[0]['line'],
 					E_USER_NOTICE);
@@ -2497,7 +2499,7 @@ class ifSNMP implements Iterator {
 		$trace = debug_backtrace();
 
 		trigger_error(
-			'Undefinierte Eigenschaft für __get(): ' . $name .
+			'Undefinierte Eigenschaft fï¿½r __get(): ' . $name .
 			' in ' . $trace[0]['file'] .
 			' Zeile ' . $trace[0]['line'],
 			E_USER_NOTICE);
@@ -2521,7 +2523,7 @@ class ifSNMP implements Iterator {
 			$trace = debug_backtrace();
 
 			trigger_error(
-				'Undefinierte Methode für __call(): ' . $name .
+				'Undefinierte Methode fï¿½r __call(): ' . $name .
 				' in ' . $trace[0]['file'] .
 				' Zeile ' . $trace[0]['line'],
 				E_USER_NOTICE);
