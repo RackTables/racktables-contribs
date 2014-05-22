@@ -1472,7 +1472,7 @@ function snmpgeneric_list($object_id) {
 
 			foreach($ipaddresses as $ipaddr => $value) {
 				// fast fix for nasty IPv6 zones (ipv6z), otherwise it ends with invalid ip address exception
-				if(filter_var('127.0.0.1', FILTER_VALIDATE_IP) == false) continue; 
+				if(filter_var($ipaddr, FILTER_VALIDATE_IP) == false) continue; 
 				$createipaddr = FALSE;
 				$disableipaddr = FALSE;
 				$ipaddrhref = '';
