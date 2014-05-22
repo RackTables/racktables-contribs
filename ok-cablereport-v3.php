@@ -2,19 +2,20 @@
 
 ///////////////////////////////////////////////////////////
 // Opin Kerfi: CableReport
-// Version: 3.0
+// Version: 3.1
 //
 // Description:
 //   Racktables reports plugin for listing of all linked cables in Racktables.
 //   Uses jQuery and DataTables for easy sorting and searching.
-//   Tested on Racktables version 0.20.5.
+//   Tested on Racktables version 0.20.5 and 0.20.7.
 //
 // Author: Ingimar Robertsson <ingimar@ok.is>
 //
 // Installation:
-//  Copy ok-cablereport-v3.php into the Racktables plugins folder.
+//  Copy ok-cablereport-v31.php into the Racktables plugins folder.
 //
 // Version History:
+//   3.1 - Replaced SQL query with Racktables API calls and added links to devices and ports
 //   3.0 - Major cleanup of version 2.0 and republished to racktables-contrib
 //   2.0 - First version using jQuery/DataTables
 //   1.0 - Initial version, static table
@@ -23,51 +24,55 @@
 // Variables:
 $tabname = 'Cable Report';
 $tableheader = 'Cable Report for Racktables';
+$displaylinks = 1;      // 1 = Display HTML links for devices and ports
 
 ///////////////////////////////////////////////////////////
-$tabhandler['reports']['cablereportv3'] = 'CableReportV3'; // register a report rendering function
-$tab['reports']['cablereportv3'] = $tabname; // title of the report tab
+$tabhandler['reports']['cablereportv31'] = 'CableReportV31'; // register a report rendering function
+$tab['reports']['cablereportv31'] = $tabname; // title of the report tab
 
-function CableReportV3()
+function CableReportV31()
 {
-        global $tableheader;
-        $query = 'SELECT L.cable AS cableid, O.name AS dev1, P.name AS port1, D.dict_value as type1, ' .
-                '  O2.name AS dev2, P2.name as port2, D2.dict_value as type2 ' .
-                'FROM Link as L ' .
-                'LEFT JOIN Port as P on P.id = L.porta ' .
-                'LEFT JOIN Port as P2 on P2.id = L.portb ' .
-                'LEFT JOIN Object as O on O.id = P.object_id ' .
-                'LEFT JOIN Object as O2 on O2.id = P2.object_id ' .
-                'LEFT JOIN Dictionary as D on D.dict_key = P.type ' .
-                'LEFT JOIN Dictionary as D2 on D2.dict_key = P2.type ';
+        global $tableheader , $displaylinks;
 
-        $result = usePreparedSelectBlade ($query);
+        // Remote jQuery and DataTables files:
+        echo '<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.0/css/jquery.dataTables.css">';
+        echo '<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-1.10.2.min.js"></script>';
+        echo '<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.0/js/jquery.dataTables.js"></script>';
 
         // Local jQuery and DataTables files from DataTables-1.10.0 distribution zip:
-        echo '<link rel="stylesheet" type="text/css" href="/rt/extensions/cablereportv3/DataTables-1.10.0/media/css/jquery.dataTables.css">';
-        echo '<script type="text/javascript" charset="utf8" src="/rt/extensions/cablereportv3/DataTables-1.10.0/media/js/jquery.js"></script>';
-        echo '<script type="text/javascript" charset="utf8" src="/rt/extensions/cablereportv3/DataTables-1.10.0/media/js/jquery.dataTables.js"></script>';
-        // Remote jQuery and DataTables files:
-//      echo '<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.0/css/jquery.dataTables.css">';
-//      echo '<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-1.10.2.min.js"></script>';
-//      echo '<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.0/js/jquery.dataTables.js"></script>';
+        //echo '<link rel="stylesheet" type="text/css" href="/rt/extensions/cablereportv3/DataTables-1.10.0/media/css/jquery.dataTables.css">';
+        //echo '<script type="text/javascript" charset="utf8" src="/rt/extensions/cablereportv3/DataTables-1.10.0/media/js/jquery.js"></script>';
+        //echo '<script type="text/javascript" charset="utf8" src="/rt/extensions/cablereportv3/DataTables-1.10.0/media/js/jquery.dataTables.js"></script>';
 
         echo '<script>
                 $(document).ready(function() {
                     $("#cablereport").dataTable({
-                        "bPaginate": "false",
+                        "bPaginate": "true",
                         "bLengthChange": "false",
                         "sPaginationType": "full_numbers",
                         "aaSorting": [[ 0, "desc" ]],
-                        "iDisplayLength": 99999,
+                        "iDisplayLength": 20,
+                        "stateSave": false,
+                        "oLanguage": {
+                                "sLengthMenu": \'Display <select>\'+
+                                           \'<option value="10">10</option>\'+
+                                           \'<option value="20">20</option>\'+
+                                           \'<option value="30">30</option>\'+
+                                           \'<option value="40">40</option>\'+
+                                           \'<option value="50">50</option>\'+
+                                           \'<option value="-1">All</option>\'+
+                                           \'</select> records\'
+                        }
                     });
                 });
                 </script>';
 
-
+        echo "\n";
         echo '<div class=portlet>';
         echo '<h2>' . $tableheader . '</h2>';
+        echo "\n";
         echo '<table id="cablereport" class="display">';
+        echo "\n";
         echo '<thead><tr>';
         echo '<th>Cable ID</th>';
         echo '<th>Device 1</th>';
@@ -76,22 +81,71 @@ function CableReportV3()
         echo '<th>Device 2</th>';
         echo '<th>Port 2</th>';
         echo '<th>Type 2</th>';
-        echo '</tr></thead><tbody>';
+        echo '</tr></thead>';
+        echo "\n";
+        echo '<tbody>';
+        echo "\n";
 
-        foreach ($result as $row)
-        {
+        $allports = fetchPortList('true');
+        $cid = 0;
+        foreach ( $allports as $port ) {
+                $allporttypes[$port['id']] = $port['oif_name'];
+
+                if ( $port['linked'] != 1 ) {
+                        continue;
+                }
+
+                if ( $done[$port['id']] == 1 ) {
+                        continue;
+                } else {
+                        $cid++;
+                        $cabletable[$cid]['cableid'] = $port['cableid'];
+                        if ( $displaylinks == 1 ) {
+                                $cabletable[$cid]['device1'] = formatPortLink($port['object_id'],$port['object_name'],NULL,NULL);
+                                $cabletable[$cid]['port1']   = formatPortLink($port['object_id'],NULL,$port['id'],$port['name']);
+                        } else {
+                                $cabletable[$cid]['device1'] = $port['object_name'];
+                                $cabletable[$cid]['port1']   = $port['name'];
+                        }
+                        $cabletable[$cid]['port1id'] = $port['id'];
+                        $cabletable[$cid]['type1']   = $port['oif_name'];
+                        if ( $displaylinks == 1 ) {
+                                $cabletable[$cid]['device2'] = formatPortLink($port['remote_object_id'],$port['remote_object_name'],NULL,NULL);
+                                $cabletable[$cid]['port2']   = formatPortLink($port['remote_object_id'],NULL,$port['remote_id'],$port['remote_name']);
+                        } else {
+                                $cabletable[$cid]['device2'] = $port['remote_object_name'];
+                                $cabletable[$cid]['port2']   = $port['remote_name'];
+                        }
+                        $cabletable[$cid]['port2id'] = $port['remote_id'];
+                        $cabletable[$cid]['type2']   = ''; # missing from fetchPortList() add later from $allporttypes being created;
+                        $done[$port['remote_id']] = 1;
+                }
+        }
+
+        foreach ( $cabletable as $cable ) {
                 echo '<tr>';
-                echo '<td><b>' . $row['cableid'] . '</b></td>';
-                echo '<td><b>' . $row['dev1'] . '</b></td>';
-                echo '<td><b>' . $row['port1'] . '</b></td>';
-                echo '<td>' . $row['type1'] . '</td>';
-                echo '<td><b>' . $row['dev2'] . '</b></td>';
-                echo '<td><b>' . $row['port2'] . '</b></td>';
-                echo '<td>' . $row['type2'] . '</td>';
-                echo "</tr>\n";
+                echo '<td>';
+                echo $cable['cableid'];
+                echo '</td><td>';
+                echo $cable['device1'];
+                echo '</td><td>';
+                echo $cable['port1'];
+                echo '</td><td>';
+                echo $cable['type1'];
+                echo '</td><td>';
+                echo $cable['device2'];
+                echo '</td><td>';
+                echo $cable['port2'];
+                echo '</td><td>';
+                echo $allporttypes[$cable['port2id']];
+                echo '</td>';
+                echo '</tr>';
+                echo "\n";
         }
 
         echo '</tbody></table><br/><br/>';
+        echo 'ok-cablereport version 3.1';
         echo '</div>';
 }
+
 ?>
