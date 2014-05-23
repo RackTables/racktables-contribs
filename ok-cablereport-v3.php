@@ -15,6 +15,7 @@
 //  Copy ok-cablereport-v31.php into the Racktables plugins folder.
 //
 // Version History:
+//   3.2 - Changed fetchPortList call
 //   3.1 - Replaced SQL query with Racktables API calls and added links to devices and ports
 //   3.0 - Major cleanup of version 2.0 and republished to racktables-contrib
 //   2.0 - First version using jQuery/DataTables
@@ -27,8 +28,8 @@ $tableheader = 'Cable Report for Racktables';
 $displaylinks = 1;      // 1 = Display HTML links for devices and ports
 
 ///////////////////////////////////////////////////////////
-$tabhandler['reports']['cablereportv31'] = 'CableReportV31'; // register a report rendering function
-$tab['reports']['cablereportv31'] = $tabname; // title of the report tab
+$tabhandler['reports']['ok-cablereport'] = 'CableReportV31'; // register a report rendering function
+$tab['reports']['ok-cablereport'] = $tabname; // title of the report tab
 
 function CableReportV31()
 {
@@ -86,7 +87,7 @@ function CableReportV31()
         echo '<tbody>';
         echo "\n";
 
-        $allports = fetchPortList('true');
+        $allports = fetchPortList('IF(la.porta, pa.id, pb.id) IS NOT NULL');
         $cid = 0;
         foreach ( $allports as $port ) {
                 $allporttypes[$port['id']] = $port['oif_name'];
