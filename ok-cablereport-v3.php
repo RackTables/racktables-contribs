@@ -2,7 +2,7 @@
 
 ///////////////////////////////////////////////////////////
 // Opin Kerfi: CableReport
-// Version: 3.1
+// Version: 3.2
 //
 // Description:
 //   Racktables reports plugin for listing of all linked cables in Racktables.
@@ -28,10 +28,10 @@ $tableheader = 'Cable Report for Racktables';
 $displaylinks = 1;      // 1 = Display HTML links for devices and ports
 
 ///////////////////////////////////////////////////////////
-$tabhandler['reports']['ok-cablereport'] = 'CableReportV31'; // register a report rendering function
-$tab['reports']['ok-cablereport'] = $tabname; // title of the report tab
+$tabhandler['reports']['cablereport'] = 'CableReport'; // register a report rendering function
+$tab['reports']['cablereport'] = $tabname; // title of the report tab
 
-function CableReportV31()
+function CableReport()
 {
         global $tableheader , $displaylinks;
 
@@ -145,7 +145,7 @@ function CableReportV31()
         }
 
         echo '</tbody></table><br/><br/>';
-        echo 'ok-cablereport version 3.1';
+        echo 'ok-cablereport version 3.2';
         echo '</div>';
 }
 
