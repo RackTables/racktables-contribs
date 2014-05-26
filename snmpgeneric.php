@@ -73,6 +73,9 @@
  *
  */
 
+/* RackTables Debug Mode */
+//$debug_mode=1;
+
 require_once('inc/snmp.php');
 
 $tab['object']['snmpgeneric'] = 'SNMP Generic sync';
@@ -1296,6 +1299,9 @@ function snmpgeneric_list($object_id) {
 					$ipaddr =  preg_replace('/((..):(..))/','\\2\\3',$ipaddr);
 					$ipaddr =  preg_replace('/%.*$/','',$ipaddr);
 
+					if(ip_checkparse($ipaddr) === false)
+						continue(2); // 2 because of switch
+
 					$ip6_bin = ip6_parse($ipaddr);
 					$ip6_addr = ip_format($ip6_bin);
 					$netid = getIPv6AddressNetworkId($ip6_bin);
@@ -1499,6 +1505,9 @@ function snmpgeneric_list($object_id) {
 						/* format ipaddr for ip6_parse */
 						$ipaddr =  preg_replace('/((..):(..))/','\\2\\3',$ipaddr);
 						$ipaddr =  preg_replace('/%.*$/','',$ipaddr);
+
+						if(ip_checkparse($ipaddr) === false)
+							continue(2); // 2 because of switch
 
 						/* ip_parse throws exception on parse errors */
 						$ip6_bin = ip_parse($ipaddr);
