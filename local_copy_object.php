@@ -1,14 +1,6 @@
 <?php
-
-
-// I need this in local.php
- define ('TABLE_BORDER',	1);
-// require_once "local_copy_object.php";
-// (c)2011 Manon Goo <manon@dg-i.net>
-
 $tab['object']['objectcopier'] = 'Object Copier ';
 $tabhandler['object']['objectcopier'] = 'localfunc_ObjectCopier';
-// $ophandler['object']['objectcopier']['updateobjectcopier'] = 'updateconfig_ObjectCopier';
 $ophandler['object']['objectcopier']['copyLotOfObjects'] = 'copyLotOfObjects';
 
 function amplifyCell_object_Backend_Port (&$record, $dummy = NULL)
@@ -133,7 +125,7 @@ function copyLotOfObjects()//$template_object)
 {
 	global $dbxlink;
 	$dbrollback = 0;
-	if (! $dbxlink->beginTransaction() ) 
+	if (! $dbxlink->beginTransaction() )
 		throw new  RTDatabaseError ("can not start transaction");
 	// do we need this ?
 	$log = emptyLog();
@@ -145,14 +137,14 @@ function copyLotOfObjects()//$template_object)
 	$source_object = spotEntity ('object', $source_object_id);
 	amplifyCell($source_object);
 	if ( function_exists ( 'amplifyCell_object_Backend_Port' ) )
-	{ 
+	{
 		amplifyCell_object_Backend_Port($source_object);
-	} 
+	}
 	if ($global_type_id == 0 or !strlen ($_REQUEST['namelist']))
 	{
-		// Log something reasonable with showError Here 
+		// Log something reasonable with showError Here
 		// We do not have names to copy our object to !
-		// Pls check what makes $global_type_id == 0  an error 
+		// Pls check what makes $global_type_id == 0  an error
 		$log = mergeLogs ($log, oneLiner (186));
 		return ;
 	}
@@ -174,15 +166,15 @@ function copyLotOfObjects()//$template_object)
 		$asset_no = '';
 		$object_name = '';
 		$regexp='/^\"([^\"]*)\","([^\"]*)\","([^\"]*)\"/';
-		$object_name_or_csv = htmlspecialchars_decode($name_or_csv, ENT_QUOTES);	
+		$object_name_or_csv = htmlspecialchars_decode($name_or_csv, ENT_QUOTES);
 		// error_log( "$regexp $object_name" );
-		if (preg_match($regexp, $object_name_or_csv, $matches) ) 
+		if (preg_match($regexp, $object_name_or_csv, $matches) )
 		{
 			$object_name = $matches[1];
 			$label = $matches[2];
 			$asset_no = $matches[3];
-		} 
-		else 
+		}
+		else
 			$object_name = $name_or_csv;
 		try
 		{
@@ -194,9 +186,9 @@ function copyLotOfObjects()//$template_object)
 			foreach ($source_object['ports'] as $source_port)
 			{
 				$update_port=0;
-				foreach ($info['ports'] as $new_port) 
+				foreach ($info['ports'] as $new_port)
 				{
-					if ($new_port['name'] == $source_port['name'] ) 
+					if ($new_port['name'] == $source_port['name'] )
 					{
 						commitUpdatePort ($object_id, $new_port['id'], $new_port['name'], $new_port['oif_id'], $source_port['label'], "" );
 						$update_port=1;
@@ -204,23 +196,23 @@ function copyLotOfObjects()//$template_object)
 				}
 				if ($update_port)
 					true;
-				else	
+				else
 					commitAddPort ( $object_id, $source_port['name'], sprintf("%s-%s", $source_port['iif_id'], $source_port['oif_id']), $source_port['label'], "" );
 			}
 			// Copy Backendlinks only start if we ghave function linkmgmt_linkPorts from linkmgmt.php
 			if ( function_exists ( 'amplifyCell_object_Backend_Port' ) && function_exists ('linkmgmt_linkPorts')  )
-			{ 
+			{
 				$info = spotEntity ('object', $object_id);
 				amplifyCell ($info);
 				amplifyCell_object_Backend_Port($info);
-				 
+
 			/*	 showError( '<div align="left"><pre>\n===== Source Object ======\n\n' .
-				 		 varDumpToString ( $source_object ) .  
-						'\n\n===== New Object ======\n\n' . 
+				 		 varDumpToString ( $source_object ) .
+						'\n\n===== New Object ======\n\n' .
 						 varDumpToString ( $info )  .  '</pre></div>' );
-			*/	
+			*/
 				$name_by_id = array();
-				foreach ($info['BackendPorts'] as $new_be_port) 
+				foreach ($info['BackendPorts'] as $new_be_port)
 				{
 					$name_by_id[$new_be_port['name']] = $new_be_port['id'];
 				}
@@ -231,11 +223,11 @@ function copyLotOfObjects()//$template_object)
 					if ( $source_be_port['object_id'] == $source_be_port['remote_object_id'] )
 					{
 						// We have a Port that has the own object as remote object we want to copy this type of Linko
-						// We have backend Links 
+						// We have backend Links
 						$new_be_port_a = $name_by_id[$source_be_port['name']] ;
 						$new_be_port_b = $name_by_id[$source_be_port['remote_name']] ;
 						if ( $new_be_port_a && $new_be_port_b  && ! array_key_exists($new_be_port_a, $linked_ports ) && ! array_key_exists($new_be_port_b, $linked_ports ) )
-						{ 
+						{
 							// error_log ( sprintf ('new_be_port_a %s // new_be_port_b %s // cableid %s', $new_be_port_a  , $new_be_port_b, $source_be_port['cableid'] ));
 							$ret_val = linkmgmt_linkPorts( $new_be_port_a  , $new_be_port_b , 'back', $source_be_port['cableid'] );
 							// error_log ( sprintf (' linkmgmt_linkPorts ret val: "%s" ', $ret_val)) ;
@@ -243,15 +235,15 @@ function copyLotOfObjects()//$template_object)
 							{
 								throw new RTDatabaseError("could not copy Backend Links for $object_name because: $ret_val");
 							}
-							else 
+							else
 							{
 								$linked_ports[$new_be_port_a] = True;
 								$linked_ports[$new_be_port_b] = True;
-							} 
+							}
 						}
 					}
 				}
-			} 
+			}
 			// Copy attributes
 			foreach (getAttrValues ($source_object_id) as $record)
 			{
@@ -268,7 +260,7 @@ function copyLotOfObjects()//$template_object)
 						break;
 					default:
 				}
-				
+
 				if (permitted (NULL, NULL, NULL, array (array ('tag' => '$attr_' . $record['id'] ))))
 					if (empty($value))
 						commitUpdateAttrValue ($object_id, $record['id'] );
@@ -279,7 +271,7 @@ function copyLotOfObjects()//$template_object)
 
 			}
 
-			//$log = mergeLogs ($log, oneLiner (5, array ('<a href="' . 
+			//$log = mergeLogs ($log, oneLiner (5, array ('<a href="' .
 			//	makeHref (array ('page' => 'object', 'tab' => 'default', 'object_id' => $object_id)) .
 			//	'">' . $info['dname'] . '</a>'))
 			//);
