@@ -2946,8 +2946,8 @@ class portlist {
 		$result = usePreparedSelectBlade
 		(
 				'SELECT count(*) from Port
-				 left join LinkBackend as LinkBackend_a on LinkBackend_a.porta = id
-				 left join LinkBackend as LinkBackend_b on LinkBackend_b.portb = id
+				 join LinkBackend as LinkBackend_a on LinkBackend_a.porta = id
+				 join LinkBackend as LinkBackend_b on LinkBackend_b.portb = id
 				 where object_id = ?',
 				array($object_id)
 		);
