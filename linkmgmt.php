@@ -54,7 +54,7 @@ CREATE TABLE `LinkBackend` (
   KEY `LinkBackend_FK_b` (`portb`),
   CONSTRAINT `LinkBackend_FK_a` FOREIGN KEY (`porta`) REFERENCES `Port` (`id`) ON DELETE CASCADE,
   CONSTRAINT `LinkBackend_FK_b` FOREIGN KEY (`portb`) REFERENCES `Port` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8i collate=utf8_unicode_ci;
 
  *	2. copy jquery.jeditable.mini.js to js/ directory (http://www.appelsiini.net/download/jquery.jeditable.mini.js)
  *	3. copy linkmgmt.php to plugins directory
@@ -70,6 +70,10 @@ CREATE TABLE `LinkBackend` (
 ALTER TABLE LinkBackend ADD KEY `LinkBackend_FK_b` (`portb`);
 ALTER TABLE LinkBackend DROP INDEX porta;
 ALTER TABLE LinkBackend DROP INDEX portb;
+
+ * UPDATE to RT 0.20.7
+
+ALTER TABLE LinkBackend CONVERT to CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
  *
  *
