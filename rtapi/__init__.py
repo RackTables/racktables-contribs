@@ -30,7 +30,7 @@ Simple python Class for manipulation with objects in racktables database.
 For proper function, some methods need ipaddr module (https://pypi.python.org/pypi/ipaddr)
 '''
 __author__ = "Robert Vojcik (robert@vojcik.net)"
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __copyright__ = "OpenSource"
 __license__ = "GPLv2"
 
@@ -170,7 +170,7 @@ class RTObject:
         return object_id
 
     # Logging
-    def InsertLog(object_id,message):
+    def InsertLog(self,object_id,message):
         '''Attach log message to specific object'''
         sql = "INSERT INTO ObjectLog (object_id,user,date,content) VALUES (%d,'script',now(),'%s')" % (object_id, message)
         self.db_insert(sql)
@@ -270,7 +270,7 @@ class RTObject:
         
             sql = "INSERT INTO Port (object_id,name,iif_id,type) VALUES (%d,'%s',1,24)" % (object_id,interface)
             self.db_insert(sql)
-            port_id = self.db_getlastrowid()
+            port_id = self.db_fetch_lastid()
 
         else:
             port_id = result[0]
