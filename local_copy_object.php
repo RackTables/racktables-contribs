@@ -136,7 +136,8 @@ function copyLotOfObjects()//$template_object)
 	$source_object_id = $_REQUEST['object_id'];
 	$source_object = spotEntity ('object', $source_object_id);
 	amplifyCell($source_object);
-	if ( function_exists ( 'amplifyCell_object_Backend_Port' ) )
+	// only call amplifyCell_object_Backend_Port if we have function linkmgmt_linkPorts from linkmgmt.php
+	if ( function_exists ( 'amplifyCell_object_Backend_Port' ) && function_exists ('linkmgmt_linkPorts') )
 	{
 		amplifyCell_object_Backend_Port($source_object);
 	}
