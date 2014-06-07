@@ -79,7 +79,7 @@ ALTER TABLE LinkBackend CONVERT to CHARACTER SET utf8 COLLATE utf8_unicode_ci;
  *
  * TESTED on FreeBSD 9.0, nginx/1.0.11, php 5.3.9
  *	GraphViz_Image 1.3.0
- *	and RackTables <= 0.20.3
+ *	and RackTables 0.20.8
  *
  * (c)2012-2014 Maik Ehinger <m.ehinger@ltur.de>
  */
@@ -1260,26 +1260,26 @@ class linkmgmt_gvmap {
 				Port.*,
 				Port.type AS oif_id,
 				PortInnerInterface.iif_name as iif_name,
-				Dictionary.dict_value as oif_name,
+				POI.oif_name as oif_name,
 				Object.id as object_id, Object.name as object_name,
 				IFNULL(LinkTable_a.cable,LinkTable_b.cable) as cableid,
 				remoteObject.id as remote_object_id, remoteObject.name as remote_object_name,
 				remotePort.id as remote_id, remotePort.name as remote_name,
 				remotePort.type AS remote_oif_id,
 				remotePortInnerInterface.iif_name as remote_iif_name,
-				remoteDictionary.dict_value as remote_oif_name
+				remotePOI.oif_name as remote_oif_name
 			FROM Port";
 
 		// JOIN
 		$join = "	LEFT JOIN PortInnerInterface on PortInnerInterface.id = Port.iif_id
-				LEFT JOIN Dictionary on Dictionary.dict_key = Port.type
+				LEFT JOIN PortOuterInterface AS POI on POI.id = Port.type
 				LEFT JOIN $linktable as LinkTable_a on Port.id = LinkTable_a.porta 
 				LEFT JOIN $linktable as LinkTable_b on Port.id = LinkTable_b.portb
 				LEFT JOIN Object on Object.id = Port.object_id
 				LEFT JOIN Port as remotePort on remotePort.id = IFNULL(LinkTable_a.portb, LinkTable_b.porta)
 				LEFT JOIN Object as remoteObject on remoteObject.id = remotePort.object_id
 				LEFT JOIN PortInnerInterface as remotePortInnerInterface on remotePortInnerInterface.id = remotePort.iif_id
-				LEFT JOIN Dictionary as remoteDictionary on remoteDictionary.dict_key = remotePort.type
+				LEFT JOIN PortOuterInterface as remotePOI on remotePOI.id = remotePort.type
 			";
 
 		// WHERE
@@ -1775,7 +1775,7 @@ function linkmgmt_findSparePorts($port_info, $filter, $linktype, $multilink = fa
 	{
 		/* port compat */
 		$join .= ' INNER JOIN PortInnerInterface pii ON remotePort.iif_id = pii.id
-			INNER JOIN Dictionary d ON d.dict_key = remotePort.type';
+			INNER JOIN PortOuterInterface poi ON remotePort.type = poi.id';
 		// porttype filter (non-strict match)
 		$join .= ' INNER JOIN (
 			SELECT Port.id FROM Port
