@@ -1,10 +1,10 @@
 <?php
 
 /*
-
+ 
 Copyright 2014 Erik Ruiter
 
-This is a Racktables plugin for loading batches of data to racktables.
+This is a Racktables plugin which enables loading batches of data into racktables.
 It adds an CSV import page on the configuration menu screen.
 From here you can choose to either import a CSV file, or paste some manual CSV lines in a textbox.
 
@@ -174,6 +174,9 @@ function importData()
 // The following format is used:
 // OBJECT; objecttype ; common name ; Visible label ; Asset tag; portname,portname,etc ; porttype,porttype,etc
 // OBJECT;PATCHPANEL;atestpanel;testpanel;testpanel;ge-0/0/[0-11].0,ge-0/1/[0-11];24,29
+// OBJECT;SWITCH;opti-r1.rtr.sara.nl;opti-r1.rtr.sara.nl;opti-r1.rtr.sara.nl;Et[1-24];1084
+// OBJECT;SWITCH;border-sw1.rtr.sara.nl;border-sw1.rtr.sara.nl;border-sw1.rtr.sara.nl;xe-0/0/[0-3],et-0/1/0,xe-0/2/[0-3],et-0/3/0,xe-1/0/[0-7],xe-1/1/[0-7],xe-1/2/[0-7],xe-1/3/[0-7];1084,1668,1084,1668,1084,1084,1084,1084
+// OBJECT;SWITCH;sw1-fw-ext-vc.rtr.sara.nl;sw1-fw-ext-vc.rtr.sara.nl;sw1-fw-ext-vc.rtr.sara.nl;xe-0/0/[0-31],xe-2/0/[0-31];1084,1084
 
 function addObject($csvdata,$row) 
 {
@@ -249,6 +252,10 @@ function addObject($csvdata,$row)
 		}
 
 		setConfigVar ('AUTOPORTS_CONFIG',$tempAUTOPORTS_CONFIG);
+	}
+	else 
+	{
+		showNotice("No valid Port information found, skipping port import.");
 	}
 	showSuccess("line $row: Import ". $object_type_name. " Object ".$object_name. " successful; object_id=".$object_id);
 }
@@ -353,7 +360,7 @@ function addRackImport($csvdata,$row)
 				return FALSE;
 			}
 		}
-		else { // Location child odes not exist, create new object and link to parent location
+		else { // Location child does not exist, create new object and link to parent location
 			$location_child_id = commitAddObject ($location_child, "", 1562, "", array());
 			commitLinkEntities ('location', $location_id , 'location', $location_child_id );
 			showSuccess ("Line $row: Child Location ".$csvdata[1]. " imported; object_id=".$location_child_id);	
