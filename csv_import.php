@@ -1,43 +1,158 @@
 <?php
 
+# Copyright (c) 2014, Erik Ruiter, SURFsara BV, Amsterdam, The Netherlands
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions
+# and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+# and the following disclaimer in the documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+# TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+# OF THE POSSIBILITY OF SUCH DAMAGE.
+
 /*
- 
-Copyright 2014 Erik Ruiter
+-----------------------------------------
+
+csv_import.php
+
+Description:
 
 This is a Racktables plugin which enables loading batches of data into racktables.
 It adds an CSV import page on the configuration menu screen.
 From here you can choose to either import a CSV file, or paste some manual CSV lines in a textbox.
+CSV files can contain multiple types of import data.
+The script currently supports importing of Objects, Racks, VLANs and IP space.
+It also supports linking ports, and assigning rackspace to objects.
 
-OBJECT; objecttype ; common name ; Visible label ; Asset tag; portname,portname,etc ; porttype,porttype,etc
-OBJECT;PATCHPANEL;atestpanel;testpanel;testpanel;ge-0/0/[0-11].0,ge-0/1/[0-11];24,29
+The newest version of this plugin can be found at: https://github.com/sara-nl/racktables-contribs/
 
-OBJECT;SERVER;head02.hathi.surfsara.nl;head02.hathi.surfsara.nl;head02.hathi.surfsara.nl;IPMI,eth0,eth1,eth2;24,24,24,24; 
-SERVER;common name ; Visible label ; Asset tag; portname,portname,etc ; porttype,porttype,etc
+Usage:
+
+* Importing Objects:
+
+ Syntax: OBJECT; Objecttype ; Common name ; Visible label ; Asset tag; portname,portname,etc ; porttype,porttype,etc
+
+ Value 1, OBJECT
+ Value 2, Objectype: Can be one of the predefined types (SERVER, PATCHPANEL,SWITCH), or a numeric value indicating the object type from Racktables
+ Value 3, Common name: Common name string
+ Value 4, Asset tag: Asset tag string
+ Value 5, Port array: This is an optional field where you can create ports for the objects, separated by a comma. When you use this , you also need to add the Port type array
+ An individual port field can be a range of ports. Eg. 'eth[0-9]' creates ten ports ranging from eth0 to eth9.
+ Value 6, Port type array: This is an array which maps to the previous port array. This allows you to specify the interface type of the ports. The interface type is a numeric value from Racktables.
+
+ Examples: 
+ 
+ OBJECT;SERVER;myServer;www.server.com;SRV001;IPMI,eth[0-2];24,24
+ Creates a Server object named myServer having 4x 1000-Base-T interfaces, named IPMI, eth0, eth1 and eth2
+
+ OBJECT;SWITCH;myAccessSwitch1;testswitch;SW0001;ge-0/0/[0-11],fe-0/1/[0-11];24,19
+ Creates a Switch object named myAccessSwitch1 having 12x 1000-Base-T interfaces named ge-0/0/0 to ge-0/0/11. And also 12x 100-Base-TX interfaces named fe-0/1/0 to fe-0/1/11.
 
 
-PATCHPANEL; common name ; Visible label ; Asset tag; portnumber,portnumber,etc ; porttype,porttype,etc
+* Importing Racks
 
-atestpanel;testpanel;testpanel;ge-0/0/[0-11].0,ge-0/1/[0-11];24,29
-SWITCH; ge-0/0/[0-47]
-CUSTOMOBJECT;
-RACK; 
+ Syntax: RACK; Location ; Location child ; Row ; Rack; Height
+ Value 1, RACK
+ Value 2, Location ; Specifies the location where the rack is to be placed. This can be the location name string of an existing location. If the location does not exist, it will be created.
+ Value 3, Location child ; Specifies the child location (eg room) where the rack is to be placed. This can be the name of an existing location. If the location does not exist, it will be created.
+ Value 4, Row: Specifies the row where the rack is to be placed. This can be the name of an existing row. If the row does not  exist, it will be created
+ Value 5, Rack: Name of the rack that is to be created.
+ Value 6, Height: Sets the Height of the rack in rackunits. When omitted, the default value is 46 units.
+ 
+ Examples:
 
-OBJECT;SERVER;a_head02.hathi.surfsara.nl;head02.hathi.surfsara.nl;head02.hathi.surfsara.nl;IPMI,eth0,eth1,eth2;24,24,24,24; 
-OBJECT;PATCHPANEL;a_testpanel;testpanel;testpanel;[1-12],[13-24];24,29
-OBJECT;SWITCH;a_testswitch;testswitch;testswitch;ge-0/0/[0-11].0,ge-0/1/[0-11];24,29
+ RACK;Datacenter AMS01; Room 0.08; R01; AA-1
+ Creates a rack named AA-1 in Room 0.08 of location Datacenter AMS01, with a height of 46 units.
 
+
+* Assigning Rackspace
+
+ Syntax: RACKASSIGNMENT; Object name ;Rack; units ; fib
+ Value 1, RACKASSIGNMENT
+ Value 2, Object name: Name of the Racktables object
+ Value 3, Rack; NAme of the rack where the object is to be placed.
+ Value 4, units: List of units to be assigned to the object. The unit numbers are separated by a comma.
+ Value 5, fib: List of Front / Interior / Back indication. This list maps directly to the previous unit list.
+
+ Examples:
+
+ RACKASSIGNMENT;myServer;AA-1;32,33,34,35;fi,fi,fi,fi
+ Mounts the myServer object in Rack AA-1 on rackunits 32-35, using front and interior part of the rack units.
+
+
+* Linking ports
+
+ Syntax:CABLELINK; Objectname A; Portname A; Objectname B; Portname B; Cable ID
+ Value 1, CABLELINK
+ Value 2, Objectname A: Specifies the name of the object on the A-side of the link
+ Value 3, Portname A: Specifies the name of the port on the A-side of the link
+ Value 4, Objectname B: Specifies the name of the object on the B-side of the link
+ Value 5, Portname B: Specifies the name of the port on the B-side of the link 
+ Value 6, Cable ID: Specifies the Cable ID. It can be numeric or string.
+
+ Examples:
+
+ CABLELINK;myServer;eth1;myAccessSwitch1;ge-0/0/1;0080123
+ Connects the eth1 port of myServer to the ge-0/0/1 port of myAccessSwitch1, using cable ID 0080123
+
+
+* Importing VLANs
+
+ Syntax: VLAN; VLAN domain; VLAN name; VLAN ID ; Propagation; Attached IP
+ Value 1, VLAN
+ Value 2, VLAN domain: Specifies the name of the VLAN domain where the VLAN is to be added. If the domain does not exist, it will be created.
+ Value 3, VLAN name: Specifies the name of the to be created VLAN.
+ Value 4, Propagation: Sets the Racktables propagation feature for the VLAN, options are ondemand or compulsory. When ommitted the value defaults to compulsory.
+ Value 5, Attached IP: This is an optional list of existing IPv4/IPv6 networks which can be assigned to the VLAN. The ranges should not have netmasks, and each range is separated by a comma.
+
+ Examples:
+
+ VLAN;Private;Netops;1020;compulsory;10.1.3.0,2001:610:1020::0
+ Creates VLAN 1020, named Netops having the IPv4 range 10.1.3.0 and the IPv6 range 2001:610:1020::0 attached.
+
+* Importing IP space
+
+ Syntax: IP; Prefix; Name; is_connected; VLAN domain; VLAN ID
+ Value 1, IP
+ Value 2, Prefix: Specifies the IPv4 / IPv6 prefix of the network, including netmask.
+ Value 3, Name: Specifies the name of the network which is to be added.
+ Value 4, is_connected: Specifies if broadcast and network address in the subnet need to be reserved. Can be TRUE or FALSE. When omitted, the default is FALSE
+ Value 5, VLAN domain: This is an optional value which can be used to set the VLAN domain of the network. You have to specifiy the name of the VLAN domain.
+ Value 6, VLAN ID: This is an optional numeric value setting the VLAN ID of the network. It is to be used in conjunction with the previous VLAN domain value.
+
+ Examples:
+
+ IP;10.1.3.0/24;Netops network;TRUE;SURFsara;1020
+ Creates the IP network 10.1.3.0/24 called 'Netops network' and attaches it to VLAN 1020 in the SURFsara VLAN domain.
+
+
+-----------------------------------------
 */
+
 
 // Build Navigation
 $page['import']['title'] = 'Import csv data';
 $page['import']['parent'] = 'config';
 $tab['import']['default'] = 'Import csv data';
-$tab['import']['delete'] = 'Delete csv data';
 $tabhandler['import']['default'] = 'import_csv_data';
-$tabhandler['import']['delete'] = 'delete_csv_data';
+// Work in progress
+//$tab['import']['delete'] = 'Delete csv data';
+//$tabhandler['import']['delete'] = 'delete_csv_data'; 
 $ophandler['import']['default']['importData'] = 'importData';
 $ophandler['import']['delete']['importData'] = 'deleteData';
 
+// tabhandler
 function import_csv_data ()
 {
 	// Used for uploading a csv file, or manually pasting csv data
@@ -55,6 +170,7 @@ function import_csv_data ()
 	finishPortlet();
 }
 
+// tabhandler
 function delete_csv_data ()
 {
 	// Used for uploading a csv file, or manually pasting csv data
@@ -129,7 +245,7 @@ $msgcode['importData']['ERR1'] = 207;
 function importData()
 {
 	assertStringArg ('csv_text', TRUE);
-	$row = 1;
+	$row_number = 1;
 	// if the manual input is empty, load the selected file
 	if (strlen(($_REQUEST['csv_text'])) == 0) 
 	{   
@@ -140,10 +256,13 @@ function importData()
 			showNotice ("Importing ".$_FILES['file']['name']);
 			while (($csvdata = fgetcsv($handle, 1000, ";")) !== FALSE) 
 			{
-				if ($csvdata[0] == "OBJECT") 			addObject($csvdata,$row);
-				if ($csvdata[0] == "RACK")				addRackImport($csvdata,$row);
-				if ($csvdata[0] == "RACKASSIGNMENT") 	addRackAssignment($csvdata,$row);
-				$row++;
+				if ($csvdata[0] == "OBJECT") 			addObject($csvdata,$row_number);
+				if ($csvdata[0] == "RACK")				addRackImport($csvdata,$row_number);
+				if ($csvdata[0] == "RACKASSIGNMENT") 	addRackAssignment($csvdata,$row_number);
+				if ($csvdata[0] == "VLAN") 				addVLAN($csvdata,$row_number);
+				if ($csvdata[0] == "CABLELINK") 		addCableLink($csvdata,$row_number);
+				if ($csvdata[0] == "IP") 				addIP($csvdata,$row_number);
+				$row_number++;
 			}
 			fclose($handle);
 		}
@@ -160,10 +279,13 @@ function importData()
 		foreach ($data as $dataitem) 
 		{
 			$csvdata = str_getcsv($dataitem,";");
-			if ($csvdata[0] == "OBJECT") 			addObject($csvdata,$row);
-			if ($csvdata[0] == "RACK")				addRackImport($csvdata,$row);
-			if ($csvdata[0] == "RACKASSIGNMENT") 	addRackAssignment($csvdata,$row);
-			$row++;
+			if ($csvdata[0] == "OBJECT") 			addObject($csvdata,$row_number);
+			if ($csvdata[0] == "RACK")				addRackImport($csvdata,$row_number);
+			if ($csvdata[0] == "RACKASSIGNMENT") 	addRackAssignment($csvdata,$row_number);
+			if ($csvdata[0] == "VLAN") 				addVLAN($csvdata,$row_number);
+			if ($csvdata[0] == "CABLELINK") 		addCableLink($csvdata,$row_number);
+			if ($csvdata[0] == "IP") 				addIP($csvdata,$row_number);
+			$row_number++;
 		}		
 	}
 	return showFuncMessage (__FUNCTION__, 'OK', array (htmlspecialchars ("Import finished.")));
@@ -171,14 +293,7 @@ function importData()
 
 
 // This function adds a object to racktables and report appropriate results in the GUI
-// The following format is used:
-// OBJECT; objecttype ; common name ; Visible label ; Asset tag; portname,portname,etc ; porttype,porttype,etc
-// OBJECT;PATCHPANEL;atestpanel;testpanel;testpanel;ge-0/0/[0-11].0,ge-0/1/[0-11];24,29
-// OBJECT;SWITCH;opti-r1.rtr.sara.nl;opti-r1.rtr.sara.nl;opti-r1.rtr.sara.nl;Et[1-24];1084
-// OBJECT;SWITCH;border-sw1.rtr.sara.nl;border-sw1.rtr.sara.nl;border-sw1.rtr.sara.nl;xe-0/0/[0-3],et-0/1/0,xe-0/2/[0-3],et-0/3/0,xe-1/0/[0-7],xe-1/1/[0-7],xe-1/2/[0-7],xe-1/3/[0-7];1084,1668,1084,1668,1084,1084,1084,1084
-// OBJECT;SWITCH;sw1-fw-ext-vc.rtr.sara.nl;sw1-fw-ext-vc.rtr.sara.nl;sw1-fw-ext-vc.rtr.sara.nl;xe-0/0/[0-31],xe-2/0/[0-31];1084,1084
-
-function addObject($csvdata,$row) 
+function addObject($csvdata,$row_number) 
 {
 	$object_type = 		trim ($csvdata[1]);
 	$object_name = 		trim ($csvdata[2]);
@@ -199,13 +314,13 @@ function addObject($csvdata,$row)
 			$object_type_name = $db_object_type['dict_value'];
 		else
 		{
-			showError("line $row: Object type ".$object_type. " does not exist. Import FAILED.");
+			showError("line $row_number: Object type ".$object_type. " does not exist. Import FAILED.");
 			return FALSE;
 		}
 	}
 	else
 	{
-		showError("line $row: Object type ".$object_type. " does not exist. Import FAILED.");
+		showError("line $row_number: Object type ".$object_type. " does not exist. Import FAILED.");
 		return FALSE;
 	}
 
@@ -217,7 +332,7 @@ function addObject($csvdata,$row)
 		}
 		catch (Exception $e) 
 		{ 
-			showError("line $row: Import ". $object_type_name. " Object ".$object_name. " FAILED; object already exists");
+			showError("line $row_number: Import ". $object_type_name. " Object ".$object_name. " FAILED; object already exists");
 			return FALSE;
 		}
 	}
@@ -257,54 +372,12 @@ function addObject($csvdata,$row)
 	{
 		showNotice("No valid Port information found, skipping port import.");
 	}
-	showSuccess("line $row: Import ". $object_type_name. " Object ".$object_name. " successful; object_id=".$object_id);
-}
-
-// This function adds Rack assignment info for an object
-function addRackAssignment($csvdata,$row) 
-{
-//Object;Rack;units;fib
-	//p-head04.alley.sara.nl;V36;4,5,6;fib,fib,fi
-
-	$object = 		trim ($csvdata[0]);
-	$rack = 		trim ($csvdata[1]);
-	$rackUnits = 	explode(',',$csvdata[2]);
-	$fib = 			explode(',',$csvdata[3]);
-
-	if (strlen($object ) > 0) 
-	{
-
-		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id from Object where Object.name='".$object."';");
-		$db_object = $result->fetch (PDO::FETCH_ASSOC);
-		
-		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id from Object where Object.name='".$rack."';");
-		$db_rack = $result->fetch (PDO::FETCH_ASSOC);
-		// Go ahead when Rack and object exists
-		if (($db_object) & ($db_rack)) 
-		{
-			for ($i=0 ; $i < count($rackUnits); $i++ ) 
-			{
-				if (strpos($fib[$i],'f') !== false)
-					usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'front', 'state' => 'T', 'object_id' => $db_object['id']));
-				if (strpos($fib[$i],'i') !== false)
-					usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'interior', 'state' => 'T', 'object_id' => $db_object['id']));
-				if (strpos($fib[$i],'b') !== false)
-					usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'rear', 'state' => 'T', 'object_id' => $db_object['id']));
-				
-				usePreparedDeleteBlade ('RackThumbnail', array ('rack_id' => $db_rack['id']));  //Updates the thumbnail of the rack
-			}
-			showSuccess("line $row: Rack Assignment for  ".$object. " successful");
-		}
-		else
-		{
-			showError("Line $row: Object " . $object . " or Rack " . $rack. " does not exist. Import FAILED.");
-			return FALSE;
-		}
-	}
+	showSuccess("line $row_number: Import ". $object_type_name. " Object ".$object_name. " successful; object_id=".$object_id);
 }
 
 
-function addRackImport($csvdata,$row) 
+
+function addRackImport($csvdata,$row_number) 
 {
 
 	$location = 		$csvdata[0];
@@ -328,7 +401,7 @@ function addRackImport($csvdata,$row)
 			// Object already exists but is not a Location (objecttype 1562) cannot continue
 			if ($db_location['objtype_id'] != 1562) 
 			{ 
-				showError("Line $row: Location " . $location . " already exists as another Objecttype, Import FAILED.");
+				showError("Line $row_number: Location " . $location . " already exists as another Objecttype, Import FAILED.");
 				return FALSE;
 			}
 		}
@@ -336,7 +409,7 @@ function addRackImport($csvdata,$row)
 		else 
 		{		
 			$location_id = commitAddObject ($location, "", 1562, "", array());
-			showSuccess ("Line $row: Location ".$location. " imported; object_id=".$location_id);
+			showSuccess ("Line $row_number: Location ".$location. " imported; object_id=".$location_id);
 		}
 		
 	}
@@ -352,18 +425,18 @@ function addRackImport($csvdata,$row)
 			$location_child_id = $db_location_child['id'];
 
 			if ($db_location_child['objtype_id'] != 1562) { // Object already exists but is not a Location (objecttype 1562) cannot continue
-				showError("Line $row: Location Child " . $location_child . " already exists as another Objecttype, Import FAILED.");
+				showError("Line $row_number: Location Child " . $location_child . " already exists as another Objecttype, Import FAILED.");
 				return FALSE;
 			}
 			if ($db_location_child['parent_entity_id'] != $location_id) { // The child Location id doesnt not match with the parent location ID
-				showError("Line $row: Location Child " . $location_child . " mismatch with parent location_id, Import FAILED.");
+				showError("Line $row_number: Location Child " . $location_child . " mismatch with parent location_id, Import FAILED.");
 				return FALSE;
 			}
 		}
 		else { // Location child does not exist, create new object and link to parent location
 			$location_child_id = commitAddObject ($location_child, "", 1562, "", array());
 			commitLinkEntities ('location', $location_id , 'location', $location_child_id );
-			showSuccess ("Line $row: Child Location ".$csvdata[1]. " imported; object_id=".$location_child_id);	
+			showSuccess ("Line $row_number: Child Location ".$location_child. " imported; object_id=".$location_child_id);	
 		}		
 	}
 
@@ -379,13 +452,13 @@ function addRackImport($csvdata,$row)
 			// Object already exists but is not a Row (objecttype 1561) cannot continue
 			if ($db_rackrow['objtype_id'] != 1561) 
 			{ 
-				showError("Line $row: Row " . $rackrow. $db_rackrow['objtype_id'] . " already exists as another Objecttype, Import FAILED.");
+				showError("Line $row_number: Row " . $rackrow. $db_rackrow['objtype_id'] . " already exists as another Objecttype, Import FAILED.");
 				return FALSE;
 			}
 			// The Row doesnt not match with the parent or child location ID
 			if (($db_rackrow['parent_entity_id'] != $location_id) & ($db_rackrow['parent_entity_id'] != $location_child_id))   
 			{ 
-				showError("Line $row: Row " . $rackrow . " mismatch with parent location_id, Import FAILED.". $db_rackrow['parent_entity_id']. " , " . $location_id . " , " . $location_child_id);
+				showError("Line $row_number: Row " . $rackrow . " mismatch with parent location_id, Import FAILED.". $db_rackrow['parent_entity_id']. " , " . $location_id . " , " . $location_child_id);
 				return FALSE;
 			}
 
@@ -398,7 +471,7 @@ function addRackImport($csvdata,$row)
 				commitLinkEntities ('location', $location_id , 'row', $rackrow_id );
 			else 
 				commitLinkEntities ('location', $location_child_id  , 'row', $rackrow_id );
-			showSuccess ("Line $row: Row ".$rackrow. " imported; object_id=".$rackrow_id);
+			showSuccess ("Line $row_number: Row ".$rackrow. " imported; object_id=".$rackrow_id);
 		}			
 	}
 
@@ -415,7 +488,7 @@ function addRackImport($csvdata,$row)
 			// Object already exists but is not a Location (objecttype 1562) cannot continue
 			if ($db_rack['objtype_id'] != 1560) 
 			{ 
-				showError("Line $row: Rack " . $rack . " already exists as another Objecttype, Import FAILED.");
+				showError("Line $row_number: Rack " . $rack . " already exists as another Objecttype, Import FAILED.");
 				return FALSE;
 			}
 		}
@@ -425,12 +498,192 @@ function addRackImport($csvdata,$row)
 			$rack_id = commitAddObject ($rack, "", 1560, "", array());	// Object type 1560 = rack		
 			commitLinkEntities ('row', $rackrow_id  , 'rack', $rack_id );
 			commitUpdateAttrValue ($rack_id, 27, $rack_height);		// attribute type 27 = height
-			showSuccess ("Line $row: Rack ".$rack. " imported; object_id=".$rack_id);
+			showSuccess ("Line $row_number: Rack ".$rack. " imported; object_id=".$rack_id);
 		}
 			
 	}
-}// Todo
+} 
 
-// Cable link import
+// This function adds Rack assignment info for an object
+function addRackAssignment($csvdata,$row_number) 
+{
+
+	$object = 		trim ($csvdata[1]);
+	$rack = 		trim ($csvdata[2]);
+	$rackUnits = 	explode(',',$csvdata[3]);
+	$fib = 			explode(',',$csvdata[4]);
+
+	if (strlen($object ) > 0) 
+	{
+
+		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id from Object where Object.name='".$object."';");
+		$db_object = $result->fetch (PDO::FETCH_ASSOC);
+		
+		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id from Object where Object.name='".$rack."';");
+		$db_rack = $result->fetch (PDO::FETCH_ASSOC);
+		// Go ahead when Rack and object exists
+		if (($db_object) & ($db_rack)) 
+		{
+			for ($i=0 ; $i < count($rackUnits); $i++ ) 
+			{
+				if (strpos($fib[$i],'f') !== false)
+					usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'front', 'state' => 'T', 'object_id' => $db_object['id']));
+				if (strpos($fib[$i],'i') !== false)
+					usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'interior', 'state' => 'T', 'object_id' => $db_object['id']));
+				if (strpos($fib[$i],'b') !== false)
+					usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'rear', 'state' => 'T', 'object_id' => $db_object['id']));
+				
+				usePreparedDeleteBlade ('RackThumbnail', array ('rack_id' => $db_rack['id']));  //Updates the thumbnail of the rack
+			}
+			showSuccess("line $row_number: Rack Assignment for  ".$object. " successful");
+		}
+		else
+		{
+			showError("Line $row_number: Object " . $object . " or Rack " . $rack. " does not exist. Import FAILED.");
+			return FALSE;
+		}
+	}
+}
+
+function addCableLink($csvdata,$row_number) 
+{
+	$object_a = 	trim ($csvdata[1]);
+	$port_a = 		trim ($csvdata[2]);
+	$object_b = 	trim ($csvdata[3]);
+	$port_b = 		trim ($csvdata[4]);
+	$cable_id = 	trim ($csvdata[5]);
+
+	// Check if object_a and port_a exist, if not; stop and return false
+	$result = usePreparedSelectBlade ("SELECT Port.*, Object.name FROM Port, Object WHERE Port.object_id = Object.id AND Port.name='".$port_a."' AND Object.name='".$object_a."';");
+	$db_result_a = $result->fetch (PDO::FETCH_ASSOC);
+	if (!$db_result_a)
+	{
+		showError("line $row_number: Import CableLink ". $cable_id. " FAILED; The object-port combination ".$object_a." ".$port_a." does not exist.");
+		return FALSE;
+	}
+
+	// Check if object_a and port_a exist, if not; stop and return false
+	$result = usePreparedSelectBlade ("SELECT Port.*, Object.name FROM Port, Object WHERE Port.object_id = Object.id AND Port.name='".$port_b."' AND Object.name='".$object_b."';");
+	$db_result_b = $result->fetch (PDO::FETCH_ASSOC);
+	if (!$db_result_b)
+	{
+		showError("line $row_number: Import CableLink ". $cable_id. " FAILED; The object-port combination ".$object_b." ".$port_b." does not exist.");
+		return FALSE;
+	}
+
+	// Create Link
+	try 
+	{
+		linkPorts ($db_result_a['id'], $db_result_b['id'], $cable_id);
+	}
+	catch (Exception $e) 
+	{ 
+		showError("line $row_number: Import CableLink ". $cable_id." FAILED. Possible porttype mismatch. Complete Expeption data: ".$e);
+		return FALSE;
+	}
+	showSuccess ("Line $row_number: Import CableLink ".$cable_id. " imported.");					
+}
+
+
+function addVLAN($csvdata,$row_number) 
+{
+	$vlan_domain = 		trim ($csvdata[1]);
+	$vlan_name = 		trim ($csvdata[2]);
+	$vlan_id = 			trim ($csvdata[3]);
+	$vlan_propagation = trim ($csvdata[4]);
+	if ($vlan_propagation != 'ondemand') $vlan_propagation = "compulsory";
+	$ip_ranges = 		explode(',',$csvdata[5]);
+
+	// Check if VLAN domain exists
+	$result = usePreparedSelectBlade ("SELECT id from VLANDomain where description='". $vlan_domain . "';");
+	$db_result = $result->fetch (PDO::FETCH_ASSOC);
+
+	// If VLAN domain does not exists, create domain
+	if (!$db_result)
+	{
+		usePreparedInsertBlade ('VLANDomain', array ('description' => $vlan_domain));
+		$result = usePreparedSelectBlade ("select id from VLANDomain where description ='". $vlan_domain . "';");
+		$db_result = $result->fetch (PDO::FETCH_ASSOC);
+		showSuccess ("Line $row_number: VLAN Domain ".$vlan_domain. " imported; object_id=".$db_result['id']);	
+	}
+	$domain_id = $db_result['id'];
+
+	// Create VLAN
+	try 
+	{
+		usePreparedInsertBlade ("VLANDescription", array('domain_id' => $domain_id , 'vlan_id' => $vlan_id, 'vlan_type' => $vlan_propagation, 'vlan_descr' => $vlan_name));
+	}
+	catch (Exception $e) 
+	{ 
+		showError("line $row_number: Import ". $vlan_name. " vlan_id ".$vlan_id. " FAILED; VLAN already exists");
+		return FALSE;
+	}
+	showSuccess ("Line $row_number: VLAN ".$vlan_name. " imported; vlan_id=".$vlan_id);				
+	
+	// Try to attach VLANs to IP ranges
+	foreach ($ip_ranges as $ip_range)
+	{
+		try
+		{
+			$net = spotNetworkByIP (ip_parse($ip_range));	
+		}
+		catch (Exception $e) 
+		{ 
+			showError("line $row_number: Unable to find/parse IP network address ". $ip_range);
+		}
+		if (isset($net['id']))
+		{
+			if (strpos($ip_range,".")) commitSupplementVLANIPv4 ($domain_id."-".$vlan_id, $net['id']);
+			if (strpos($ip_range,":")) commitSupplementVLANIPv6 ($domain_id."-".$vlan_id, $net['id']);
+			showSuccess ("Line $row_number: VLAN ".$vlan_name. " attached to IP range ".$ip_range);
+		}
+		else 
+		{
+			showError ("Line $row_number: VLAN ".$vlan_name. " unable to attach to range ".$ip_range);
+		}
+	}
+	
+}
+
+
+function addIP($csvdata,$row_number) 
+{
+
+	$prefix = 		trim ($csvdata[1]);
+	$ip_name= 		trim ($csvdata[2]);
+	$is_connected = trim ($csvdata[3]);
+	$vlan_domain = 	trim ($csvdata[4]);
+	$vlan_id =  	trim ($csvdata[5]);
+	$vlan_ck = 		NULL;
+
+	// Check if vlan domain - vlan combination exists
+	if ((strlen($vlan_domain) > 0) & (strlen($vlan_id) > 0))
+	{
+		$result = usePreparedSelectBlade ("SELECT VLANDescription.*, VLANDomain.description FROM VLANDescription, VLANDomain WHERE VLANDomain.id = VLANDescription.domain_id AND VLANDescription.vlan_id=".$vlan_id." AND VLANDomain.description ='".$vlan_domain."';");
+		$vlan_result = $result->fetch (PDO::FETCH_ASSOC);
+		if (!$vlan_result)
+		{
+			showError("line $row_number: Import IP ". $cable_id. " FAILED; The VLAN domain - VLAN combination ".$vlan_domain." -  ".$vlan_id." does not exist.");
+			return FALSE;
+		}
+		else
+		{
+			$vlan_ck = $vlan_result['domain_id']."-".$vlan_id;
+		}
+	}
+
+	// Create IP range
+	try 
+	{
+		if (strpos($prefix,".")) createIPv4Prefix($prefix, $ip_name, $is_connected, array(), $vlan_ck); 
+		if (strpos($prefix,":")) createIPv6Prefix($prefix, $ip_name, $is_connected, array(), $vlan_ck); 
+	}
+	catch (Exception $e) 
+	{		
+		showError("line $row_number: Import IP ". $prefix." FAILED. Complete Expeption data: ".$e);
+		return FALSE;
+	}
+	showSuccess ("Line $row_number: Import IP ".$prefix. " imported. ".$vlan_ck);					
+}
 
 ?>
