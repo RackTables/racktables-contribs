@@ -828,8 +828,17 @@ class lm_Image_GraphViz extends Image_GraphViz {
 				<ul id=\"link\" style=\"list-style-type:none\"></ul>
 			</div>";
 
+		if($debug)
+			$gvmap->setFalseOnError(False);
+
 		$data2 = '';
 		$data = $gvmap->fetch($type, $command, 'cmapx', $data2);
+
+		if($data === false)
+			echo "ERROR Fetching image data!<br>";
+
+		if(PEAR::isError($data))
+			echo $data->getMessage();
 
 		//echo $gvmap->fetch('cmapx', $command);
 		echo $data2;
@@ -981,6 +990,11 @@ class linkmgmt_gvmap {
 
 	function __destruct() {
 		error_reporting($this->errorlevel);
+	}
+
+	function setFalseOnError($newvalue)
+	{
+		$this->gv->_returnFalseOnError = $newvalue;
 	}
 
 	// !!!recursiv !!!
