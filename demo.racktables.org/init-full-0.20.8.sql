@@ -4886,7 +4886,7 @@ CREATE TABLE `Script` (
 
 LOCK TABLES `Script` WRITE;
 /*!40000 ALTER TABLE `Script` DISABLE KEYS */;
-INSERT INTO `Script` VALUES ('RackCode','# Keep admin password immutable by means of special (and also immutable) RackCode.\ndeny {$op_updateUser} or {$op_saveRackCode}\nallow {$userid_1}\n');
+INSERT INTO `Script` VALUES ('RackCode','# Keep admin password immutable by means of special (and also immutable) RackCode.\ndeny {$op_changeMyPassword} or {$op_updateUser} or {$op_saveRackCode}\nallow {$userid_1}\n');
 /*!40000 ALTER TABLE `Script` ENABLE KEYS */;
 UNLOCK TABLES;
 
