@@ -911,7 +911,7 @@ class linkmgmt_gvmap {
 
 		$_GET['all'] = 1;
 
-		$graphattr['URL'] = makeHrefProcess($_GET);
+		$graphattr['URL'] = $this->_makeHrefProcess($_GET);
 
 		unset($_GET['all']);
 
@@ -997,6 +997,11 @@ class linkmgmt_gvmap {
 		$this->gv->_returnFalseOnError = $newvalue;
 	}
 
+	function _makeHrefProcess($array)
+	{
+		return str_replace('&','&amp;',makeHrefProcess($array));
+	}
+
 	// !!!recursiv !!!
 	function _add($gv, $object_id, $port_id = NULL) {
 		global $lm_multilink_port_types;
@@ -1074,7 +1079,7 @@ class linkmgmt_gvmap {
 				$_GET['object_id'] = $object_id;
 				//$_GET['hl'] = 'o';
 
-				$clusterattr['URL'] = makeHrefProcess($_GET);
+				$clusterattr['URL'] = $this->_makeHrefProcess($_GET);
 
 				//has_problems
 				if($object['has_problems'] != 'no')
@@ -1151,7 +1156,7 @@ class linkmgmt_gvmap {
 				$_GET['port_id'] = $port['id'];
 				$_GET['hl'] = 'p';
 
-				$nodeattr['URL'] = makeHrefProcess($_GET);
+				$nodeattr['URL'] = $this->_makeHrefProcess($_GET);
 				$nodeattr['id'] = "${port['object_id']}-${port['id']}--"; /* for js context menu */
 
 				$gv->addNode($port['id'],
@@ -1223,7 +1228,7 @@ class linkmgmt_gvmap {
 					$_GET['port_id'] = $port['id'];
 					$_GET['remote_id'] = $port['remote_id'];
 
-					$edgeattr['URL'] = makeHrefProcess($_GET);
+					$edgeattr['URL'] = $this->_makeHrefProcess($_GET);
 
 					$edgeattr['id'] = $port['object_id']."-".$port['id']."-".$port['remote_id']."-".$linktype; /* for js context menu  */
 
