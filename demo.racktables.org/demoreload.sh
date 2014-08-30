@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # This shell script reloads a RackTables demo database. It requires:
 # 1. unpacked RackTables release tarball in home directory
