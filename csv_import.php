@@ -338,7 +338,7 @@ function addObject($csvdata,$row_number)
 	}
 
 	// When available, import the port information
-	if ((count($ifName) > 0) & (count($ifType > 0)) & (count($ifName) == count($ifType)) ) 
+	if ((count($ifName) > 0) && (count($ifType > 0)) && (count($ifName) == count($ifType)) && (strlen($ifName ) > 0) )
 	{
 		// temporary disable autocreation of ports
 		$tempAUTOPORTS_CONFIG =  getConfigVar ('AUTOPORTS_CONFIG');
