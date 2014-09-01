@@ -1820,6 +1820,12 @@ function guessRToif_id($ifType,$ifDescr = NULL) {
 					}
 				}
 
+				if(preg_match('/sfp 1000-sx/i',$ifDescr))
+					$oif_type = '1000BASE-SX';
+
+				if(preg_match('/sfp 1000-lx/i',$ifDescr))
+					$oif_type = '1000BASE-LX';
+
 			}
 
 			if($no) {
