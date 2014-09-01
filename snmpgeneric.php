@@ -723,7 +723,7 @@ function snmpgeneric_pf_regex(&$snmp, &$sysObjectID, $attr_id) {
 $sg_portiifoptions= getPortIIFOptions();
 $sg_portiifoptions[-1] = 'sfp'; /* generic sfp */
 
-$sg_portoifoptions= getPortOIOptions();
+$sg_portoifoptions= getPortOIFOptions();
 
 /* -------------------------------------------------- */
 /* -------------------------------------------------- */
