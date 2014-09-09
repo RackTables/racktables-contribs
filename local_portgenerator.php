@@ -136,6 +136,17 @@ CREATE TABLE IF NOT EXISTS `AutoPort` (
 //------------------------------------
 //*** Added support for PortInnterInterface ***
 //
+//
+//Version 1.5
+//Revised by Marian Stetina
+//09-2014
+//------------------------------------
+//Changes:
+//------------------------------------
+//*** Compatibility with RT v.0.20.8, because DB-Model was changed (RactTables Changelog: update: move port outer interfaces from the dictionary)
+//*** Port listing with InnerInterface ID (Example: 10-1588	QSFP+ => empty QSFP+)
+//*** some HTML Tags bugfixed
+//
 
 $tab['object']['portgenerator'] = 'Port generator';
 $trigger['object']['portgenerator'] = 'localtrigger_PortGenerator';
@@ -296,10 +307,10 @@ function localverify_PortGenerator($object) {
               }
               if ($thisOrder[1]==1 || strpos($thisOrder[2],"%u")!==false) {
                if (preg_match ('/^([[:digit:]]+)-([[:digit:]]+)$/', $thisOrder[3], $matches)) 
-                         $oif_id = $matches[2];
+                  $oif_id = $matches[2];
                else 
                   $oif_id = $thisOrder[3];
-                $q = "SELECT dict_value FROM Dictionary WHERE dict_key='$oif_id' AND chapter_id=2 ";
+                $q = "SELECT oif_name FROM PortOuterInterface WHERE id='$oif_id'";
                 $result = usePreparedSelectBlade ($q);
                 if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
                 if ($row3 = $result->fetch (PDO::FETCH_NUM)) {
@@ -386,14 +397,15 @@ function localfunc_PortGenerator()
     //
     print "<center>";
     print $genText."<p>\n";
+    print "<b>USAGE</b><br><br>";
     print "&lt;list1&gt;;&lt;list2&gt;;.... where &lt;listx&gt; is<br>";
     print "&lt;start port #&gt;|&lt;port count, use %n for number of ports&gt;|";
     print "&lt;port name, use %u for number&gt;|[&lt;port innerinterface id&gt;-]&lt;port type id&gt;[|&lt;port label, use %u for number&gt;]<br><br>";
-    print "<b>EXAMPLE</b><br><br> 1|15|eth%u|24; <br><br>"; //an example of how to use port generator 
-    print "<b>EXPLANATION</b><br><br> <b>1</b> = starting number, 
-    <b>15</b> = number of generated ports,  
-    <b>eth%u</b> = will begin with <b>starting number</b> and create up to the <b>number of generated ports</b>, 
-    <b>24</b> = the dictionary value displayed on the chart below <b>in bold</b><br><br>"; //explains example
+    print "<b>EXAMPLE (for Force10 S4810)</b><br><br>0|48|%u|9-1084|TenGigabitEthernet0/%u;48|4|%u|10-1588|FortyGigE0/48;52|4|%u|10-1588|FortyGigE0/52;56|4|%u|10-1588|FortyGigE0/56;60|4|%u|10-1588|FortyGigE0/60;1|1|RS-232|29|Serial port;1|1|Ethernet|24|ManagementEthernet0/%u;1|2|AC%u|16<br><br>";
+    print "<b>EXPLANATION (for AC-in ports)</b><br><br> <b>1</b> = starting number,
+    <b>2</b> = number of generated ports,  
+    <b>AC%u</b> = will begin with <b>starting number</b> and create up to the <b>number of generated ports</b>, 
+    <b>16</b> = the value displayed on the chart below <b>in bold</b> (Notice: Default innerinterface ID is 1 /hardwired/, so the realy value is <b>1-16</b>)<br><br>"; //explains example
     print "<b>PLEASE NOTE</b><br><br> If you do not add the port that is selected <b>(dictionary value)</b> to the default list in the <b>Ports</b> Tab,  
     you will get a <b>foriegn key violation</b> error. 
     You must go to the <b>Configuration</b> area on the main page, go to <b>Enable port types</b>
@@ -404,7 +416,7 @@ function localfunc_PortGenerator()
     // On top of the table of ports avialabe instead of beneath it
 	//
     printOpFormIntro ('updateportgenerator', array ('yId' => $searchIt));
-    print "Autoport Configuration : <input type='text' size='60' name='yConfig' value='";
+    print "<b>Autoport Configuration:</b><br><br><input type='text' style='width:100%; font-size: 16px' name='yConfig' value='";
     if ($valueConfiguration) {
       print $valueConfiguration[0];
     }
@@ -419,30 +431,23 @@ function localfunc_PortGenerator()
     print "</form>\n";
     print "</center><br>";
      
-    print "<table border='2' rules=all>\n<tr>";
+    print "<table border='2' rules=all>\n<tr class=row_odd>";
     $isfirst = true;
     $i = 0;
     //
     // List all available port types with their dictionary key
     //
-    $q = "SELECT dict_key, dict_value FROM Dictionary WHERE chapter_id=2 ORDER BY dict_value ";
+    $q = "SELECT IF(iif_id,CONCAT(i.id,'-',o.id),o.id) as ID , IF(iif_id,CONCAT(i.iif_name,' => ',o.oif_name),o.oif_name) as name FROM PortOuterInterface o left join PortInterfaceCompat c on o.id = c.oif_id left join PortInnerInterface i on c.iif_id = i.id order by i.id,o.id";
     $result = usePreparedSelectBlade ($q);//Changed for new configeration in versions after 0.17.x
     if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
     while ($row4 = $result->fetch (PDO::FETCH_NUM)) {
-      if (!$isfirst && $i%10==0) { //Change from %12 to %10 to render table evenly
-        print "</td></tr>\n"; //Change to </td></tr> so that each dictionary entry is nestled in its own cell
+      if (!$isfirst && $i%10==0) {
+         print "</td></tr>\n<tr class=".( ($i%4==0) ? "row_odd" : "row_even" ).">";
       } else {
       $isfirst = false;
       }
-      if ($i%10==0) {
-        print "<td align='left'></td>";
-        $i=0;
-     }
-      $length = strlen($row4[1]);
-   
-      $padded_row = str_pad($row4[1], 32, " ", STR_PAD_RIGHT);//Does not work yet, will make each cell the same size
-      print "<td><b>{$row4[0]}</b>:";//seperated values to make them easier to read
-      print "{$padded_row}\n</td>"; 
+      print "<td><b>{$row4[0]}</b><br>";//seperated values to make them easier to read
+      print "{$row4[1]}\n</td>"; 
       $i++;
     }
     print "</td>\n";
