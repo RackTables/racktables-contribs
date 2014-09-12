@@ -1,0 +1,111 @@
+/* tables */
+table.tablesorter {
+	font-family:arial;
+	background-color: #CDCDCD;
+	margin:10px 0pt 15px;
+	font-size: 8pt;
+	width: 100%;
+	text-align: left;
+	width:95%;
+}
+table.tablesorter thead tr th, table.tablesorter tfoot tr th {
+	background-color: #3C78B5;
+	/*border: 1px solid #FFF;*/
+	font-size: 11pt;
+    font-weight:bold;
+	padding: 4px;
+    color:white;
+    border:1px solid #3C78B5;
+}
+table.tablesorter thead tr .header {
+	background-image: url(bg.gif);
+	background-repeat: no-repeat;
+	background-position: center right;
+	cursor: pointer;
+}
+table.tablesorter tbody td {
+	color: #3D3D3D;
+	padding: 2px;
+	background-color: #E8E8E8;
+	vertical-align: top;
+    font-weight:bold;
+    
+}
+table.tablesorter tbody tr.odd td {
+	background-color:#D0D0D0;
+}
+table.tablesorter thead tr .headerSortUp {
+	background-image: url(asc.gif);
+}
+table.tablesorter thead tr .headerSortDown {
+	background-image: url(desc.gif);
+}
+table.tablesorter thead tr .headerSortDown, table.tablesorter thead tr .headerSortUp {
+    background-color: #468DD5;
+}
+
+/* Custom Report */
+table.searchTable {
+	font-size: 8pt;
+	text-align: left;
+	border-collapse:collapse;
+	border-spacing:0px;
+	width:180px;
+	border:1px solid #3C78B5;
+}
+
+table.searchTable tr.odd {
+	background-color: #D0D0D0;
+}
+
+table.searchTable th {
+	font-size: 8pt;
+    padding : 2px;
+    text-decoration: underline;
+}
+
+table.searchTable td {
+	padding : 0px; 
+	height:20px;
+}
+
+table.searchTable td table {
+   border:none;
+}
+
+.searchForm {
+
+}
+ 
+.show_hide {
+   /* display:none; */
+}
+
+/* Images from http://openiconlibrary.sourceforge.net */
+
+/* Server */
+table.tablesorter tbody tr span.object_typeid_4 { 
+	background-image: url(server.png);
+	background-repeat: no-repeat;
+	padding-left:20px;
+}
+/* Example set text color of object type */
+/*
+table.tablesorter tbody tr span.object_typeid_4 a {
+    color:red;	
+}
+*/
+
+/* Switches */
+table.tablesorter tbody tr span.object_typeid_8 { 
+    background-image: url(network.png);
+    background-repeat: no-repeat;
+    padding-left:20px;
+}
+
+/* VMs */
+table.tablesorter tbody tr span.object_typeid_1504 { 
+    background-image: url(vm.png);
+    background-repeat: no-repeat;
+    padding-left:20px;
+}

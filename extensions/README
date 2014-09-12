@@ -1,0 +1,76 @@
+Racktables Extensions v0.3.1
+---------------------------------------------------------------
+2013-08-28 - Mogilowski Sebastian <sebastian@mogilowski.net>
+---------------------------------------------------------------
+Website and HowTo: http://www.mogilowski.net/projects/racktables
+---------------------------------------------------------------
+
+INSTALL:
+
+General:
+
+Move folder "extensions" into the racktables wwwroot folder.
+
+"mv extensions /var/www/racktables" for example
+
+---------------------------------------------------------------
+
+On Racktables 0.19.13 or later:
+
+Create or modify "local.php" in the "inc" folder.
+
+"vim /var/www/racktables/inc/local.php"
+
+Insert the following content:
+
+<?php
+
+# Load server report
+require_once "extensions/reports/server-report.php";
+
+# Load virtual machine report
+require_once "extensions/reports/vm-report.php";
+
+# Load switch report
+require_once "extensions/reports/switch-report.php";
+
+?>
+
+or copy the example file.
+
+---------------------------------------------------------------
+
+On Racktables 0.20.0 or later:
+
+Create or modify "extensions.php" in the "plugins" folder.
+
+"vim /var/www/racktables/plugins/extensions.php"
+
+Insert the following content:
+
+<?php
+
+# Load server report
+require_once "../wwwroot/extensions/reports/server-report.php";
+
+# Load virtual machine report
+require_once "../wwwroot/extensions/reports/vm-report.php";
+
+# Load switch report
+require_once "../wwwroot/extensions/reports/switch-report.php";
+
+?>
+
+or copy the example file.
+
+---------------------------------------------------------------
+
+USAGE:
+
+Login into racktables and go to "Reports".
+
+Now you find "Server", "Virtual machines", "Switches" and "Custom" in the report menu.
+
+Sort multiple columns simultaneously by holding down the shift key and clicking a second, third or even fourth column header! 
+
+---------------------------------------------------------------
