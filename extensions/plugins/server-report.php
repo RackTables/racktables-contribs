@@ -121,10 +121,10 @@ function renderServerReport()
   }
 
   // Load stylesheet and jquery scripts
-  echo '<link rel="stylesheet" href="extensions/jquery/themes/racktables/style.css" type="text/css"/>';
-  echo '<script type="text/javascript" src="extensions/jquery/jquery-latest.js"></script>';
-  echo '<script type="text/javascript" src="extensions/jquery/jquery.tablesorter.js"></script>';
-  echo '<script type="text/javascript" src="extensions/jquery/picnet.table.filter.min.js"></script>';
+  addCSS ('css/extensions/style.css');
+  addJS ('js/extensions/jquery-latest.js');
+  addJS ('js/extensions/jquery.tablesorter.js');
+  addJS ('js/extensions/picnet.table.filter.min.js');
 
   // Display the stat array
   echo '<h2>Server report ('.$iTotal.')</h2><ul>';

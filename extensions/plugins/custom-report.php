@@ -212,11 +212,11 @@ function renderCustomReport()
     echo '<h2>Custom report</h2><ul>';
 
     // Load stylesheet and jquery scripts
-    echo '<link rel="stylesheet" href="extensions/jquery/themes/racktables/style.css" type="text/css"/>';
-    echo '<script type="text/javascript" src="extensions/jquery/saveFormValues.js"></script>';
-    echo '<script type="text/javascript" src="extensions/jquery/jquery-latest.js"></script>';
-    echo '<script type="text/javascript" src="extensions/jquery/jquery.tablesorter.js"></script>';
-    echo '<script type="text/javascript" src="extensions/jquery/picnet.table.filter.min.js"></script>';
+    addCSS ('css/extensions/style.css');
+    addJS ('js/extensions/saveFormValues.js');
+    addJS ('js/extensions/jquery-latest.js');
+    addJS ('js/extensions/jquery.tablesorter.js');
+    addJS ('js/extensions/picnet.table.filter.min.js');
 
     if ( $_SERVER['REQUEST_METHOD'] == 'POST' )
         echo '<a href="#" class="show_hide">Show/hide search form</a><br/><br/>';

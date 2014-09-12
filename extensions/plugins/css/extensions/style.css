@@ -18,7 +18,7 @@ table.tablesorter thead tr th, table.tablesorter tfoot tr th {
     border:1px solid #3C78B5;
 }
 table.tablesorter thead tr .header {
-	background-image: url(bg.gif);
+	background-image: url(?module=chrome&uri=pix/extensions/bg.gif);
 	background-repeat: no-repeat;
 	background-position: center right;
 	cursor: pointer;
@@ -35,10 +35,10 @@ table.tablesorter tbody tr.odd td {
 	background-color:#D0D0D0;
 }
 table.tablesorter thead tr .headerSortUp {
-	background-image: url(asc.gif);
+	background-image: url(?module=chrome&uri=pix/extensions/asc.gif);
 }
 table.tablesorter thead tr .headerSortDown {
-	background-image: url(desc.gif);
+	background-image: url(?module=chrome&uri=pix/extensions/desc.gif);
 }
 table.tablesorter thead tr .headerSortDown, table.tablesorter thead tr .headerSortUp {
     background-color: #468DD5;
@@ -85,7 +85,7 @@ table.searchTable td table {
 
 /* Server */
 table.tablesorter tbody tr span.object_typeid_4 { 
-	background-image: url(server.png);
+	background-image: url(?module=chrome&uri=pix/extensions/server.png);
 	background-repeat: no-repeat;
 	padding-left:20px;
 }
@@ -98,14 +98,14 @@ table.tablesorter tbody tr span.object_typeid_4 a {
 
 /* Switches */
 table.tablesorter tbody tr span.object_typeid_8 { 
-    background-image: url(network.png);
+    background-image: url(?module=chrome&uri=pix/extensions/network.png);
     background-repeat: no-repeat;
     padding-left:20px;
 }
 
 /* VMs */
 table.tablesorter tbody tr span.object_typeid_1504 { 
-    background-image: url(vm.png);
+    background-image: url(?module=chrome&uri=pix/extensions/vm.png);
     background-repeat: no-repeat;
     padding-left:20px;
 }
