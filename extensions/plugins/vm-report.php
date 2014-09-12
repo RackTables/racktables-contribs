@@ -1,5 +1,5 @@
 <?php
-// Custom Racktables Report v.0.3.1
+// Custom Racktables Report v.0.3.2
 // List all virtual machines
 
 // 2013-08-28 - Mogilowski Sebastian <sebastian@mogilowski.net>

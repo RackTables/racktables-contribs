@@ -1,5 +1,5 @@
 <?php
-// Custom Racktables Report v.0.3.1
+// Custom Racktables Report v.0.3.2
 // Custom report builder
 
 // 2013-08-28 - Mogilowski Sebastian <sebastian@mogilowski.net>
