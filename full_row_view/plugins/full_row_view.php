@@ -1,7 +1,7 @@
 <?php
 //
 // Render a full row of racks view with server names
-// Version 0.4
+// Version 0.5
 //
 // Written by Philipp Grau <phgrau@zedat.fu-berlin.de>
 // 
@@ -15,19 +15,17 @@
 //         0.2: Removed call of markupObjectProblems(), function was removed in 0.20.5
 //         0.3: Add patch for interface for rotated labels in layout style V (for bladecenters)
 //         0.4: Display rack row from left to right, no wrapping
-//
-// Installation:
-// 1) Copy full_row_view.php to the plugins folder as full_row_view.php
-// 2) Copy cssloader.php to the plugins folder
-// 3) Copy custom.css to the plugins folder
-// 4) Apply patch to interface.php 
+//         0.5: Rearrange files for simpler installation.
 
 $tab['row']['full_row_view'] = 'Full Row View';
 $tabhandler['row']['full_row_view'] = 'FullRowView';
 $ophandler['row']['full_row_view']['preparePrint'] ='preparePrint';
 
 // Set variables
-$frvVersion = "0.4";
+$frvVersion = "0.5";
+// load a customized stylesheet
+addCSS ('css/full_row_view.css');
+
 function preparePrint()
 {
     return showSuccess ("Created <a href=\"rowprint.php\">Print preview</a>!");
