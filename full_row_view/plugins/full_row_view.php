@@ -1,7 +1,6 @@
 <?php
 //
 // Render a full row of racks view with server names
-// Version 0.5
 //
 // Written by Philipp Grau <phgrau@zedat.fu-berlin.de>
 // 
@@ -16,13 +15,14 @@
 //         0.3: Add patch for interface for rotated labels in layout style V (for bladecenters)
 //         0.4: Display rack row from left to right, no wrapping
 //         0.5: Rearrange files for simpler installation.
+//         0.6: Do not call deprecated functions.
 
 $tab['row']['full_row_view'] = 'Full Row View';
 $tabhandler['row']['full_row_view'] = 'FullRowView';
 $ophandler['row']['full_row_view']['preparePrint'] ='preparePrint';
 
 // Set variables
-$frvVersion = "0.5";
+$frvVersion = "0.6";
 // load a customized stylesheet
 addCSS ('css/full_row_view.css');
 
@@ -74,8 +74,6 @@ function renderReducedRack ($rack_id, $hl_obj_id = 0)
 	if ($hl_obj_id > 0)
 		highlightObject ($rackData, $hl_obj_id);
 	// markupObjectProblems ($rackData); // Function removed in 0.20.5
-	$prev_id = getPrevIDforRack ($rackData['row_id'], $rack_id);
-	$next_id = getNextIDforRack ($rackData['row_id'], $rack_id);
 	echo "<center><table border=0><tr valign=middle>";
 	echo '<td><h2>' . mkA ($rackData['name'], 'rack', $rackData['id']) . '</h2></td>';
 	echo "</h2></td></tr></table>\n";
