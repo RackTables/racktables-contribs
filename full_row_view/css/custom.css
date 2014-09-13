@@ -1,0 +1,41 @@
+th.rackphg {
+	font: bold 12px Verdana, sans-serif;
+}
+
+.vertslot {
+    position: absolute;
+    -webkit-transform-origin:0% 50% 0;-moz-transform-origin:0% 50% 0;-o-transform-origin:0% 50% 0;-ms-transform-origin:0% 50% 0;transform-origin:0% 50% 0;
+    -webkit-transform:rotate(-90deg);-moz-transform:rotate(-90deg);-o-transform:rotate(-90deg);-ms-transform:rotate(-90deg);transform:rotate(-90deg);
+    writing-mode: lr-tb;
+    padding-left: 5px;
+}
+
+
+.rackphg {
+	font: bold 10px Verdana, sans-serif;
+	border: 1px solid black;
+	border-top: 0px solid black;
+	border-right: 0px solid black;
+	text-align: center;
+}
+
+.rackphg th {
+	border-top: 1px solid black;
+	border-right: 1px solid black;
+}
+
+.rackphg td {
+	border-top: 1px solid black;
+	border-right: 1px solid black;
+}
+
+.rackphg a {
+	font: 10px Verdana, sans-serif;
+	color: #000;
+	text-decoration: none;
+}
+
+.rackphg a:hover {
+	text-decoration: underline;
+}
+
