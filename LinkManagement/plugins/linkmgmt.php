@@ -175,8 +175,6 @@ function linkmgmt_opHelp() {
 
 function linkmgmt_ajax_mapinfo() {
 
-	require_once 'inc/interface.php'; /* renderCell */
-
 	$object_id = NULL;
 	$port_id = NULL;
 	$remote_id = NULL;
@@ -274,6 +272,17 @@ function linkmgmt_ajax_mapinfo() {
 	exit;
 }
 
+/* -------------------------------------- */
+function lm_renderObjectCell ($cell)
+{
+	echo "<table class='slbcell vscell'><tr><td rowspan=2 width='5%'>";
+	printImageHREF ('OBJECT');
+	echo '</td><td>';
+	echo mkA ('<strong>' . niftyString ($cell['dname']) . '</strong>', 'object', $cell['id']);
+	echo '</td></tr><tr><td>';
+	echo count ($cell['etags']) ? ("<small>" . serializeTags ($cell['etags']) . "</small>") : '&nbsp;';
+	echo "</td></tr></table>";
+}
 /* -------------------------------------- */
 
 class linkmgmt_RTport {
@@ -407,7 +416,7 @@ class linkmgmt_RTport {
 		}
 
 		echo "<table><tr><td>";
-		renderCell($object);
+		lm_renderObjectCell($object);
 		echo "</td></tr><tr><td><table>";
 
 		self::_printinforow($object,
@@ -1877,8 +1886,6 @@ function linkmgmt_findSparePorts($port_info, $filter, $linktype, $multilink = fa
  */
 function linkmgmt_renderPopupPortSelector()
 {
-	require_once 'inc/popup.php'; /* getProximateRacks */
-
 	global $lm_multilink_port_types;
 
         assertUIntArg ('port');
