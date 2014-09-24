@@ -50,7 +50,7 @@ Usage:
  Value 5, Port array: This is an optional field where you can create ports for the objects, separated by a comma. When you use this , you also need to add the Port type array
  An individual port field can be a range of ports. Eg. 'eth[0-9]' creates ten ports ranging from eth0 to eth9.
  Value 6, Port type array: This is an array which maps to the previous port array. This allows you to specify the interface type of the ports. The interface type is a numeric value from Racktables.
-
+ The ports are created with an inner interface type 'hardwired', so only port types which are compatible with 'hardwired' can be added. New port types can be linked to hardwired using the configuration -> Enabled port types page.
  Examples: 
  
  OBJECT;SERVER;myServer;www.server.com;SRV001;IPMI,eth[0-2];24,24
@@ -338,7 +338,8 @@ function addObject($csvdata,$row_number)
 	}
 
 	// When available, import the port information
-	if ((count($ifName) > 0) && (count($ifType > 0)) && (count($ifName) == count($ifType)) && (strlen($ifName ) > 0) )
+
+	if ((count($ifName) > 0) & (count($ifType > 0)) & (count($ifName) == count($ifType)) ) 
 	{
 		// temporary disable autocreation of ports
 		$tempAUTOPORTS_CONFIG =  getConfigVar ('AUTOPORTS_CONFIG');
@@ -346,24 +347,32 @@ function addObject($csvdata,$row_number)
 
 		for ($i=0 ; $i < count($ifName); $i++ ) 
 		{
-			$prefix = "";
-			$suffix = "";
-    		$pattern = "!(?<=[[])[^]]+(?=[]])!";
-    		preg_match($pattern,$ifName[$i],$match);
+			if (strlen($ifName[$i]) > 0)
+			{
+				/*to do 
+				 Add Check for port compatibility, specified itType should be linked it iif_type 1 ('hardwired')
+				 Else an foreign key error is thrown
+				*/
+				 
+				$prefix = "";
+				$suffix = "";
+	    		$pattern = "!(?<=[[])[^]]+(?=[]])!";
+	    		preg_match($pattern,$ifName[$i],$match);
 
-			if ((count($match) > 0) & (strpos($match[0],'-') !== false))	
-			{	
-				$prefix = substr($ifName[$i],0, strpos($ifName[$i],'['));
-				$suffix = substr($ifName[$i],strpos($ifName[$i],']')+1, strlen($ifName[$i])-1);
-				$portlist = explode('-',$match[0]);
-				if ((is_numeric($portlist[0])) & (is_numeric($portlist[1])) & ($portlist[0] < $portlist[1]))
-				{
-					for ($p = $portlist[0]; $p <= $portlist[1]; $p++) 
-						$new_port_id = commitAddPort ( $object_id, $prefix.$p.$suffix, trim ($ifType[$i]), "", "" );
+				if ((count($match) > 0) & (strpos($match[0],'-') !== false))	
+				{	
+					$prefix = substr($ifName[$i],0, strpos($ifName[$i],'['));
+					$suffix = substr($ifName[$i],strpos($ifName[$i],']')+1, strlen($ifName[$i])-1);
+					$portlist = explode('-',$match[0]);
+					if ((is_numeric($portlist[0])) & (is_numeric($portlist[1])) & ($portlist[0] < $portlist[1]))
+					{
+						for ($p = $portlist[0]; $p <= $portlist[1]; $p++) 
+							$new_port_id = commitAddPort ( $object_id, $prefix.$p.$suffix, trim ($ifType[$i]), "", "" );
+					}
 				}
+				else 
+					$new_port_id = commitAddPort ( $object_id, trim ($ifName[$i]), trim ($ifType[$i]), "", "" );
 			}
-			else 
-				$new_port_id = commitAddPort ( $object_id, trim ($ifName[$i]), trim ($ifType[$i]), "", "" );
 		}
 
 		setConfigVar ('AUTOPORTS_CONFIG',$tempAUTOPORTS_CONFIG);
