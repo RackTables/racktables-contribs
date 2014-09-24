@@ -145,12 +145,12 @@ Usage:
  Value 2, Objectname: Specifies the name of the object
  Value 3, OS Interface name: Specifies the name of the interface to be added
  Value 4, IP address: Specifies the ip address of the interface to b e added (IPv4 or Ipv6) no subnet mask required
- Value 5, Type: Chooses the type of interface to be added. Can be: connected, loopback, shared, router, point-to-point. The default type is: router
+ Value 5, Type: Chooses the type of interface to be added. Can be: regular, virtual, shared, router, point2point. The default type is: router
 
  Examples:
 
- OBJECTIP;myRouter;eth0;10.1.3.1;connected
- Creates an IP interface name eth0, with address 10.1.3.1 and type 'connected', which is added to the myRouter object.
+ OBJECTIP;myRouter;eth0;10.1.3.1;regular
+ Creates an IP interface name eth0, with address 10.1.3.1 and type 'regular', which is added to the myRouter object.
 
 -----------------------------------------
 */
