@@ -49,12 +49,12 @@ Usage:
  Value 4, Asset tag: Asset tag string
  Value 5, Port array: This is an optional field where you can create ports for the objects, separated by a comma. When you use this , you also need to add the Port type array
  An individual port field can be a range of ports. Eg. 'eth[0-9]' creates ten ports ranging from eth0 to eth9.
- Value 6, Port type array: This is an array which maps to the previous port array. This allows you to specify the interface type of the ports. The interface type is a numeric value from Racktables.
- The ports are created with an inner interface type 'hardwired', so only port types which are compatible with 'hardwired' can be added. New port types can be linked to hardwired using the configuration -> Enabled port types page.
+ Value 6, Port type array: This is an array which maps to the previous port array. This allows you to specify the interface type of the ports. It takes the form 'a-b'. Where a is the inner interface type, and b the outer interface type. Both a and b are numeric values.
+ New inner / outer interface pair types can be linked using the configuration -> Enabled port types page. When the 'a-' value is ommited, the inner port type defaults to 'hardwire'. 
  Examples: 
  
- OBJECT;SERVER;myServer;www.server.com;SRV001;IPMI,eth[0-2];24,24
- Creates a Server object named myServer having 4x 1000-Base-T interfaces, named IPMI, eth0, eth1 and eth2
+ OBJECT;SERVER;myServer;www.server.com;SRV001;IPMI,eth[0-2];1-24,3-24
+ Creates a Server object named myServer having 4x 1000-Base-T interfaces, named IPMI (hardwired inner iface, 1gbps), eth0, eth1 and eth2 (gbic inner iface, 1gbps)
 
  OBJECT;SWITCH;myAccessSwitch1;testswitch;SW0001;ge-0/0/[0-11],fe-0/1/[0-11];24,19
  Creates a Switch object named myAccessSwitch1 having 12x 1000-Base-T interfaces named ge-0/0/0 to ge-0/0/11. And also 12x 100-Base-TX interfaces named fe-0/1/0 to fe-0/1/11.
