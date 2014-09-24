@@ -121,6 +121,7 @@ Usage:
  VLAN;Private;Netops;1020;compulsory;10.1.3.0,2001:610:1020::0
  Creates VLAN 1020, named Netops having the IPv4 range 10.1.3.0 and the IPv6 range 2001:610:1020::0 attached.
 
+
 * Importing IP space
 
  Syntax: IP; Prefix; Name; is_connected; VLAN domain; VLAN ID
@@ -136,6 +137,20 @@ Usage:
  IP;10.1.3.0/24;Netops network;TRUE;SURFsara;1020
  Creates the IP network 10.1.3.0/24 called 'Netops network' and attaches it to VLAN 1020 in the SURFsara VLAN domain.
 
+
+* Importing Object IP interfaces
+
+ Syntax: OBJECTIP; Objectname; OS Interface name; IP address; Type
+ Value 1, OBJECTIP
+ Value 2, Objectname: Specifies the name of the object
+ Value 3, OS Interface name: Specifies the name of the interface to be added
+ Value 4, IP address: Specifies the ip address of the interface to b e added (IPv4 or Ipv6) no subnet mask required
+ Value 5, Type: Chooses the type of interface to be added. Can be: connected, loopback, shared, router, point-to-point. The default type is: router
+
+ Examples:
+
+ OBJECTIP;myRouter;eth0;10.1.3.1;connected
+ Creates an IP interface name eth0, with address 10.1.3.1 and type 'connected', which is added to the myRouter object.
 
 -----------------------------------------
 */
@@ -256,12 +271,14 @@ function importData()
 			showNotice ("Importing ".$_FILES['file']['name']);
 			while (($csvdata = fgetcsv($handle, 1000, ";")) !== FALSE) 
 			{
+				$csvdata[0] = trim($csvdata[0]);
 				if ($csvdata[0] == "OBJECT") 			addObject($csvdata,$row_number);
 				if ($csvdata[0] == "RACK")				addRackImport($csvdata,$row_number);
 				if ($csvdata[0] == "RACKASSIGNMENT") 	addRackAssignment($csvdata,$row_number);
 				if ($csvdata[0] == "VLAN") 				addVLAN($csvdata,$row_number);
 				if ($csvdata[0] == "CABLELINK") 		addCableLink($csvdata,$row_number);
 				if ($csvdata[0] == "IP") 				addIP($csvdata,$row_number);
+				if ($csvdata[0] == "OBJECTIP") 			addObjectIP($csvdata,$row_number);
 				$row_number++;
 			}
 			fclose($handle);
@@ -279,12 +296,14 @@ function importData()
 		foreach ($data as $dataitem) 
 		{
 			$csvdata = str_getcsv($dataitem,";");
+			$csvdata[0] = trim($csvdata[0]);
 			if ($csvdata[0] == "OBJECT") 			addObject($csvdata,$row_number);
 			if ($csvdata[0] == "RACK")				addRackImport($csvdata,$row_number);
 			if ($csvdata[0] == "RACKASSIGNMENT") 	addRackAssignment($csvdata,$row_number);
 			if ($csvdata[0] == "VLAN") 				addVLAN($csvdata,$row_number);
 			if ($csvdata[0] == "CABLELINK") 		addCableLink($csvdata,$row_number);
 			if ($csvdata[0] == "IP") 				addIP($csvdata,$row_number);
+			if ($csvdata[0] == "OBJECTIP") 			addObjectIP($csvdata,$row_number);
 			$row_number++;
 		}		
 	}
@@ -353,7 +372,7 @@ function addObject($csvdata,$row_number)
 				 Add Check for port compatibility, specified itType should be linked it iif_type 1 ('hardwired')
 				 Else an foreign key error is thrown
 				*/
-				 
+
 				$prefix = "";
 				$suffix = "";
 	    		$pattern = "!(?<=[[])[^]]+(?=[]])!";
@@ -694,5 +713,39 @@ function addIP($csvdata,$row_number)
 	}
 	showSuccess ("Line $row_number: Import IP ".$prefix. " imported. ".$vlan_ck);					
 }
+
+function addObjectIP($csvdata,$row_number) 
+{
+	$objectName = 		trim ($csvdata[1]);
+	$ifName = 			trim ($csvdata[2]);
+	$ipAddress = 		trim ($csvdata[3]);
+	if (!isset($csvdata[4])) 
+		$type = "router";
+	else 
+		$type = trim (strtolower($csvdata[4]));
+
+	//Check if object exists, and return object_id
+	$result = usePreparedSelectBlade ("SELECT  Object.id from Object where Object.name='".$objectName."';");
+	$db_object = $result->fetch (PDO::FETCH_ASSOC);
+
+	//if object exists, create IP interface
+	if ($db_object)
+	{
+		try 
+		{
+			bindIPToObject (ip_parse($ipAddress), $db_object['id'], $ifName, $type);
+		}
+		catch (Exception $e) 
+		{ 
+		showError("line $row_number: IP interface ". $ifName. " import FAILED" . "Reason: ". $e);
+		return FALSE;
+		}
+		showSuccess ("Line $row_number: IP interface ".$ifName. " imported.");		
+	}
+	else 
+	{
+		showError("Line $row_number: IP interface, Object " .$objectName. " does not exist. Import FAILED.");
+	}
+}	
 
 ?>
