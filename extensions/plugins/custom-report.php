@@ -27,6 +27,8 @@ function renderCustomReport()
 
         $aResult = getResult($_POST); // Get Result
         $_POST['name'] = validateColums($_POST); // Fix empty colums
+        
+        $csvDelimiter = (isset( $_POST['csvDelimiter'] )) ? $_POST['csvDelimiter'] : ',';
 
         /* Create Header */
         $aCSVRow = array();
@@ -78,7 +80,7 @@ function renderCustomReport()
         if ( isset( $_POST['Childs'] ) )
             array_push($aCSVRow, "Child objects");
 
-        fputcsv( $outstream, $aCSVRow );
+        fputcsv( $outstream, $aCSVRow, $csvDelimiter );
 
         /* Create data rows */
         foreach ( $aResult as $Result ) {
@@ -200,7 +202,7 @@ function renderCustomReport()
             	array_push($aCSVRow, $sTemp);
             }
 
-            fputcsv( $outstream, $aCSVRow );
+            fputcsv( $outstream, $aCSVRow, $csvDelimiter );
         }
 
         fclose($outstream);
@@ -316,6 +318,7 @@ function renderCustomReport()
     echo '<td valign="top">
             <table class="searchTable">
               <tr><td><input type="checkbox" name="csv" value="1"> CSV Export</td></tr>
+              <tr><td><input type="text" name="csvDelimiter" value="," size="1"> CSV Delimiter</td></tr>
               <tr class="odd"><td>Name Filter: <i>(Regular Expression)</i></td></tr>
               <tr><td><input type="text" name="name_preg" value="'; if (isset($_POST['name_preg'])) echo $_POST['name_preg']; echo '" style="height: 11pt;"></td></tr>
               <tr class="odd"><td>Asset Tag Filter: <i>(Regular Expression)</i></td></tr>
