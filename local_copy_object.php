@@ -1,4 +1,10 @@
 <?php
+
+/*
+(c) 2014 Maximilian Mensing <max@maximilian-mensing.de>
+(c) 2011 Manon Goo <manon@dg-i.net>
+*/
+
 $tab['object']['objectcopier'] = 'Object Copier ';
 $tabhandler['object']['objectcopier'] = 'localfunc_ObjectCopier';
 $ophandler['object']['objectcopier']['copyLotOfObjects'] = 'copyLotOfObjects';
