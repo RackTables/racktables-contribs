@@ -1133,7 +1133,7 @@ class linkmgmt_gvmap {
 			if(!isset($this->ports[$port['id']])) {
 
 
-				$nodelabel = "${port['name']}";
+				$nodelabel = htmlspecialchars("${port['name']}");
 
 				if($port['iif_id'] != '1' )
 					$nodelabel .= "<BR/><FONT POINT-SIZE=\"8\">${port['iif_name']}</FONT>";
@@ -1157,7 +1157,7 @@ class linkmgmt_gvmap {
 					$nodeattr['fillcolor'] = $this->_getcolor('port', 'remote', $this->alpha);
 				}
 
-				$nodeattr['tooltip'] = "${port['name']}";
+				$nodeattr['tooltip'] = htmlspecialchars("${port['name']}");
 
 				unset($_GET['module']);
 				unset($_GET['remote_id']);
@@ -1194,7 +1194,7 @@ class linkmgmt_gvmap {
 
 					$edgeattr = array(
 							'fontsize' => 8,
-							'label' => $port['cableid'],
+							'label' => htmlspecialchars($port['cableid']),
 							'tooltip' => $edgetooltip,
 							'sametail' => $linktype,
 							'samehead' => $linktype,
