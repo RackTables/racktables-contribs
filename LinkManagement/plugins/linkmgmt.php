@@ -1,6 +1,6 @@
 <?php
 /*
- * Link Management for RT 0.20.x
+ * Link Management for RT >= 0.20.9
  *
  *	Features:
  *		- create links between ports
@@ -79,15 +79,14 @@ ALTER TABLE LinkBackend CONVERT to CHARACTER SET utf8 COLLATE utf8_unicode_ci;
  *
  * TESTED on FreeBSD 9.0, nginx/1.0.11, php 5.3.9
  *	GraphViz_Image 1.3.0
- *	and RackTables 0.20.8
  *
- * (c)2012-2014 Maik Ehinger <m.ehinger@ltur.de>
+ * (c)2012-2015 Maik Ehinger <m.ehinger@ltur.de>
  */
 
 /**
  * The newest version of this plugin can be found at:
  *
- * https://github.com/github138/myRT-contribs/tree/develop-0.20.x
+ * https://github.com/github138/myRT-contribs/tree/develop-0.20.9
  *
  */
 
