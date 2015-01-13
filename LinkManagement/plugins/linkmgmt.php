@@ -1300,7 +1300,7 @@ class linkmgmt_gvmap {
 		// JOIN
 		$join = "	LEFT JOIN PortInnerInterface on PortInnerInterface.id = Port.iif_id
 				LEFT JOIN PortOuterInterface AS POI on POI.id = Port.type
-				LEFT JOIN $linktable as LinkTable_a on Port.id = LinkTable_a.porta 
+				LEFT JOIN $linktable as LinkTable_a on Port.id = LinkTable_a.porta
 				LEFT JOIN $linktable as LinkTable_b on Port.id = LinkTable_b.portb
 				LEFT JOIN Object on Object.id = Port.object_id
 				LEFT JOIN Port as remotePort on remotePort.id = IFNULL(LinkTable_a.portb, LinkTable_b.porta)
@@ -2798,7 +2798,7 @@ class portlist {
 				}
 
 				$this->_printportlist($dst_port_id,!$back);
-			
+
 				if($linkcount > 1) {
 					echo "</tr></table></td></tr>"
 						.( $key != $lastkey ? "<tr><td height=1 colspan=100% bgcolor=#c0c0c0><td></tr>" : "");
