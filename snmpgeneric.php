@@ -730,10 +730,56 @@ $sg_portoifoptions= getPortOIFOptions();
 
 function snmpgeneric_tabhandler($object_id) {
 
-	if(isset($_POST['snmpconfig'])) {
-		if($_POST['snmpconfig'] == '1') {
-			snmpgeneric_list($object_id);
+//	sg_var_dump_html($_POST);
+
+	if(isset($_POST['asnewobject']) && $_POST['asnewobject'] == "1")
+	{
+		$newobject_name = $_POST['object_name'];
+		$newobject_label = $_POST['object_label'];
+		$newobject_type_id = $_POST['object_type_id'];
+		$newobject_asset_no = $_POST['object_asset_no'];
+
+		if(sg_checkObjectNameUniqueness($newobject_name, $newobject_type_id))
+		{
+
+			$object_id = commitAddObject($newobject_name, $newobject_label, $newobject_type_id, $newobject_asset_no);
+
+			$_POST['asnewobject'] = "0";
+
+			parse_str($_SERVER['QUERY_STRING'],$query_string);
+
+			$query_string['object_id'] = $object_id;
+
+			$_SERVER['QUERY_STRING'] = http_build_query($query_string);
+
+			list($path, $qs) = explode('?',$_SERVER['REQUEST_URI'],2);
+			$_SERVER['REQUEST_URI'] = $path.'?'.$_SERVER['QUERY_STRING'];
+
+
+			// switch to new object
+			echo '<body>';
+			echo '<body onload="document.forms[\'newobject\'].submit();">';
+
+			echo '<form method=POST id=newobject action='.$_SERVER['REQUEST_URI'].'>';
+
+			foreach($_POST as $name => $value)
+			{
+				echo "<input type=hidden name=$name value=$value>";
+			}
+
+			echo '<input type=submit id="submitbutton" tabindex="1" value="Show List">';
+			echo '</from></body>';
+			exit;
 		}
+		else
+		{
+			showError("Object with name: \"$newobject_name\" already exists!!!");
+			$_POST['snmpconfig'] = "0";
+		}
+	}
+
+	if(isset($_POST['snmpconfig']) && $_POST['snmpconfig'] == '1') {
+		snmpgeneric_list($object_id);
 	} else {
 		snmpgeneric_snmpconfig($object_id);
 	}
@@ -749,7 +795,6 @@ function snmpgeneric_tabhandler($object_id) {
 
 function snmpgeneric_snmpconfig($object_id) {
 
-	echo '<body onload="document.getElementById(\'submitbutton\').focus();">';
 
 	$object = spotEntity ('object', $object_id);
 	//$object['attr'] = getAttrValues($object_id);
@@ -771,6 +816,21 @@ function snmpgeneric_snmpconfig($object_id) {
 				}
 			};',TRUE);
 
+	addJS('function shownewobject(element) {
+				var style;
+
+				if(element.checked) {
+					style = \'\';
+				} else {
+					style = \'none\';
+				}
+
+				var elements = document.getElementsByName(\'newobject\');
+				for(var i=0;i<elements.length;i++) {
+					elements[i].style.display=style;
+				}
+			};',TRUE);
+
 	addJS('function checkInput() {
 				var host = document.getElementById(\'host\');
 
@@ -787,6 +847,8 @@ function snmpgeneric_snmpconfig($object_id) {
 				else
 					return false;
 			};',TRUE);
+
+	echo '<body onload="document.getElementById(\'submitbutton\').focus(); showsnmpv3(document.getElementById(\'snmpversion\')); shownewobject(document.getElementById(\'asnewobject\'));">';
 
 	foreach( $endpoints as $key => $value) {
 		$endpoints[$value] = $value;
@@ -833,7 +895,7 @@ function snmpgeneric_snmpconfig($object_id) {
 
 //	sg_var_dump_html($endpoints);
 
-	if(!isset($snmpconfig['snmpversion']))
+	if(!isset($snmpconfig['version']))
 		$snmpconfig['version'] = mySNMP::SNMP_VERSION;
 
 	if(!isset($snmpconfig['community']))
@@ -857,11 +919,33 @@ function snmpgeneric_snmpconfig($object_id) {
 	if(!isset($snmpconfig['priv_passphrase']))
 		$snmpconfig['priv_passphrase'] = NULL;
 
+	if(!isset($snmpconfig['asnewobject']))
+		$snmpconfig['asnewobject'] = NULL;
+
+	if(!isset($snmpconfig['object_type_id']))
+		$snmpconfig['object_type_id'] = '8';
+
+	if(!isset($snmpconfig['object_name']))
+		$snmpconfig['object_name'] = NULL;
+
+	if(!isset($snmpconfig['object_label']))
+		$snmpconfig['object_label'] = NULL;
+
+	if(!isset($snmpconfig['object_asset_no']))
+		$snmpconfig['object_asset_no'] = NULL;
+
+//	sg_var_dump_html($snmpconfig);
+
+//	$snmpv3displaystyle = ($snmpconfig['version'] == "3" ? "style=\"\"" : "style=\"display:none;\"");
+
 	echo '<h1 align=center>SNMP Config</h1>';
 	echo '<form method=post name="snmpconfig" onsubmit="return checkInput()" action='.$_SERVER['REQUEST_URI'].' />';
 
         echo '<table cellspacing=0 cellpadding=5 align=center class=widetable>
 	<tr><th class=tdright>Host:</th><td>';
+
+	if($snmpconfig['asnewobject'] == '1')
+		$endpoints[$snmpconfig['host']] = $snmpconfig['host'];
 
 	echo getSelect ($endpoints, array ('id' => 'host','name' => 'host'), $snmpconfig['host'], FALSE);
 
@@ -878,7 +962,7 @@ function snmpgeneric_snmpconfig($object_id) {
         </tr>
         <tr>
                 <th id="snmp_community_label" class=tdright><label for=community>Community:</label></th>
-                <th name="snmpv3" style="display:none" class=tdright><label for=community>Security Name:</label></th>
+                <th name="snmpv3" style="display:none;" class=tdright><label for=community>Security Name:</label></th>
                 <td class=tdleft><input type=text name=community value='.$snmpconfig['community'].' ></td>
         </tr>
         <tr name="snmpv3" style="display:none;">
@@ -916,6 +1000,33 @@ function snmpgeneric_snmpconfig($object_id) {
                 <td class=tdleft><input type=password name=priv_passphrase value="'.$snmpconfig['priv_passphrase'].'"></td>
         </tr>
 	</tr>
+
+	<tr>
+		<th></th>
+		<td class=tdleft>
+		<input name=asnewobject id=asnewobject type=checkbox value=1 onchange="shownewobject(this)"'.($snmpconfig['asnewobject'] == '1' ? ' checked="checked"' : '').'>
+		<label>Create as new object</label></td>
+	</tr>';
+
+//	$newobjectdisplaystyle = ($snmpconfig['asnewobject'] == '1' ? "" : "style=\"display:none;\"");
+
+	echo '<tr name="newobject" style="display:none;">
+	<th class=tdright>Type:</th><td class=tdleft>';
+
+	$typelist = withoutLocationTypes (readChapter (CHAP_OBJTYPE, 'o'));
+        $typelist = cookOptgroups ($typelist);
+
+	printNiftySelect ($typelist, array ('name' => "object_type_id"), $snmpconfig['object_type_id']);
+
+        echo '</td></tr>
+
+	<tr name="newobject" style="display:none;">
+	<th class=tdright>Common name:</th><td class=tdleft><input type=text name=object_name value='.$snmpconfig['object_name'].'></td></tr>
+	<tr name="newobject" style="display:none;">
+	<th class=tdright>Visible label:</th><td class=tdleft><input type=text name=object_label value='.$snmpconfig['object_label'].'></td></tr>
+	<tr name="newobject" style="display:none;">
+	<th class=tdright>Asset tag:</th><td class=tdleft><input type=text name=object_asset_no value='.$snmpconfig['object_asset_no'].'></td></tr>
+
 	<td colspan=2>
 
         <input type=hidden name=snmpconfig value=1>
@@ -935,6 +1046,8 @@ function snmpgeneric_list($object_id) {
 		showError("Missing SNMP Config");
 		return;
 	}
+
+//	sg_var_dump_html($snmpconfig);
 
 	echo '<body onload="document.getElementById(\'createbutton\').focus();">';
 
@@ -1913,6 +2026,28 @@ function getPortOIOptions()
         $row = $result->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_UNIQUE|PDO::FETCH_COLUMN);
         return $row;
 }
+
+function sg_checkObjectNameUniqueness ($name, $type_id, $object_id = 0)
+{
+	// Some object types do not need unique names
+	// 1560 - Rack
+	// 1561 - Row
+	$dupes_allowed = array (1560, 1561);
+	if (in_array ($type_id, $dupes_allowed))
+	return;
+
+	$result = usePreparedSelectBlade
+	(
+		'SELECT COUNT(*) FROM Object WHERE name = ? AND id != ?',
+		array ($name, $object_id)
+	);
+	$row = $result->fetch (PDO::FETCH_NUM);
+	if ($row[0] != 0)
+		return false;
+	else
+		return true;
+}
+
 
 /* ------------------------------------------------------- */
 class SNMPgeneric {
