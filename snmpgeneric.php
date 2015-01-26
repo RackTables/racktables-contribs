@@ -20,6 +20,7 @@
  *		- create networks
  *		- create ports
  *		- add and bind ip addresses
+ *		- creatre as new object
  *
  *	Known to work with:
  *		- Enterasys SecureStacks, S-Series
@@ -43,7 +44,7 @@
  * TESTED on FreeBSD 9.0, nginx/1.0.12, php 5.3.10, NET-SNMP 5.7.1
  *	and RackTables <= 0.20.3
  *
- * (c)2012,2013 Maik Ehinger <m.ehinger@ltur.de>
+ * (c)2015 Maik Ehinger <m.ehinger@ltur.de>
  */
 
 /****
