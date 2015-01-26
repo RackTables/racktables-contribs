@@ -20,7 +20,7 @@
  *		- create networks
  *		- create ports
  *		- add and bind ip addresses
- *		- creatre as new object
+ *		- create as new object
  *
  *	Known to work with:
  *		- Enterasys SecureStacks, S-Series
