@@ -32,6 +32,9 @@
 * - fixed ip additions for 20.1
 * - added VM auto adding to Parent
 *
+* 2015-02-10 modified by Gjermund Jensvoll <gjerjens@gmail.com>
+* - RackTables >= 0.20.8 compatability (Fixing error "Argument 'port_type_id' of value NULL is invalid (format error)")
+*
 */
 
 
@@ -292,18 +295,18 @@ function Update()
 			if ($facter['is_virtual']=="false")
 			{
 				// Find 1000Base-T id
-				$query = "select dict_key from Dictionary where dict_value REGEXP '^ *1000Base-T$' LIMIT 1";
+				$query = "select id from PortOuterInterface where oif_name REGEXP '^ *1000Base-T$' LIMIT 1";
 			}
 			else
 			{
 				// Find virtual port id
-				$query = "select dict_key from Dictionary where dict_value REGEXP '^ *virtual port$' LIMIT 1";
+				$query = "select id from PortOuterInterface where oif_name REGEXP '^ *virtual port$' LIMIT 1";
 			}
 			unset($result);
 			$result = usePreparedSelectBlade ($query);
 			$resultarray = $result->fetchAll (PDO::FETCH_ASSOC);
 			if($resultarray) {
-				$nictypeid=$resultarray[0]['dict_key'];
+				$nictypeid=$resultarray[0]['id'];
 			}
 	
 			// Remove newline from ip
