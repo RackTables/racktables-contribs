@@ -1,0 +1,65 @@
+fingtab racktables plugin
+-------------------------
+
+Author: Florian Pfaff (pfaffflo@gmx.de)
+
+
+Overview
+-------
+Scan remote networks which use different DNS servers and cannot be pinged.
+This plugin uses Overlook Fing on an SSH host to scan remote networks.
+
+It shows, which hosts are up and allows to import remote dns names.
+In addition the mac address and the vendor name is displayed.
+
+Installation
+------------
+1. copy the php file into the racktables plugin directory
+2. make sure overlook fing (http://www.overlooksoft.com/download) is installed on the remote host
+3. make sure you have an ssh key on the racktables host which you can use
+   to log into the remote host to run fing
+4. add path to ssh binary to secret.php
+5. add connection information for the networks you want to scan to secret.php
+
+
+Configuration
+-------------
+The following variables have to been set in secret.php
+
+$FING_ssh_binary
+The ssh binary which the plugin should use to connect to the remote system
+
+>> $FING_ssh_binary = "/usr/bin/ssh";
+
+
+$FING_settings
+two dimensional array which contains the connection details for the networks
+The first key indicates the network for which the settings are, the second keys define the connection details
+
+    Network Format:
+        IPv4addr/CIDR   1.2.3.4/24
+
+    Connection Details
+
+        Key         Example         Type        Description
+        gateway     1.2.3.4         string      The IP or hostname of the SSH host on which fing is installed
+        user        myuser          string      user name used to authenticate with the SSH host
+        sudo        TRUE            boolean     True is sudo should be used to run fing. The sudo command is not allowed to require a password
+        id_file     /rsssh/id_rsa   string      private key used to authenticate with the SSH host
+
+
+Example Configuration
+---------------------
+
+$FING_ssh_binary = "/usr/bin/ssh";
+$FING_settings = array(
+    "192.168.123.0/24" => array(
+        "gateway" => "192.168.123.100",
+        "user" => "pi",
+        "sudo" => TRUE,
+        "id_file" => "/var/www/.ssh/id_rsa"
+    )
+)
+
+
+
