@@ -21,6 +21,7 @@
  *		- create ports
  *		- add and bind ip addresses
  *		- create as new object
+ *		- save snmp settings per object (uses comment field)
  *
  *	Known to work with:
  *		- Enterasys SecureStacks, S-Series
@@ -71,6 +72,8 @@
  *  - correct iif_name display if != 1
  *
  *  - set more Object attributs / fields
+ *
+ *  - Input variables exceeded 1000
  *
  */
 
@@ -779,6 +782,68 @@ function snmpgeneric_tabhandler($object_id) {
 		}
 	}
 
+	// save snmp settings
+	if(isset($_POST['save']) && $_POST['save'] == "1")
+	{
+		// TODO save only on success !!
+
+		$object = spotEntity('object', $object_id);
+
+		$snmpvalues[0] = 'SNMP';
+		$snmpnames = array('host', 'version', 'community');
+		if($_POST['version'] == "3")
+			$snmpnames = array_merge($snmpnames, array('sec_level','auth_protocol','auth_passphrase','priv_protocol','priv_passphrase'));
+
+		foreach($snmpnames as $key => $value)
+		{
+			if(isset($_POST[$value]))
+			{
+				switch($value)
+				{
+					case "auth_passphrase":
+					case "priv_passphrase":
+						$snmpvalues[$key + 1] = base64_encode($_POST[$value]);
+						break;
+
+					default: $snmpvalues[$key + 1] = $_POST[$value];
+				}
+			}
+		}
+
+	//	sg_var_dump_html($snmpvalues);
+
+		$newsnmpstr = implode($snmpvalues,":");
+
+		$snmpstr = strtok($object['comment'],"\n\r");
+
+		$snmpstrarray = explode(':', $snmpstr);
+
+		$setcomment = "set";
+                if($snmpstrarray[0] == "SNMP")
+		{
+			if($newsnmpstr == $snmpstr)
+				$setcomment = "ok";
+			else
+				$setcomment = "update";
+		}
+
+		if($setcomment != "ok")
+		{
+
+			if($setcomment == "update")
+				$comment = str_replace($snmpstr,$newsnmpstr, $object['comment']);
+			else
+				$comment = "$newsnmpstr\n".$object['comment'];
+
+		//	echo "$snmpnewstr ".$object['comment']." --> $comment";
+
+			commitUpdateObject($object_id, $object['name'], NULL, $object['has_problems'], NULL, $comment );
+			showNotice("$setcomment SNMP Settings: $newsnmpstr");
+
+		}
+
+	}
+
 	if(isset($_POST['snmpconfig']) && $_POST['snmpconfig'] == '1') {
 		snmpgeneric_list($object_id);
 	} else {
@@ -879,7 +944,41 @@ function snmpgeneric_snmpconfig($object_id) {
 	/* ask for ip/host name on submit see js checkInput() */
 	$endpoints['-1'] = 'ask me';
 
-	$snmpconfig = $_POST;
+	// saved snmp settings
+	$snmpstr = strtok($object['comment'],"\n\r");
+	$snmpstrarray = explode(':', $snmpstr);
+
+	if($snmpstrarray[0] == "SNMP")
+	{
+		$snmpnames = array('SNMP','host', 'version', 'community');
+		if($snmpstrarray[2] == "3")
+			$snmpnames = array_merge($snmpnames, array('sec_level','auth_protocol','auth_passphrase','priv_protocol','priv_passphrase'));
+
+		$snmpvalues = array();
+		foreach($snmpnames as $key => $value)
+		{
+			if(isset($snmpstrarray[$key]))
+			{
+				switch($key)
+				{
+					case 6:
+					case 8:
+						$snmpvalues[$value] = base64_decode($snmpstrarray[$key]);
+						break;
+
+					default: $snmpvalues[$value] = $snmpstrarray[$key];
+				}
+			}
+		}
+
+		unset($snmpvalues['SNMP']);
+
+		$snmpconfig = $snmpvalues;
+	}
+	else
+		$snmpconfig = array();
+
+	$snmpconfig += $_POST;
 
 	if(!isset($snmpconfig['host'])) {
 		$snmpconfig['host'] = -1;
@@ -935,6 +1034,9 @@ function snmpgeneric_snmpconfig($object_id) {
 	if(!isset($snmpconfig['object_asset_no']))
 		$snmpconfig['object_asset_no'] = NULL;
 
+	if(!isset($snmpconfig['save']))
+		$snmpconfig['save'] = true;
+
 //	sg_var_dump_html($snmpconfig);
 
 //	$snmpv3displaystyle = ($snmpconfig['version'] == "3" ? "style=\"\"" : "style=\"display:none;\"");
@@ -945,7 +1047,8 @@ function snmpgeneric_snmpconfig($object_id) {
         echo '<table cellspacing=0 cellpadding=5 align=center class=widetable>
 	<tr><th class=tdright>Host:</th><td>';
 
-	if($snmpconfig['asnewobject'] == '1')
+	//if($snmpconfig['asnewobject'] == '1' )
+	if($snmpconfig['host'] != '-1' and !isset($endpoints[$snmpconfig['host']]))
 		$endpoints[$snmpconfig['host']] = $snmpconfig['host'];
 
 	echo getSelect ($endpoints, array ('id' => 'host','name' => 'host'), $snmpconfig['host'], FALSE);
@@ -1028,6 +1131,12 @@ function snmpgeneric_snmpconfig($object_id) {
 	<tr name="newobject" style="display:none;">
 	<th class=tdright>Asset tag:</th><td class=tdleft><input type=text name=object_asset_no value='.$snmpconfig['object_asset_no'].'></td></tr>
 
+	<tr>
+		<th></th>
+		<td class=tdleft>
+		<input name=save id=save type=checkbox value=1'.($snmpconfig['save'] == '1' ? ' checked="checked"' : '').'>
+		<label>Save SNMP settings for object</label></td>
+	</tr>
 	<td colspan=2>
 
         <input type=hidden name=snmpconfig value=1>
