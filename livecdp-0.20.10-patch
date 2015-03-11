@@ -1,0 +1,35 @@
+--- /var/www/RackTables-0.20.10/wwwroot/inc/interface.php	2013-04-14 21:27:19.000000000 +0100
++++ /var/www/RackTables-0.20.10/wwwroot/inc/interface.php	2013-04-17 10:33:35.261661075 +0100
+
+@@ -8292,7 +8292,7 @@
+ 	$myports = array();
+ 	foreach ($mydevice['ports'] as $port)
+ 		if (mb_strlen ($port['name']))
+-			$myports[$port['name']][] = $port;
++			$myports[mb_strtolower($port['name'])][] = $port;
+ 
+ 	// scroll to selected port
+ 	if (isset ($_REQUEST['hl_port_id']))
+@@ -8340,12 +8340,12 @@
+ 				// get list of ports that have name matching CDP portname
+ 				$remote_ports = array(); // list of remote (by DP info) ports
+ 				foreach ($dp_remote_object['ports'] as $port)
+-					if ($port['name'] == $dp_neighbor['port'])
++					if (mb_strtolower($port['name']) == $dp_neighbor['port'])
+ 					{
+ 						$portinfo_remote = $port;
+ 						$remote_ports[] = $port;
+ 					}
+ 
+ 				// check if ports with such names exist on devices
+ 				if (empty ($local_ports))
+ 				{
+@@ -8366,7 +8366,7 @@
+ 						if
+ 						(
+ 							$portinfo_local['remote_object_id'] == $dp_remote_object_id
+-							and $portinfo_local['remote_name'] == $dp_neighbor['port']
++							and mb_strtolower($portinfo_local['remote_name']) == $dp_neighbor['port']
+ 						)
+ 						{
+ 							// set $portinfo_remote to corresponding remote port
