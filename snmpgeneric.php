@@ -74,6 +74,7 @@
  *  - set more Object attributs / fields
  *
  *  - Input variables exceeded 1000
+ *  - update iftypes
  *
  */
 
@@ -1299,7 +1300,7 @@ function snmpgeneric_list($object_id) {
 
 	/* needs PHP >= 5 foreach call by reference */
 	/* php 5.1.6 doesn't seem to work */
-	//foreach($sysObjectID['attr'] as $attr_id => &$attr) {
+	//foreach($sysObjectID['attr'] as $attr_id => &$attr)
 	foreach($sysObjectID['attr'] as $attr_id => $value) {
 
 		$attr = &$sysObjectID['attr'][$attr_id];
@@ -1589,7 +1590,7 @@ function snmpgeneric_list($object_id) {
 	}
 
 
-	echo "<br><br>ifNumber: ".$ifsnmp->ifNumber."<br><table><tbody valign=\"top\">";
+	echo "<br><br>ifNumber: ".$ifsnmp->ifNumber."<br>indexcount: ".$ifsnmp->indexcount."<br><table><tbody valign=\"top\">";
 
 	$portcompat = getPortInterfaceCompat();
 
@@ -1634,8 +1635,6 @@ function snmpgeneric_list($object_id) {
 			$ifPhysAddress = $ifsnmp->ifPhysAddress($if);
 
 			$l2port =  sg_checkL2Address($ifPhysAddress);
-
-			//if(alreadyUsedL2Address($ifPhysAddress, $object_id)) {
 
 			if(!empty($l2port)) {
 				$l2object_id = key($l2port);
@@ -1854,7 +1853,7 @@ function snmpgeneric_list($object_id) {
 
 	echo '<tr><td colspan=15 align="right"><p><input id="createbutton" type=submit value="Create Ports and IPs" onclick="return confirm(\'Create selected items?\')"></p></td></tr></tbody></table></form>';
 
-}
+} // END function  snmpgeneric_list
 
 /* -------------------------------------------------- */
 function snmpgeneric_opcreate() {
@@ -2480,6 +2479,7 @@ class mySNMP extends SNMPgeneric implements Iterator {
 class ifSNMP implements Iterator {
 	private $snmpdevice;
 	private $ifNumber = 0;
+	private $indexcount = 0;
 	private $ifTable;
 
 	private $interfaceserror = TRUE;
@@ -2498,6 +2498,9 @@ class ifSNMP implements Iterator {
 
 	function getifTable() {
 		$this->ifTable['ifIndex'] = $this->snmpdevice->walk('ifIndex',TRUE);
+
+		$this->indexcount = count($this->ifTable['ifIndex']);
+
 		$this->ifTable['ifDescr'] = $this->snmpdevice->walk('ifDescr',TRUE);
 		$this->ifTable['ifAlias'] = $this->snmpdevice->walk('ifAlias',TRUE);
 		$this->ifTable['ifName'] =  $this->snmpdevice->walk('ifName',TRUE);
@@ -2747,6 +2750,7 @@ class ifSNMP implements Iterator {
 
 		switch($name) {
 			case 'ifNumber':
+			case 'indexcount':
 				return $this->{$name};
 				break;
 			case 'ipaddress':
@@ -2807,7 +2811,7 @@ class ifSNMP implements Iterator {
 	}
 
 	function valid() {
-		return ($this->IteratorIndex<=$this->ifNumber);
+		return ($this->IteratorIndex<=$this->indexcount);
 	}
 
 	function rewind() {
