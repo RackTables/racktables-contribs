@@ -1596,7 +1596,7 @@ function snmpgeneric_list($object_id) {
 
 	$ipnets = array();
 
-	$ifsnmp->printifInfoTableHeader("<th>add ip</th><th>add port</th><th title=\"update mac\">upd mac</th><th>porttypeid</th><th>comment</th></tr>");
+	$ifsnmp->printifInfoTableHeader("<th>add ip</th><th>add port</th><th title=\"update mac\">upd mac</th><td>upd port type</th><th>porttypeid</th><th>comment</th></tr>");
 
 	echo '<tr><td colspan="11"></td>
 		<td><input type="checkbox" id="ipaddr" onclick="setchecked(this.id)">IPv4<br>
@@ -1610,6 +1610,7 @@ function snmpgeneric_list($object_id) {
 		$disableport = FALSE;
 		$ignoreport = FALSE;
 		$port_info = NULL;
+		$updateporttype = false;
 
 		$updatemaccheckbox = '';
 
@@ -1682,6 +1683,18 @@ function snmpgeneric_list($object_id) {
 			$comment .= ", ignore if type";
 			$createport = FALSE;
 			$ignoreport = TRUE;
+		}
+		else
+		{
+			if($port_info)
+			{
+				$ptid = $port_info['iif_id']."-".$port_info['oif_id'];
+				if($porttypeid != $ptid)
+				{
+					$comment .= ", Update Type $ptid -> $porttypeid";
+					$updateporttype = true;
+				}
+			}
 		}
 
 		/* ignore ports without an Connector */
@@ -1832,14 +1845,22 @@ function snmpgeneric_list($object_id) {
 
 		$selectoptions = array('name' => "porttypeid[$if]");
 
-		if($disableport)
+		if($disableport && !$updateporttype)
 			$selectoptions['disabled'] = "disabled";
+
+		$updateporttypecheckbox = "";
+
+
+		if($updateporttype)
+			$updateporttypecheckbox = '<b style="background-color:#00ff00;">'
+					.'<input class="porttype" style="background-color:#00ff00;" type="checkbox" name="updateporttype['.$if.']" value="'
+					.$port_info['id'].($updateporttype ? '" checked="checked"' : '' ).'></b>';
 
 		$porttypeidselect = getNiftySelect($newporttypeoptions, $selectoptions, $porttypeid);
 
 		$comment = trim($comment,', ');
 
-		$ifsnmp->printifInfoTableRow($if,"<td>$ipaddrcell</td><td>$portcreatecheckbox</td><td>$updatemaccheckbox</td><td>$porttypeidselect</td><td nowrap=\"nowrap\">$comment</td>", $hrefs);
+		$ifsnmp->printifInfoTableRow($if,"<td>$ipaddrcell</td><td>$portcreatecheckbox</td><td>$updatemaccheckbox</td><td>$updateporttypecheckbox</td><td>$porttypeidselect</td><td nowrap=\"nowrap\">$comment</td>", $hrefs);
 
 	}
 	unset($if);
@@ -1959,6 +1980,21 @@ function snmpgeneric_opcreate() {
 	}
 	/* updatemac */
 
+	/* update port type */
+	if(isset($_POST['updateporttype'])) {
+		foreach($_POST['updateporttype'] as $if => $port_id) {
+
+			$porttypeid = (isset($_POST['porttypeid'][$if]) ? trim($_POST['porttypeid'][$if]) : '' );
+
+			sg_commitUpdatePortType($object_id, $port_id, $porttypeid);
+
+			$ifName = (isset($_POST['ifName'][$if]) ? trim($_POST['ifName'][$if]) : '' );
+			showSuccess("port type updated on $ifName");
+		}
+		unset($if);
+		unset($port_id);
+	}
+	/* updateporttype */
 } /* snmpgeneric_opcreate */
 
 /* -------------------------------------------------- */
@@ -2110,6 +2146,31 @@ function sg_commitUpdatePortl2address($object_id, $port_id, $port_l2address)
         $dbxlink->exec ('UNLOCK TABLES');
 } /* sg_commitUpdatePortl2address */
 
+/* --------------------------------------------------- */
+
+function sg_commitUpdatePortType($object_id, $port_id, $porttypeid)
+{
+	global $dbxlink;
+
+	list($iif_id, $type) = explode("-",$porttypeid);
+
+        $dbxlink->exec ('LOCK TABLES Port WRITE');
+        usePreparedUpdateBlade
+        (
+                'Port',
+                array
+                (
+                        'iif_id' => ($iif_id === '') ? NULL : $iif_id,
+			'type' => ($type === '') ? NULL : $type
+                ),
+                array
+                (
+                        'id' => $port_id,
+                        'object_id' => $object_id
+                )
+        );
+        $dbxlink->exec ('UNLOCK TABLES');
+} /* sg_commitUpdatePortType */
 /* ----------------------------------------------------- */
 
 /* returns object_id and port_id to a given l2address */
