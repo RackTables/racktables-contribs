@@ -152,6 +152,17 @@ Usage:
  OBJECTIP;myRouter;eth0;10.1.3.1;regular
  Creates an IP interface name eth0, with address 10.1.3.1 and type 'regular', which is added to the myRouter object.
 
+* Setting Object Attributes:
+ 
+  Syntax: OBJECTATTRIBUTE
+  Value 1, OBJECTATTRIBUTE
+  Value 2, Objectname: Specifies the name of the object
+  Value 3, attribute id
+  Value 4, attribute value
+
+  Examples:
+  OBJECTATTRIBUTE;myRouter;3,mgmt.myrouter.com
+  Sets the FQDN (3)  for the myRouter object.
 -----------------------------------------
 */
 
@@ -245,7 +256,7 @@ function deleteData()
 		showNotice ("Deleting from manual input field");
 		foreach ($data as $dataitem) 
 		{
-			$csvdata = str_getcsv($dataitem,";");
+			$csvdata = str_getcsv($dataitem,";","B");
 			addServerObject($csvdata,$row);
 			$row++;
 		}
@@ -279,6 +290,7 @@ function importData()
 				if ($csvdata[0] == "CABLELINK") 		addCableLink($csvdata,$row_number);
 				if ($csvdata[0] == "IP") 				addIP($csvdata,$row_number);
 				if ($csvdata[0] == "OBJECTIP") 			addObjectIP($csvdata,$row_number);
+				if ($csvdata[0] == "OBJECTATTRIBUTE") 	setObjectAttributes($csvdata,$row_number);
 				$row_number++;
 			}
 			fclose($handle);
@@ -295,7 +307,7 @@ function importData()
 		showNotice ("Importing from manual input field");
 		foreach ($data as $dataitem) 
 		{
-			$csvdata = str_getcsv($dataitem,";");
+			$csvdata = str_getcsv($dataitem,";","B");
 			$csvdata[0] = trim($csvdata[0]);
 			if ($csvdata[0] == "OBJECT") 			addObject($csvdata,$row_number);
 			if ($csvdata[0] == "RACK")				addRackImport($csvdata,$row_number);
@@ -304,6 +316,7 @@ function importData()
 			if ($csvdata[0] == "CABLELINK") 		addCableLink($csvdata,$row_number);
 			if ($csvdata[0] == "IP") 				addIP($csvdata,$row_number);
 			if ($csvdata[0] == "OBJECTIP") 			addObjectIP($csvdata,$row_number);
+			if ($csvdata[0] == "OBJECTATTRIBUTE") 	setObjectAttributes($csvdata,$row_number);
 			$row_number++;
 		}		
 	}
@@ -754,5 +767,28 @@ function addObjectIP($csvdata,$row_number)
 		showError("Line $row_number: IP interface, Object " .$objectName. " does not exist. Import FAILED.");
 	}
 }	
+
+// This function adds Rack assignment info for an object
+function setObjectAttributes($csvdata,$row_number) 
+{
+
+	$object = 	trim ($csvdata[1]);
+	$attr_id = 	trim ($csvdata[2]);
+	$attr_value = trim ($csvdata[3]);
+	
+	if (strlen($object ) > 0) 
+	{
+
+		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id from Object where Object.name='".$object."';");
+		$db_object = $result->fetch (PDO::FETCH_ASSOC);
+
+		// Go ahead when object exists
+		if ($db_object) 
+		{
+			commitUpdateAttrValue ($db_object['id'], $attr_id, $attr_value);
+			showSuccess("line $row_number: attribute for  ".$object. ": ".$attr_id." ".$attr_value." updated");	
+		}
+	}
+}
 
 ?>
