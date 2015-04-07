@@ -612,6 +612,18 @@ function addCableLink($csvdata,$row_number)
 		return FALSE;
 	}
 
+	// Check if port types are compatible
+	// Prevent SQL LOCK TABLES errors
+	$port1 = getPortInfo($db_result_a['id']);
+	$port2 = getPortInfo($db_result_b['id']);
+
+	if (!arePortTypesCompatible($port1['oif_id'], $port2['oif_id']))
+	{
+		showError("line $row_number: Import CableLink $cable_id FAILED; The porttypes mismatch $object_a $port_a -> $object_b $port_b. ".$port1['oif_name']." != ".$port2['oif_name']);
+		return FALSE;
+	}
+
+
 	// Create Link
 	try 
 	{
