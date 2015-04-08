@@ -792,7 +792,7 @@ function snmpgeneric_tabhandler($object_id) {
 
 		$snmpvalues[0] = 'SNMP';
 		$snmpnames = array('host', 'version', 'community');
-		if($_POST['version'] == "3")
+		if($_POST['version'] == "v3")
 			$snmpnames = array_merge($snmpnames, array('sec_level','auth_protocol','auth_passphrase','priv_protocol','priv_passphrase'));
 
 		foreach($snmpnames as $key => $value)
@@ -869,7 +869,7 @@ function snmpgeneric_snmpconfig($object_id) {
 
 	addJS('function showsnmpv3(element) {
 				var style;
-				if(element.value != \''.SNMPgeneric::VERSION_3.'\') {
+				if(element.value != \'v3\') {
 					style = \'none\';
 					document.getElementById(\'snmp_community_label\').style.display=\'\';
 				} else {
@@ -951,8 +951,23 @@ function snmpgeneric_snmpconfig($object_id) {
 
 	if($snmpstrarray[0] == "SNMP")
 	{
+		/* keep it compatible with older version */
+		switch($snmpstrarray[2])
+		{
+			case "1":
+				$snmpstrarray[2] = 'v1';
+				break;
+			case "2":
+			case "v2C":
+				$snmpstrarray[2] = 'v2c';
+				break;
+			case "3":
+				$snmpstrarray[2] = 'v3';
+				break;
+		}
+
 		$snmpnames = array('SNMP','host', 'version', 'community');
-		if($snmpstrarray[2] == "3")
+		if($snmpstrarray[2] == "v3")
 			$snmpnames = array_merge($snmpnames, array('sec_level','auth_protocol','auth_passphrase','priv_protocol','priv_passphrase'));
 
 		$snmpvalues = array();
@@ -1059,7 +1074,7 @@ function snmpgeneric_snmpconfig($object_id) {
                 <th class=tdright><label for=snmpversion>Version:</label></th>
                 <td class=tdleft>';
 
-	echo getSelect (array(SNMPgeneric::VERSION_1 => 'v1', SNMPgeneric::VERSION_2C => 'v2c', SNMPgeneric::VERSION_3 => 'v3'),
+	echo getSelect (array("v1" => 'v1', "v2c" => 'v2c', "v3" => 'v3'),
 			 array ('name' => 'version', 'id' => 'snmpversion', 'onchange' => 'showsnmpv3(this)'),
 			 $snmpconfig['version'], FALSE);
 
@@ -1176,7 +1191,7 @@ function snmpgeneric_list($object_id) {
 
 	$snmpdev = new mySNMP($snmpconfig['version'], $snmpconfig['host'], $snmpconfig['community']);
 
-	if($snmpconfig['version'] == SNMPgeneric::VERSION_3 ) {
+	if($snmpconfig['version'] == "v3" ) {
 		$snmpdev->setSecurity( $snmpconfig['sec_level'],
 					$snmpconfig['auth_protocol'],
 					$snmpconfig['auth_passphrase'],
@@ -1194,7 +1209,7 @@ function snmpgeneric_list($object_id) {
 
 	/* SNMP connect successfull */
 
-	showSuccess("SNMP v".$snmpconfig['version']." connect to ${snmpconfig['host']} successfull");
+	showSuccess("SNMP ".$snmpconfig['version']." connect to ${snmpconfig['host']} successfull");
 
 	echo '<form name=CreatePorts method=post action='.$_SERVER['REQUEST_URI'].'&module=redirect&op=create>';
 
@@ -2237,8 +2252,9 @@ class SNMPgeneric {
 //	protected $contextName;
 //	protected $contextEngineID;
 
-	const VERSION_1 = 1;
-	const VERSION_2C = 2;
+	const VERSION_1 = 0;
+	const VERSION_2C = 1;
+	const VERSION_2c = 1;
 	const VERSION_3 = 3;
 
 	protected $result;
@@ -2246,6 +2262,7 @@ class SNMPgeneric {
 	function __construct($version, $host, $community) {
 
 		$this->host = $host;
+
 		$this->version = $version;
 		$this->community = $community;
 
@@ -2258,6 +2275,35 @@ class SNMPgeneric {
 		$this->auth_passphrase = $auth_passphrase;
 		$this->priv_protocol = $priv_protocol;
 		$this->priv_passphrase = $priv_passphrase;
+
+		return true;
+	}
+
+	function __set($name, $value)
+	{
+		switch($name)
+		{
+			case 'quick_print':
+				snmp_set_quick_print($value);
+				break;
+			case 'oid_output_format':
+				snmp_set_oid_output_format($value);
+				break;
+			case 'enum_print':
+				snmp_set_enum_print($value);
+				break;
+			case 'valueretrieval':
+				snmp_set_valueretrieval($value);
+				break;
+			default:
+				$trace = debug_backtrace();
+				trigger_error(
+					'Undefined property via __set(): ' . $name .
+					' in ' . $trace[0]['file'] .
+					' on line ' . $trace[0]['line'],
+					E_USER_NOTICE);
+				return null;
+		}
 	}
 
 	function walk( $oid, $suffix_as_key = FALSE) {
@@ -2272,6 +2318,7 @@ class SNMPgeneric {
 				break;
 
 			case self::VERSION_2C:
+			case self::VERSION_2c:
 				if($suffix_as_key){
 					$this->result = snmp2_walk($this->host,$this->community,$oid);
 				} else {
@@ -2302,6 +2349,7 @@ class SNMPgeneric {
 				break;
 
 			case self::VERSION_2C:
+			case self::VERSION_2c:
 				$retval = snmp2_get($this->host,$this->community,$object_id);
 				break;
 
@@ -2368,7 +2416,7 @@ class SNMPgeneric {
  */
 class mySNMP extends SNMPgeneric implements Iterator {
 
-	const SNMP_VERSION = SNMPgeneric::VERSION_2C;
+	const SNMP_VERSION = parent::VERSION_2C;
 	const SNMP_COMMUNITY = 'public';
 
 	public $lastgetoid;
@@ -2380,12 +2428,31 @@ class mySNMP extends SNMPgeneric implements Iterator {
 	private $systemerror = TRUE;
 
 	function __construct($version, $host, $community) {
+
+		switch($version)
+		{
+			case '1':
+			case 'v1':
+				$version = parent::VERSION_1;
+				break;
+			case '2':
+			case 'v2C':
+			case 'v2c':
+				$version = parent::VERSION_2c;
+				break;
+			case '3':
+			case 'v3':
+				$version = parent::VERSION_3;
+				break;
+		};
+
 		parent::__construct($version, $host, $community);
 
 		//snmp_set_valueretrieval(SNMP_VALUE_LIBRARY);
 
 		/* Return values without SNMP type hint */
-		snmp_set_valueretrieval(SNMP_VALUE_PLAIN);
+		//snmp_set_valueretrieval(SNMP_VALUE_PLAIN);
+		$this->valueretrieval = SNMP_VALUE_PLAIN;
 
 		/* needs php >= 5.2.0 */
 	//	snmp_set_oid_output_format(SNMP_OID_OUTPUT_FULL);
