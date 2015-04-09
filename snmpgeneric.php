@@ -1923,7 +1923,8 @@ function snmpgeneric_opcreate() {
 			$ifAlias = (isset($_POST['ifAlias'][$if]) ? trim($_POST['ifAlias'][$if]) : '' );
 			$ifDescr = (isset($_POST['ifDescr'][$if]) ? trim($_POST['ifDescr'][$if]) : '' );
 
-			$visible_label = (empty($ifAlias) ? '' : $ifAlias.'; ').$ifDescr;
+			//$visible_label = (empty($ifAlias) ? '' : $ifAlias.'; ').$ifDescr;
+			$visible_label = $ifAlias;
 
 			if(empty($ifName)) {
 				showError('Port without ifName '.$_POST['porttypeid'][$if].', '.$visible_label.', '.$ifPhysAddress);
