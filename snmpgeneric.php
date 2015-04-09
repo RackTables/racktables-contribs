@@ -85,7 +85,7 @@ require_once('inc/snmp.php');
 
 $tab['object']['snmpgeneric'] = 'SNMP Generic sync';
 $tabhandler['object']['snmpgeneric'] = 'snmpgeneric_tabhandler';
-//$trigger['object']['snmpgeneric'] = 'snmpgeneric_tabtrigger';
+$trigger['object']['snmpgeneric'] = 'snmpgeneric_tabtrigger';
 
 $ophandler['object']['snmpgeneric']['create'] = 'snmpgeneric_opcreate';
 
@@ -854,9 +854,10 @@ function snmpgeneric_tabhandler($object_id) {
 
 /* -------------------------------------------------- */
 
-//function snmpgeneric_tabtrigger() {
-//     return 'std';
-//} /* snmpgeneric_tabtrigger */
+function snmpgeneric_tabtrigger() {
+	// display tab only on IPv4 Objects
+	return considerConfiguredConstraint (spotEntity ('object', getBypassValue()), 'IPV4OBJ_LISTSRC') ? 'std' : '';
+} /* snmpgeneric_tabtrigger */
 
 /* -------------------------------------------------- */
 
