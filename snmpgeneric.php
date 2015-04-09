@@ -2037,6 +2037,22 @@ function guessRToif_id($ifType,$ifDescr = NULL) {
 
 	/* try to identify outer and inner interface type from ifDescr */
 
+	switch(true)
+	{
+		case preg_match('/fast.?ethernet/i',$ifDescr,$matches):
+			// Fast Ethernet
+			$retval = 19;
+			break;
+		case preg_match('/10.?gigabit.?ethernet/i',$ifDescr,$matches):
+			// 10-Gigabit Ethernet
+			$retval = 1642;
+			break;
+		case preg_match('/gigabit.?ethernet/i',$ifDescr,$matches):
+			// Gigabit Ethernet
+			$retval = 24;
+			break;
+	}
+
 	/**********************
 	 * ifDescr samples
 	 *
