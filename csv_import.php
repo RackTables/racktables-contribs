@@ -538,6 +538,12 @@ function addRackImport($csvdata,$row_number)
 			$rack_id = commitAddObject ($rack, "", 1560, "", array());	// Object type 1560 = rack		
 			commitLinkEntities ('row', $rackrow_id  , 'rack', $rack_id );
 			commitUpdateAttrValue ($rack_id, 27, $rack_height);		// attribute type 27 = height
+
+			// The new rack(s) should be placed on the bottom of the list, sort-wise
+			$rowInfo = getRowInfo($rackrow_id);
+			$sort_order = $rowInfo['count']+1;
+			commitUpdateAttrValue ($rack_id, 29, $sort_order);
+
 			showSuccess ("Line $row_number: Rack ".$rack. " imported; object_id=".$rack_id);
 		}
 			
