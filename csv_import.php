@@ -420,11 +420,10 @@ function addObject($csvdata,$row_number)
 
 function addRackImport($csvdata,$row_number) 
 {
-
-	$location = 		$csvdata[1];
-	$location_child = 	$csvdata[2];
-	$rackrow = 			$csvdata[3];
-	$rack = 			$csvdata[4];
+	$location = 		trim($csvdata[1]);
+	$location_child = 	trim($csvdata[2]);
+	$rackrow = 			trim($csvdata[3]);
+	$rack = 			trim($csvdata[4]);
 	if (!isset($csvdata[5])) 
 		$rack_height = 46;
 	else
