@@ -256,7 +256,7 @@ function deleteData()
 		showNotice ("Deleting from manual input field");
 		foreach ($data as $dataitem) 
 		{
-			$csvdata = str_getcsv($dataitem,";","B");
+			$csvdata = str_getcsv($dataitem,";");
 			addServerObject($csvdata,$row);
 			$row++;
 		}
@@ -307,7 +307,7 @@ function importData()
 		showNotice ("Importing from manual input field");
 		foreach ($data as $dataitem) 
 		{
-			$csvdata = str_getcsv($dataitem,";","B");
+			$csvdata = str_getcsv($dataitem,";");
 			$csvdata[0] = trim($csvdata[0]);
 			if ($csvdata[0] == "OBJECT") 			addObject($csvdata,$row_number);
 			if ($csvdata[0] == "RACK")				addRackImport($csvdata,$row_number);
