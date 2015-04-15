@@ -157,11 +157,11 @@ Usage:
   Syntax: OBJECTATTRIBUTE
   Value 1, OBJECTATTRIBUTE
   Value 2, Objectname: Specifies the name of the object
-  Value 3, attribute id
-  Value 4, attribute value
+  Value 3, attribute id: Specifies the numeric ID of the attribute (can be looked up in Attribute table)
+  Value 4, attribute value; Specificies the value to be set for the attribute
 
   Examples:
-  OBJECTATTRIBUTE;myRouter;3,mgmt.myrouter.com
+  OBJECTATTRIBUTE;myRouter;3;mgmt.myrouter.com
   Sets the FQDN (3)  for the myRouter object.
 -----------------------------------------
 */
