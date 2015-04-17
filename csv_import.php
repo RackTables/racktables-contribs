@@ -163,6 +163,18 @@ Usage:
   Examples:
   OBJECTATTRIBUTE;myRouter;3;mgmt.myrouter.com
   Sets the FQDN (3)  for the myRouter object.
+
+* Creating Container Link:
+
+  Syntax: CONTAINERLINK
+  Value 1, CONTAINERLINK
+  Value 2, Parent Object Name : Specificy the name of the Parent Object (eg. Hypervisor Server)
+  Value 3, Child Object Name : Specify the name of the Child Object (eg. VM)
+
+  Examples:
+  CONTAINERLINK;ESX_Host1;VM_1
+  Adds VM_1 as a member of the Container ESX_Host1
+
 -----------------------------------------
 */
 
@@ -291,6 +303,7 @@ function importData()
 				if ($csvdata[0] == "IP") 				addIP($csvdata,$row_number);
 				if ($csvdata[0] == "OBJECTIP") 			addObjectIP($csvdata,$row_number);
 				if ($csvdata[0] == "OBJECTATTRIBUTE") 	setObjectAttributes($csvdata,$row_number);
+				if ($csvdata[0] == "CONTAINERLINK")		addContainerLink($csvdata,$row_number);
 				$row_number++;
 			}
 			fclose($handle);
@@ -317,6 +330,7 @@ function importData()
 			if ($csvdata[0] == "IP") 				addIP($csvdata,$row_number);
 			if ($csvdata[0] == "OBJECTIP") 			addObjectIP($csvdata,$row_number);
 			if ($csvdata[0] == "OBJECTATTRIBUTE") 	setObjectAttributes($csvdata,$row_number);
+			if ($csvdata[0] == "CONTAINERLINK")		addContainerLink($csvdata,$row_number);
 			$row_number++;
 		}		
 	}
@@ -804,6 +818,41 @@ function setObjectAttributes($csvdata,$row_number)
 		{
 			commitUpdateAttrValue ($db_object['id'], $attr_id, $attr_value);
 			showSuccess("line $row_number: attribute for  ".$object. ": ".$attr_id." ".$attr_value." updated");	
+		}
+	    else
+		{
+			showError("line $row_number: attribute for  ".$object. ": ".$attr_id." ".$attr_value." not updated. Import FAILED.");
+		}
+	}
+}
+
+function addContainerLink($csvdata,$row_number)
+{
+	$parentObjectName = trim ($csvdata[1]);
+	$childObjectName = trim ($csvdata[2]);
+	
+	if ((strlen($parentObjectName) > 0) & (strlen($childObjectName) > 0))
+	{
+	
+		// Check if parent object exists and return object_id
+		$parentResult = usePreparedSelectBlade ("SELECT Object.id from Object where Object.name='".$parentObjectName."';");
+       		$parentDB_object = $parentResult->fetch (PDO::FETCH_ASSOC);
+	
+		// Check if child object exists and return object_id
+		$childResult = usePreparedSelectBlade ("SELECT Object.id from Object where Object.name='".$childObjectName."';");
+		$childDB_object = $childResult->fetch (PDO::FETCH_ASSOC);
+
+		// if both objects exist, create an EntityLink between them
+		if (($parentDB_object) & ($childDB_object))
+		{
+			$object_parent_id = $parentDB_object['id'];
+			$object_child_id = $childDB_object['id'];
+			commitLinkEntities ('object', $object_parent_id , 'object', $object_child_id );
+       		 	showSuccess ("Line $row_number: Added ".$childObjectName. " to parent container ".$parentObjectName.".");
+		}
+		else
+		{
+			showError("Line $row_number: Unable to add ".$childObjectName. " to parent container ".$parentObjectName.". One of the objects does not exist.");
 		}
 	}
 }
