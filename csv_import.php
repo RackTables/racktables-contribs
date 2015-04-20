@@ -44,7 +44,7 @@ Usage:
  Syntax: OBJECT; Objecttype ; Common name ; Visible label ; Asset tag; portname,portname,etc ; porttype,porttype,etc
 
  Value 1, OBJECT
- Value 2, Objectype: Can be one of the predefined types (SERVER, PATCHPANEL,SWITCH), or a numeric value indicating the object type from Racktables
+ Value 2, Objectype: Can be one of the predefined types (SERVER, PATCHPANEL, SWITCH, VM), or a numeric value indicating the object type from Racktables 
  Value 3, Common name: Common name string
  Value 4, Asset tag: Asset tag string
  Value 5, Port array: This is an optional field where you can create ports for the objects, separated by a comma. When you use this , you also need to add the Port type array
@@ -168,12 +168,23 @@ Usage:
 
   Syntax: CONTAINERLINK
   Value 1, CONTAINERLINK
-  Value 2, Parent Object Name : Specificy the name of the Parent Object (eg. Hypervisor Server)
+  Value 2, Parent Object Name : Specify the name of the Parent Object (eg. Hypervisor Server)
   Value 3, Child Object Name : Specify the name of the Child Object (eg. VM)
 
   Examples:
   CONTAINERLINK;ESX_Host1;VM_1
   Adds VM_1 as a member of the Container ESX_Host1
+
+* Object Tags:
+
+  Syntax: OBJECTTAG
+  Value 1, OBJECTTAG
+  Value 2, Object Name : Specify the name of the Object to add the tag to(eg. Server)
+  Value 3, Tag Name : Specify the name of the Tag (eg. VM)
+
+  Examples:
+  OBJECTTAG;Server1;Tag1
+  Adds the tag called Tag1 to server object called Server1
 
 -----------------------------------------
 */
@@ -304,6 +315,7 @@ function importData()
 				if ($csvdata[0] == "OBJECTIP") 			addObjectIP($csvdata,$row_number);
 				if ($csvdata[0] == "OBJECTATTRIBUTE") 	setObjectAttributes($csvdata,$row_number);
 				if ($csvdata[0] == "CONTAINERLINK")		addContainerLink($csvdata,$row_number);
+				if ($csvdata[0] == "OBJECTTAG")			addObjectTag($csvdata,$row_number);
 				$row_number++;
 			}
 			fclose($handle);
@@ -331,6 +343,7 @@ function importData()
 			if ($csvdata[0] == "OBJECTIP") 			addObjectIP($csvdata,$row_number);
 			if ($csvdata[0] == "OBJECTATTRIBUTE") 	setObjectAttributes($csvdata,$row_number);
 			if ($csvdata[0] == "CONTAINERLINK")		addContainerLink($csvdata,$row_number);
+			if ($csvdata[0] == "OBJECTTAG")			addObjectTag($csvdata,$row_number);
 			$row_number++;
 		}		
 	}
@@ -352,6 +365,7 @@ function addObject($csvdata,$row_number)
 	if ($object_type == "SERVER") 		$object_type = 4;
 	if ($object_type == "PATCHPANEL")  	$object_type = 9;
 	if ($object_type == "SWITCH") 		$object_type = 8;
+	if ($object_type == "VM")			$object_type = 1504;
 	if (is_numeric($object_type)) 
 	{
 		$result = usePreparedSelectBlade ("SELECT  Dictionary.dict_value from Dictionary where Dictionary.dict_key=".$object_type.";");
@@ -836,7 +850,7 @@ function addContainerLink($csvdata,$row_number)
 	
 		// Check if parent object exists and return object_id
 		$parentResult = usePreparedSelectBlade ("SELECT Object.id from Object where Object.name='".$parentObjectName."';");
-       		$parentDB_object = $parentResult->fetch (PDO::FETCH_ASSOC);
+       	$parentDB_object = $parentResult->fetch (PDO::FETCH_ASSOC);
 	
 		// Check if child object exists and return object_id
 		$childResult = usePreparedSelectBlade ("SELECT Object.id from Object where Object.name='".$childObjectName."';");
@@ -848,13 +862,45 @@ function addContainerLink($csvdata,$row_number)
 			$object_parent_id = $parentDB_object['id'];
 			$object_child_id = $childDB_object['id'];
 			commitLinkEntities ('object', $object_parent_id , 'object', $object_child_id );
-       		 	showSuccess ("Line $row_number: Added ".$childObjectName. " to parent container ".$parentObjectName.".");
+       		showSuccess ("Line $row_number: Added ".$childObjectName. " to parent container ".$parentObjectName.".");
 		}
 		else
 		{
 			showError("Line $row_number: Unable to add ".$childObjectName. " to parent container ".$parentObjectName.". One of the objects does not exist.");
 		}
 	}
+}
+
+function addObjectTag($csvdata,$row_number)
+{
+	$objectName = trim ($csvdata[1]);
+	$tagName = trim ($csvdata[2]);
+	
+	if ((strlen($objectName) > 0) & (strlen($tagName) > 0))
+	{
+		// Check if object exists and return object_id
+		$objectResult = usePreparedSelectBlade ("SELECT Object.id from Object where Object.name='".$objectName."';");
+		$db_Object = $objectResult->fetch (PDO::FETCH_ASSOC);
+		
+		// Check if tag exists and return tag_id
+		$tagResult = usePreparedSelectBlade ("SELECT TagTree.id from TagTree where TagTree.tag='".$tagName."';");
+		$db_Tag = $tagResult->fetch (PDO::FETCH_ASSOC);
+		
+		// if both the object and the tag exist, create an entry in the TagStorage table
+		if (($db_Object) & ($db_Tag))
+		{
+			$object_id = $db_Object['id'];
+			$tag_id = $db_Tag['id'];
+			addTagForEntity ('object', $object_id, $tag_id );
+			showSuccess ("Line $row_number: Added tag ".$tagName. " to object ".$objectName.".");
+		}
+		else
+		{
+			showError("Line $row_number: Unable to add tag ".$tagName. " to object ".$objectName.". Either the object of the tag does not exist.");
+		}	
+		
+	}	
+	
 }
 
 ?>
