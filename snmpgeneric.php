@@ -1592,7 +1592,7 @@ function snmpgeneric_list($object_id) {
 
 			$netnamefield = '<input type="text" name="netname['.$i.']">';
 
-			$netreservecheckbox = '<input type="checkbox" name="netreserve['.$i.']">';
+			$netreservecheckbox = '<input type="checkbox" name="netreserve['.$i.']" checked="checked">';
 
 			echo "<tr><td>$netcreatecheckbox</td><td style=\"color:#888888\">$addrtype</td><td>$netprefixfield</td><td>$netnamefield</td><td>$netreservecheckbox</td></tr>";
 
