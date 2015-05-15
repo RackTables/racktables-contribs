@@ -922,7 +922,7 @@ function updateIP($csvdata,$row_number)
 	$ipaddress = trim ($csvdata[1]);
 	$name =	trim ($csvdata[2]);
 	$reserved = 	trim ($csvdata[3]);
-	$comment = 	trim ($csvdata[3]);
+	$comment = 	trim ($csvdata[4]);
 
 
 	$ip_bin = ip_parse($ipaddress);
