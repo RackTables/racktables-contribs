@@ -614,14 +614,22 @@ function addRackAssignment($csvdata,$row_number)
 		{
 			for ($i=0 ; $i < count($rackUnits); $i++ ) 
 			{
-				if (strpos($fib[$i],'f') !== false)
-					usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'front', 'state' => 'T', 'object_id' => $db_object['id']));
-				if (strpos($fib[$i],'i') !== false)
-					usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'interior', 'state' => 'T', 'object_id' => $db_object['id']));
-				if (strpos($fib[$i],'b') !== false)
-					usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'rear', 'state' => 'T', 'object_id' => $db_object['id']));
+				try
+				{
+					if (strpos($fib[$i],'f') !== false)
+						usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'front', 'state' => 'T', 'object_id' => $db_object['id']));
+					if (strpos($fib[$i],'i') !== false)
+						usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'interior', 'state' => 'T', 'object_id' => $db_object['id']));
+					if (strpos($fib[$i],'b') !== false)
+						usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'rear', 'state' => 'T', 'object_id' => $db_object['id']));
 				
-				usePreparedDeleteBlade ('RackThumbnail', array ('rack_id' => $db_rack['id']));  //Updates the thumbnail of the rack
+					usePreparedDeleteBlade ('RackThumbnail', array ('rack_id' => $db_rack['id']));  //Updates the thumbnail of the rack
+				}
+				catch(Exception $e)
+				{
+					showWarning("Line $row_number: \"$object\" \"$rack\" ".$fib[$i]." failure. $e");
+					continue;
+				}
 			}
 			showSuccess("line $row_number: Rack Assignment for  ".$object. " successful");
 		}
