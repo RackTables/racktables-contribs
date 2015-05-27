@@ -687,7 +687,7 @@ function addCableLink($csvdata,$row_number)
 		// port already linked
 		if($linkresult)
 		{
-			showError("line $row_number: Import CableLink ". $cable_id." FAILED. $object_a $port_a -> $object_b $port_b \"".$linkresult."\"");
+			showError("line $row_number: Import CableLink ". $cable_id." FAILED. $object_a $port_a -> $object_b $port_b \"".$linkresult."\" Link exists?!");
 			return FALSE;
 		}
 	}
@@ -723,6 +723,7 @@ function addVLAN($csvdata,$row_number)
 	}
 	$domain_id = $db_result['id'];
 
+	$catched = false;
 	// Create VLAN
 	try 
 	{
@@ -731,9 +732,11 @@ function addVLAN($csvdata,$row_number)
 	catch (Exception $e) 
 	{ 
 		showError("line $row_number: Import ". $vlan_name. " vlan_id ".$vlan_id. " FAILED; VLAN already exists");
-		return FALSE;
+		$catched = true;
 	}
-	showSuccess ("Line $row_number: VLAN ".$vlan_name. " imported; vlan_id=".$vlan_id);				
+
+	if(!$catched)
+		showSuccess ("Line $row_number: VLAN ".$vlan_name. " imported; vlan_id=".$vlan_id);
 	
 	// Try to attach VLANs to IP ranges
 	foreach ($ip_ranges as $ip_range)
@@ -748,9 +751,16 @@ function addVLAN($csvdata,$row_number)
 		}
 		if (isset($net['id']))
 		{
-			if (strpos($ip_range,".")) commitSupplementVLANIPv4 ($domain_id."-".$vlan_id, $net['id']);
-			if (strpos($ip_range,":")) commitSupplementVLANIPv6 ($domain_id."-".$vlan_id, $net['id']);
-			showSuccess ("Line $row_number: VLAN ".$vlan_name. " attached to IP range ".$ip_range);
+			try
+			{
+				if (strpos($ip_range,".")) commitSupplementVLANIPv4 ($domain_id."-".$vlan_id, $net['id']);
+				if (strpos($ip_range,":")) commitSupplementVLANIPv6 ($domain_id."-".$vlan_id, $net['id']);
+				showSuccess ("Line $row_number: VLAN ".$vlan_name. " attached to IP range ".$ip_range);
+			}
+			catch (Exception $e)
+			{
+				showWarning ("Line $row_number: VLAN ".$vlan_name. " unable to attach to range $ip_range. $e");
+			}
 		}
 		else 
 		{
