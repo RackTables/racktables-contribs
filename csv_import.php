@@ -685,7 +685,7 @@ function addCableLink($csvdata,$row_number)
 		$linkresult = linkPorts ($db_result_a['id'], $db_result_b['id'], $cable_id);
 
 		// port already linked
-		if($linkresult)
+		if(!is_numeric($linkresult))
 		{
 			showError("line $row_number: Import CableLink ". $cable_id." FAILED. $object_a $port_a -> $object_b $port_b \"".$linkresult."\" Link exists?!");
 			return FALSE;
