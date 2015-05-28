@@ -607,6 +607,7 @@ class sl_ifxsnmp extends SNMP
 		$oid_ifindex = '.1.3.6.1.2.1.2.2.1.1'; // iftable
 		$oid_ifoperstatus = '.1.3.6.1.2.1.2.2.1.8'; //iftable
 		$oid_ifspeed = '.1.3.6.1.2.1.2.2.1.5'; //iftable
+		$oid_ifdescr = '.1.3.6.1.2.1.2.2.1.2'; //iftable
 		$oid_ifhighspeed = '.1.3.6.1.2.1.31.1.1.1.15'; //ifXtable
 		$oid_ifname = '.1.3.6.1.2.1.31.1.1.1.1'; //ifXtable
 		$oid_ifalias = '.1.3.6.1.2.1.31.1.1.1.18'; //ifXtable
@@ -620,6 +621,10 @@ class sl_ifxsnmp extends SNMP
 		}
 
 		$ifname = $this->walk($oid_ifname, TRUE); //ifXtable
+
+		if($ifname == false)
+			$ifname = $this->walk($oid_ifdescr, TRUE); //ifXtable
+
 		$ifalias = $this->walk($oid_ifalias, TRUE); //ifXtable
 
 		$ifspeed = $this->walk($oid_ifspeed, TRUE); //iftable
