@@ -82,7 +82,7 @@ Usage:
  Value 1, RACKASSIGNMENT
  Value 2, Object name: Name of the Racktables object
  Value 3, Rack; NAme of the rack where the object is to be placed.
- Value 4, units: List of units to be assigned to the object. The unit numbers are separated by a comma.
+ Value 4, units: List of units to be assigned to the object. The unit numbers are separated by a comma. 0 for Zero-U.
  Value 5, fib: List of Front / Interior / Back indication. This list maps directly to the previous unit list.
 
  Examples:
@@ -616,12 +616,21 @@ function addRackAssignment($csvdata,$row_number)
 			{
 				try
 				{
-					if (strpos($fib[$i],'f') !== false)
-						usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'front', 'state' => 'T', 'object_id' => $db_object['id']));
-					if (strpos($fib[$i],'i') !== false)
-						usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'interior', 'state' => 'T', 'object_id' => $db_object['id']));
-					if (strpos($fib[$i],'b') !== false)
-						usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'rear', 'state' => 'T', 'object_id' => $db_object['id']));
+
+					if($rackUnits[$i] == 0)
+					{
+						// Zero-U
+						commitLinkEntities ('rack', $db_rack['id'], 'object', $db_object['id']);
+					}
+					else
+					{
+						if (strpos($fib[$i],'f') !== false)
+							usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'front', 'state' => 'T', 'object_id' => $db_object['id']));
+						if (strpos($fib[$i],'i') !== false)
+							usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'interior', 'state' => 'T', 'object_id' => $db_object['id']));
+						if (strpos($fib[$i],'b') !== false)
+							usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'rear', 'state' => 'T', 'object_id' => $db_object['id']));
+					}
 				
 					usePreparedDeleteBlade ('RackThumbnail', array ('rack_id' => $db_rack['id']));  //Updates the thumbnail of the rack
 				}
