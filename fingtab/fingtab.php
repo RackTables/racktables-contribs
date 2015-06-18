@@ -31,10 +31,10 @@ $ophandler['ipv4net']['fing']['importFingData'] = 'importFingData';
  * provide STDOUT and STDERR
  */
 function my_shell_exec($cmd, &$stdout=null, &$stderr=null) {
-    $proc = proc_open($cmd,[
-        1 => ['pipe','w'],
-        2 => ['pipe','w'],
-    ],$pipes);
+    $proc = proc_open($cmd, array(
+        1 => array('pipe','w'),
+        2 => array('pipe','w'),
+    ),$pipes);
     $stdout = stream_get_contents($pipes[1]);
     fclose($pipes[1]);
     $stderr = stream_get_contents($pipes[2]);
