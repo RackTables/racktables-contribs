@@ -1,7 +1,7 @@
 <?php
 /**
  * Fing network scan plugin
- * version 0.1
+ * version 0.2
  *
  * Written by Florian Pfaff
  *
@@ -23,6 +23,7 @@
 $tab['ipv4net']['fing'] = 'Fing Scan';
 $tabhandler['ipv4net']['fing'] = 'FingTab';
 $ophandler['ipv4net']['fing']['importFingData'] = 'importFingData';
+
 
 
 /**
@@ -162,6 +163,13 @@ function get_fing_scan($ip,$mask)
     return $known_ips;
 }
 
+/**
+ *
+ * address allocation setting (copied from interface.php)
+ *
+ */
+
+
 
 
 /**
@@ -172,6 +180,20 @@ function get_fing_scan($ip,$mask)
 function FingTab($id)
 {
     $can_import = permitted (NULL, NULL, 'importFingData');
+
+
+    //
+    // allocation settings
+    //
+    // address allocation code, IPv4 networks view
+    $aac_left = array
+    (
+        'regular' => '',
+        'virtual' => '<span class="aac-left" title="Loopback">L:</span>',
+        'shared' => '<span class="aac-left" title="Shared">S:</span>',
+        'router' => '<span class="aac-left" title="Router">R:</span>',
+        'point2point' => '<span class="aac-left" title="Point-to-point">P:</span>',
+    );
 
     //
     // header
@@ -233,7 +255,7 @@ function FingTab($id)
 
 
     echo "<table class='widetable' border=0 cellspacing=0 cellpadding=5 align='center'>\n";
-    echo "<tr><th class='tdleft'>address</th><th class='tdleft'>state</th><th class='tdleft'>current name</th><th class='tdleft'>DNS name</th><th class='tdleft'>MAC</th>";
+    echo "<tr><th class='tdleft'>address</th><th class='tdleft'>state</th><th class='tdleft'>current name</th><th class='tdleft'>DNS name</th><th class='tdleft'>MAC</th><th class='tdleft'>Allocation</th>";
     if ($can_import)
         echo '<th>import</th>';
     echo "</tr>\n";
@@ -307,6 +329,43 @@ function FingTab($id)
         echo "<td class=tdleft>${addr['name']}</td>";
         echo "<td class='tdleft'>".$fing_hostname."</td>";
         echo "<td class='tdleft'>".$fing_mac_vendor."</td>";
+
+
+        //allocation
+        echo "<td>";
+        $delim = '';
+        if ( $addr['reserved'] == 'yes')
+        {
+            echo "<strong>RESERVED</strong> ";
+            $delim = '; ';
+        }
+        foreach ($addr['allocs'] as $ref)
+        {
+            echo $delim . $aac_left[$ref['type']];
+            echo makeIPAllocLink ($ip_bin, $ref, TRUE);
+            $delim = '; ';
+        }
+        if ($delim != '')
+            $delim = '<br>';
+        foreach ($addr['vslist'] as $vs_id)
+        {
+            $vs = spotEntity ('ipv4vs', $vs_id);
+            echo $delim . mkA ("${vs['name']}:${vs['vport']}/${vs['proto']}", 'ipv4vs', $vs['id']) . '&rarr;';
+            $delim = '<br>';
+        }
+        foreach ($addr['vsglist'] as $vs_id)
+        {
+            $vs = spotEntity ('ipvs', $vs_id);
+            echo $delim . mkA ($vs['name'], 'ipvs', $vs['id']) . '&rarr;';
+            $delim = '<br>';
+        }
+        foreach ($addr['rsplist'] as $rsp_id)
+        {
+            $rsp = spotEntity ('ipv4rspool', $rsp_id);
+            echo "${delim}&rarr;" . mkA ($rsp['name'], 'ipv4rspool', $rsp['id']);
+            $delim = '<br>';
+        }
+        echo "</td>";
 
         // import column
         if ($can_import)
