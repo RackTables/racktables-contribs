@@ -2497,6 +2497,7 @@ class portlist {
 	/*
 	 */
 	function printport(&$port, $multilink = false) {
+		global $lm_cache;
 
 		/* set bgcolor for current port */
 		if($port['id'] == $this->port_id) {
@@ -2514,7 +2515,7 @@ class portlist {
 		echo '<td'.$idtag.' align=center '.$bgcolor.' title="'.$title.'"><pre>[<a href="'
 			.makeHref(array('page'=>'object', 'tab' => 'linkmgmt', 'object_id' => $port['object_id'], 'hl_port_id' => $port['id']))
 			.'#'.$port['id']
-			.'">'.$port['name'].'</a>]</pre>'.($multilink ? $this->_getlinkportsymbol($port['id'], 'back') : '' ).'</td>';
+			.'">'.$port['name'].'</a>]</pre>'.($multilink && $lm_cache['allowbacklink'] ? $this->_getlinkportsymbol($port['id'], 'back') : '' ).'</td>';
 
 	} /* printport */
 
