@@ -2267,18 +2267,6 @@ function sg_checkL2Address ($address)
         return $row;
 }
 
-/* returns oi_id and name */
-function getPortOIOptions()
-{
-        $result = usePreparedSelectBlade
-        (
-		'SELECT dict_key,dict_value from Dictionary where chapter_id = 2',
-                array ()
-        );
-        $row = $result->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_UNIQUE|PDO::FETCH_COLUMN);
-        return $row;
-}
-
 function sg_checkObjectNameUniqueness ($name, $type_id, $object_id = 0)
 {
 	// Some object types do not need unique names
