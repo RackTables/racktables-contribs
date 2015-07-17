@@ -65,8 +65,6 @@
  *
  *  - code cleanup
  *
- *  - update visible label on ifAlias change !?
- *
  *  - test if device supports mibs
  *  - gethostbyaddr / gethostbyname host list
  *  - correct iif_name display if != 1
@@ -1612,12 +1610,13 @@ function snmpgeneric_list($object_id) {
 
 	$ipnets = array();
 
-	$ifsnmp->printifInfoTableHeader("<th>add ip</th><th>add port</th><th title=\"update mac\">upd mac</th><td>upd port type</th><th>porttypeid</th><th>comment</th></tr>");
+	$ifsnmp->printifInfoTableHeader("<th>add ip</th><th>add port</th><th>upd label</th><th title=\"update mac\">upd mac</th><td>upd port type</th><th>porttypeid</th><th>comment</th></tr>");
 
 	echo '<tr><td colspan="11"></td>
 		<td><input type="checkbox" id="ipaddr" onclick="setchecked(this.id)">IPv4<br>
 		<input type="checkbox" id="ipv6addr" onclick="setchecked(this.id)">IPv6</td>
 		<td><input type="checkbox" id="ports" onclick="setchecked(this.id)"></td>
+		<td><input type="checkbox" id="label" onclick="setchecked(this.id)" checked="checked"></td>
 		<td><input type="checkbox" id="mac" onclick="setchecked(this.id)" checked="checked"></td></tr>';
 
 	foreach($ifsnmp as $if) {
@@ -1626,6 +1625,7 @@ function snmpgeneric_list($object_id) {
 		$disableport = FALSE;
 		$ignoreport = FALSE;
 		$port_info = NULL;
+		$updatelabel = false;
 		$updateporttype = false;
 
 		$updatemaccheckbox = '';
@@ -1642,6 +1642,11 @@ function snmpgeneric_list($object_id) {
 			if(array_key_exists($ifsnmp->ifName($if),$object['ports'])){
 				$port_info = &$object['ports'][$ifsnmp->ifName($if)];
 				$comment .= "Name exists";
+
+				/* ifalias change */
+				if($port_info['label'] != $ifsnmp->ifAlias($if))
+					$updatelabel = true;
+
 				$createport = FALSE;
 				$disableport = TRUE;
 			}
@@ -1654,6 +1659,7 @@ function snmpgeneric_list($object_id) {
 			$l2port =  sg_checkL2Address($ifPhysAddress);
 
 			if(!empty($l2port)) {
+
 				$l2object_id = key($l2port);
 
 				$porthref = makeHref(array('page'=>'object', 'tab' => 'ports',
@@ -1866,7 +1872,6 @@ function snmpgeneric_list($object_id) {
 
 		$updateporttypecheckbox = "";
 
-
 		if($updateporttype)
 			$updateporttypecheckbox = '<b style="background-color:#00ff00;">'
 					.'<input class="porttype" style="background-color:#00ff00;" type="checkbox" name="updateporttype['.$if.']" value="'
@@ -1874,9 +1879,16 @@ function snmpgeneric_list($object_id) {
 
 		$porttypeidselect = getNiftySelect($newporttypeoptions, $selectoptions, $porttypeid);
 
+		$updatelabelcheckbox = "";
+
+		if($updatelabel)
+			$updatelabelcheckbox = '<b style="background-color:#00ff00;">'
+					.'<input class="label" style="background-color:#00ff00;" type="checkbox" name="updatelabel['.$if.']" value="'
+					.$port_info['id'].($updatelabel ? '" checked="checked"' : '' ).'></b>';
+
 		$comment = trim($comment,', ');
 
-		$ifsnmp->printifInfoTableRow($if,"<td>$ipaddrcell</td><td>$portcreatecheckbox</td><td>$updatemaccheckbox</td><td>$updateporttypecheckbox</td><td>$porttypeidselect</td><td nowrap=\"nowrap\">$comment</td>", $hrefs);
+		$ifsnmp->printifInfoTableRow($if,"<td>$ipaddrcell</td><td>$portcreatecheckbox</td><td>$updatelabelcheckbox</td><td>$updatemaccheckbox</td><td>$updateporttypecheckbox</td><td>$porttypeidselect</td><td nowrap=\"nowrap\">$comment</td>", $hrefs);
 
 	}
 	unset($if);
@@ -1980,6 +1992,22 @@ function snmpgeneric_opcreate() {
 		unset($if);
 	}
 	/* ipaddrecreate */
+
+	/* update label */
+	if(isset($_POST['updatelabel'])) {
+		foreach($_POST['updatelabel'] as $if => $port_id) {
+
+			$ifAlias = (isset($_POST['ifAlias'][$if]) ? trim($_POST['ifAlias'][$if]) : '' );
+
+			sg_commitUpdatePortLabel($object_id, $port_id, $ifAlias);
+
+			$ifName = (isset($_POST['ifName'][$if]) ? trim($_POST['ifName'][$if]) : '' );
+			showSuccess("label updated on $ifName to $ifAlias");
+		}
+		unset($if);
+		unset($port_id);
+	}
+	/* updatemac */
 
 	/* update mac addresses only */
 	if(isset($_POST['updatemac'])) {
@@ -2204,6 +2232,27 @@ function sg_commitUpdatePortType($object_id, $port_id, $porttypeid)
         );
         $dbxlink->exec ('UNLOCK TABLES');
 } /* sg_commitUpdatePortType */
+
+function sg_commitUpdatePortLabel($object_id, $port_id, $label)
+{
+	global $dbxlink;
+
+        $dbxlink->exec ('LOCK TABLES Port WRITE');
+        usePreparedUpdateBlade
+        (
+                'Port',
+                array
+                (
+                        'label' => ($label === '') ? NULL : $label
+                ),
+                array
+                (
+                        'id' => $port_id,
+                        'object_id' => $object_id
+                )
+        );
+        $dbxlink->exec ('UNLOCK TABLES');
+} /* sg_commitUpdatePortLabel */
 /* ----------------------------------------------------- */
 
 /* returns object_id and port_id to a given l2address */
