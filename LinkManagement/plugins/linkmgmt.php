@@ -1041,7 +1041,7 @@ class linkmgmt_gvmap {
 		if(empty($ports))
 		{
 			/* needed because of  gv_image empty cluster bug (invalid foreach argument) */
-			$gv->addNode('dummy', array(
+			$gv->addNode("dummy$cluster_id", array(
 					//	'label' =>'No Ports found/connected',
 						'label' =>'',
 						'fontsize' => 0,
