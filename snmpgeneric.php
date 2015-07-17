@@ -1563,7 +1563,7 @@ function snmpgeneric_list($object_id) {
 			if(empty($netid) && $netaddr != '::1' && $netaddr != '127.0.0.1' && $netaddr != '127.0.0.0' && $netaddr != '0.0.0.0' && !$linklocal) {
 
 				$netaddr .= "/$maskbits";
-				$ipspace[$netaddr] = $addrtype;
+				$ipspace[$netaddr] = array('addrtype' => $addrtype, 'checked' => ($maskbits > 0 ? true : false));
 			}
 		}
 		unset($ipaddr);
@@ -1580,11 +1580,11 @@ function snmpgeneric_list($object_id) {
 		echo '<th>Type</th><th>prefix</th><th>name</th><th width=150 title="reserve network and router addresses">reserve network / router addresses</th></tr>';
 
 		$i = 1;
-		foreach($ipspace as $prefix => $addrtype) {
+		foreach($ipspace as $prefix => $ipspace) {
 
 			$netcreatecheckbox = '<b style="background-color:#00ff00">'
 				.'<input class="ipspace" style="background-color:#00ff00" type="checkbox" name="netcreate['
-				.$i.']" value="'.$addrtype.'" checked=\"checked\"></b>';
+				.$i.']" value="'.$ipspace['addrtype'].'"'.($ipspace['checked'] ? ' checked=\"checked\"' : '').'></b>';
 
 			$netprefixfield = '<input type="text" size=50 name="netprefix['.$i.']" value="'.$prefix.'">';
 
@@ -1592,7 +1592,7 @@ function snmpgeneric_list($object_id) {
 
 			$netreservecheckbox = '<input type="checkbox" name="netreserve['.$i.']" checked="checked">';
 
-			echo "<tr><td>$netcreatecheckbox</td><td style=\"color:#888888\">$addrtype</td><td>$netprefixfield</td><td>$netnamefield</td><td>$netreservecheckbox</td></tr>";
+			echo "<tr><td>$netcreatecheckbox</td><td style=\"color:#888888\">${ipspace['addrtype']}</td><td>$netprefixfield</td><td>$netnamefield</td><td>$netreservecheckbox</td></tr>";
 
 			$i++;
 		}
