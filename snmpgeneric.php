@@ -1617,7 +1617,8 @@ function snmpgeneric_list($object_id) {
 		<input type="checkbox" id="ipv6addr" onclick="setchecked(this.id)">IPv6</td>
 		<td><input type="checkbox" id="ports" onclick="setchecked(this.id)"></td>
 		<td><input type="checkbox" id="label" onclick="setchecked(this.id)" checked="checked"></td>
-		<td><input type="checkbox" id="mac" onclick="setchecked(this.id)" checked="checked"></td></tr>';
+		<td><input type="checkbox" id="mac" onclick="setchecked(this.id)" checked="checked"></td>
+		<td><input type="checkbox" id="porttype" onclick="setchecked(this.id);"></td></tr>';
 
 	foreach($ifsnmp as $if) {
 
@@ -1875,7 +1876,7 @@ function snmpgeneric_list($object_id) {
 		if($updateporttype)
 			$updateporttypecheckbox = '<b style="background-color:#00ff00;">'
 					.'<input class="porttype" style="background-color:#00ff00;" type="checkbox" name="updateporttype['.$if.']" value="'
-					.$port_info['id'].($updateporttype ? '" checked="checked"' : '' ).'></b>';
+					.$port_info['id'].'"></b>';
 
 		$porttypeidselect = getNiftySelect($newporttypeoptions, $selectoptions, $porttypeid);
 
