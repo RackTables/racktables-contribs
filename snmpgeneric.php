@@ -121,7 +121,7 @@ $sg_ifType2oif_id = array(
 	 '33' => 1469,	/*  rs232 => RS-232 (DB-9) 681 */
 	 '34' => 1469,	/* para => virtual port 1469 */
 	 '53' => 1469,	/* propVirtual => virtual port 1469 */
-	 '62' => 1195,	/* fastEther => 100BASE-FX 1195 */
+	 '62' => 19,	/* fastEther => 100BASE-TX 19 */
 	'131' => 1469,	/* tunnel => virtual port 1469 */
 	'136' => 1469,	/* l3ipvlan => virtual port 1469 */
 	'160' => 1469,	/* usb => virtual port 1469 */
