@@ -414,6 +414,9 @@ function snmpgeneric_pf_ciscoflash(&$snmp, &$sysObjectID, $attr_id) {
 
 	$ciscoflash = $snmp->walk('1.3.6.1.4.1.9.9.10.1.1.2'); /* ciscoFlashDeviceTable */
 
+	if(!$ciscoflash)
+		return;
+
 	$flash = array_keys($ciscoflash, 'flash');
 
 	foreach($flash as $oid) {
@@ -643,6 +646,10 @@ function snmpgeneric_pf_entitymib(&$snmp, &$sysObjectID, $attr_id) {
 			$index = $matches[1];
 
 			$name = $snmp->get(".1.3.6.1.2.1.47.1.1.1.1.7.$index");
+
+			if(!$name)
+				continue;
+
 			$hardwarerev = $snmp->get(".1.3.6.1.2.1.47.1.1.1.1.8.$index");
 			$firmwarerev = $snmp->get(".1.3.6.1.2.1.47.1.1.1.1.9.$index");
 			$softwarerev = $snmp->get(".1.3.6.1.2.1.47.1.1.1.1.10.$index");
