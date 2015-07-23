@@ -340,6 +340,7 @@ function snmpgeneric_pf_enterasys(&$snmp, &$sysObjectID, $attr_id) {
 
 		/* TODO SW type */
 		//$attrs[4]['value'] = 'Enterasys'; /* SW type */
+		$attrs[4]['key'] = '0'; /* SW type dict key 0 = NOT SET*/
 
 		/* set SW version only if not already set by entitymib */
 		if(isset($attrs[5]['value']) && !empty($attrs[5]['value'])) {
@@ -381,7 +382,10 @@ function snmpgeneric_pf_catalyst(&$snmp, &$sysObjectID, $attr_id) {
 			$attrs[5]['value'] = $exact_release;
 
 			if (array_key_exists ($major_line, $ios_codes))
+			{
 				$attrs[4]['value'] = $ios_codes[$major_line];
+				$attrs[4]['key'] = $ios_codes[$major_line];
+			}
 
 		} /* sw type / version */
 
@@ -478,6 +482,7 @@ function snmpgeneric_pf_hwtype(&$snmp, &$sysObjectID, $attr_id) {
 
 		/* return array of attr_id => attr_value) */
 		$attr['value'] = $value;
+		$attr['key'] = $value;
 
 	} else {
 		showNotice("HW type dict_key not set - Unknown OID");
@@ -549,6 +554,7 @@ function snmpgeneric_pf_swtype(&$snmp, &$sysObjectID, $attr_id) {
 
 		/* set attr value */
 		$attr['value'] = $value;
+		$attr['key'] = $value;
 	//	unset($attr['uncheck']);
 
 	}
@@ -1393,10 +1399,18 @@ function snmpgeneric_list($object_id) {
 
 	foreach($sysObjectID['attr'] as $attr_id => &$attr) {
 
+		$attr['id'] = $attr_id;
+
 		if(isset($object['attr'][$attr_id]) && isset($attr['value'])) {
 
 			if($attr['value'] == $object['attr'][$attr_id]['value'])
 				$attr['uncheck'] = 'Current = new value';
+
+			if(isset($attr['key']) && isset($object['attr'][$attr_id]['key']))
+			{
+				if($attr['key'] == $object['attr'][$attr_id]['key'])
+					$attr['uncheck'] = 'Current = new key';
+			}
 
 			$value = $attr['value'];
 
@@ -1431,14 +1445,19 @@ function snmpgeneric_list($object_id) {
 
 	echo '</table>';
 
+	$object['breed'] = sg_detectDeviceBreedByObject($sysObjectID);
+
+	if(!empty($object['breed']))
+		echo "Found Breed: ".$object['breed']."<br>";
+
 	/* ports */
 
 	/* get ports */
 	amplifyCell($object);
 
-	/* set array key to port name */
+	/* set array key to lowercase port name */
 	foreach($object['ports'] as $key => $values) {
-		$object['ports'][$values['name']] = $values;
+		$object['ports'][strtolower(shortenIfName($values['name'], $object['breed']))] = $values;
 		unset($object['ports'][$key]);
 	}
 
@@ -1453,7 +1472,7 @@ function snmpgeneric_list($object_id) {
 
 		foreach($sysObjectID['port'] as $name => $port) {
 
-			if(array_key_exists($name,$object['ports']))
+			if(array_key_exists(strtolower($name),$object['ports']))
 				$disableport = TRUE;
 			else
 				$disableport = FALSE;
@@ -1513,6 +1532,9 @@ function snmpgeneric_list($object_id) {
 	/* snmp ports */
 
 	$ifsnmp = new ifSNMP($snmpdev);
+
+	// needed for shortenIfName()
+	$ifsnmp->object_breed = $object['breed'];
 
 	/* ip spaces */
 
@@ -2296,6 +2318,21 @@ function sg_checkObjectNameUniqueness ($name, $type_id, $object_id = 0)
 		return true;
 }
 
+function sg_detectDeviceBreedByObject($object)
+{
+	global $breed_by_swcode, $breed_by_hwcode, $breed_by_mgmtcode;
+
+	foreach ($object['attr'] as $record)
+	{
+		if ($record['id'] == 4 and array_key_exists ($record['key'], $breed_by_swcode))
+			return $breed_by_swcode[$record['key']];
+		elseif ($record['id'] == 2 and array_key_exists ($record['key'], $breed_by_hwcode))
+			return $breed_by_hwcode[$record['key']];
+		elseif ($record['id'] == 30 and array_key_exists ($record['key'], $breed_by_mgmtcode))
+			return $breed_by_mgmtcode[$record['key']];
+	}
+	return '';
+}
 
 /* ------------------------------------------------------- */
 class SNMPgeneric {
@@ -2675,6 +2712,8 @@ class ifSNMP implements Iterator {
 
 	private $interfaceserror = TRUE;
 
+	public $object_breed = NULL;
+
 	function __construct(&$snmpdevice) {
 		$this->snmpdevice = $snmpdevice;
 
@@ -2878,7 +2917,7 @@ class ifSNMP implements Iterator {
 					if($key == 'ifName') {
 						/* create textfield set to ifDescr */
 						$formfield = '<input type="text" size="8" name="'.$key.'['.$ifIndex.']" value="'
-								.$this->ifDescr($ifIndex).'">';
+								.strtolower(shortenIfName($this->ifDescr($ifIndex), $this->object_breed)).'">';
 						$textfield = TRUE;
 					}
 
@@ -2937,6 +2976,12 @@ class ifSNMP implements Iterator {
 
 	}
 
+	function ifName($index) {
+		if(isset($this->ifTable['ifName'][$index-1])) {
+			return strtolower(shortenIfName($this->ifTable['ifName'][$index-1], $this->object_breed));
+		}
+
+	}
 	function &__get($name) {
 
 		switch($name) {
