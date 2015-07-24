@@ -1334,6 +1334,9 @@ function snmpgeneric_list($object_id) {
 
 		if(isset($object['attr'][$attr_id])) {
 
+			if(array_key_exists('key',$object['attr'][$attr_id]))
+				$attr['key'] = $object['attr'][$attr_id]['key'];
+
 			switch(TRUE) {
 
 				case isset($attr['pf']):
