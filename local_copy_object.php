@@ -274,7 +274,7 @@ function copyLotOfObjects()//$template_object)
 					else
 						commitUpdateAttrValue ($object_id, $record['id'], $value ) ;
 				else
-					showError ('Permission denied, "' . $record['id'] . '"can not be set');
+					showError ('Permission denied, "' . $record['name'] . '" can not be set');
 
 			}
 
