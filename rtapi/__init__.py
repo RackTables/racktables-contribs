@@ -239,7 +239,7 @@ class RTObject:
     def GetInterfaceName(self,object_id,interface_id):
         '''Find name of specified interface. Required object_id and interface_id argument'''
         #Get interface id
-        sql = "SELECT name FROM Port WHERE object_id = %d AND name = %d" % (object_id, interface_id)
+        sql = "SELECT name FROM Port WHERE object_id = %d AND id = %d" % (object_id, interface_id)
         result = self.db_query_one(sql)
         if result != None:
             port_name = result[0]
