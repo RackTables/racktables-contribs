@@ -180,12 +180,8 @@ function renderNetworkEditAttrs()
 					echo "<input type=text name=${i}_value value='${record['value']}'>";
 					break;
 				case 'dict':
-					$suggest_records = array();
-					$chapter = readChapter ($record['chapter_id'], 'o');
-					foreach ($chapter as $id => $value)
-						$suggest_records[$id] = array("id" => $id, "tag" => $value);
-					printSuggestedInput($i . "_value", $suggest_records, array("id" => $record['key']), "macros");
-					enableTagsPicker ();
+					$opts = array ('0' => '(none)') + readChapter ($record['chapter_id'], 'o');
+					printSelect ($opts, array ('name' => "{$i}_value"), $record['key']);
 					break;
 				case 'date':
 					$date_value = $record['value'] ? date(getConfigVar('DATETIME_FORMAT'), $record['value']) : '';
