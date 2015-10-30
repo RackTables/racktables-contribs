@@ -61,7 +61,7 @@ class RTObject:
         '''SQL query function, return all rows. Require sql query as parameter'''
         self.dbresult.execute(sql)
         return self.dbresult.fetchall()
-    
+
     def db_insert(self, sql):
         '''SQL insert/update function. Require sql query as parameter'''
         self.dbresult.execute(sql)
@@ -70,11 +70,11 @@ class RTObject:
     def db_fetch_lastid(self):
         '''SQL function which return ID of last inserted row.'''
         return self.dbresult.lastrowid
-    
+
     def ListObjects(self):
         '''List all objects'''
         sql = 'SELECT name FROM Object'
-        return "Found " + str(len(self.db_query_all(sql))) +" objects in database" 
+        return "Found " + str(len(self.db_query_all(sql))) +" objects in database"
 
     # Object methotds
     def ObjectExistST(self,service_tag):
@@ -84,7 +84,7 @@ class RTObject:
             return False
         else:
             return True
-    
+
     def ObjectExistName(self,name):
         '''Check if object exist in database based on name'''
         sql = 'select id from Object where name = \''+name+'\''
@@ -110,7 +110,7 @@ class RTObject:
         '''Update label on object'''
         sql = "UPDATE Object SET label = '%s' where id = %d" % (label, object_id)
         self.db_insert(sql)
-    
+
     def UpdateObjectComment(self,object_id,comment):
         '''Update comment on object'''
         sql = "UPDATE Object SET comment = '%s' where id = %d" % (comment, object_id)
@@ -132,7 +132,7 @@ class RTObject:
             object_name = None
 
         return object_name
-    
+
     def GetObjectLabel(self,object_id):
         '''Get object label'''
         #Get interface id
@@ -175,57 +175,66 @@ class RTObject:
         sql = "INSERT INTO ObjectLog (object_id,user,date,content) VALUES (%d,'script',now(),'%s')" % (object_id, message)
         self.db_insert(sql)
 
-    # Attrubute methods
-    def InsertAttribute(self,object_id,object_tid,attr_id,string_value,uint_value,name):
-        '''Add or Update object attribute. 
-        Require 6 arguments: object_id, object_tid, attr_id, string_value, uint_value, name'''
-    
-        # Check if attribute exist
-        sql = "SELECT string_value,uint_value FROM AttributeValue WHERE object_id = %d AND object_tid = %d AND attr_id = %d" % (object_id, object_tid, attr_id)
+    # Attribute methods
+    def GetAttributeType(self,attr_id):
+        '''Get attribute type.
+        Require 1 argument: attr_id'''
+        sql = "SELECT type FROM Attribute WHERE id = %d" % (attr_id)
         result = self.db_query_one(sql)
 
         if result != None:
-            # Check if attribute value is same and determine attribute type
+            attr_type = result[0]
+        else:
+            attr_type = 'string'
+
+        return attr_type
+
+    def InsertAttribute(self,object_id,object_tid,attr_id,value):
+        '''Add or Update object attribute. 
+        Require 4 arguments: object_id, object_tid, attr_id, value'''
+
+        # Check if attribute exists
+        sql = "SELECT string_value,uint_value,float_value FROM AttributeValue WHERE object_id = %d AND object_tid = %d AND attr_id = %d" % (object_id, object_tid, attr_id)
+        result = self.db_query_one(sql)
+        sql=''
+        string_types = ['string', 'date']
+        uint_types = ['unit', 'dict']
+        float_types = ['float']
+        attribute_type = self.GetAttributeType(attr_id)
+
+        if result != None:
+            # Check if attribute value is same based on attribute type
             old_string_value = result[0]
             old_uint_value = result[1]
-            same_flag = "no"
-            attribute_type = "None"
-
-            if old_string_value != None:
-                attribute_type = "string"
-                old_value = old_string_value
-                if old_string_value == string_value:
-                    same_flag = "yes"
-            elif old_uint_value != None:
-                attribute_type = "uint"
-                old_value = old_uint_value
-                if old_uint_value == uint_value:
-                    same_flag = "yes"
-
-            # If exist, update value
-            new_value = ''
-            if same_flag == "no":
-                if attribute_type == "string":
-                    sql = "UPDATE AttributeValue SET string_value = '%s' WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (string_value, object_id, attr_id, object_tid)
-                    new_value = string_value
-                if attribute_type == "uint":
-                    sql = "UPDATE AttributeValue SET uint_value = %d WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (uint_value, object_id, attr_id, object_tid)
-                    new_value = uint_value
-
-                self.db_insert(sql)
+            old_float_value = result[2]
+            if old_string_value != value and (attribute_type in string_types):
+                sql = "UPDATE AttributeValue SET string_value = '%s' WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (value, object_id, attr_id, object_tid)
+            elif old_uint_value != value and (attribute_type in uint_types):
+                sql = "UPDATE AttributeValue SET uint_value = '%d' WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (value, object_id, attr_id, object_tid)
+            elif old_float_value != value and (attribute_type in float_types):
+                sql = "UPDATE AttributeValue SET float_value = '%d' WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (value, object_id, attr_id, object_tid)
+            else:
+                # not defining sql update because of mismatch in value and/or type
+                pass
 
         else:
-            # Attribute not exist, insert new
-            if string_value == "NULL":
-                sql = "INSERT INTO AttributeValue (object_id,object_tid,attr_id,uint_value) VALUES (%d,%d,%d,%d)" % (object_id,object_tid,attr_id,uint_value)
+            # Attribute does not exist, insert new
+            if attribute_type in string_types:
+                sql = "INSERT INTO AttributeValue (object_id,object_tid,attr_id,string_value) VALUES (%d,%d,%d,'%s')" % (object_id,object_tid,attr_id,value)
+            elif attribute_type in uint_types:
+                sql = "INSERT INTO AttributeValue (object_id,object_tid,attr_id,uint_value) VALUES (%d,%d,%d,%d)" % (object_id,object_tid,attr_id,value)
+            elif attribute_type in float_types:
+                sql = "INSERT INTO AttributeValue (object_id,object_tid,attr_id,float_value) VALUES (%d,%d,%d,%d)" % (object_id,object_tid,attr_id,value)
             else:
-                sql = "INSERT INTO AttributeValue (object_id,object_tid,attr_id,string_value) VALUES (%d,%d,%d,'%s')" % (object_id,object_tid,attr_id,string_value)
+                # not defining sql insert because of unknown attribute_type
+                pass
+        if sql:
             self.db_insert(sql)
 
     def GetAttributeId(self,searchstring):
         '''Search racktables database and get attribud id based on search string as argument'''
         sql = "SELECT id FROM Attribute WHERE name LIKE '%"+searchstring+"%'"
-  
+
         result = self.db_query_one(sql)
 
         if result != None:
@@ -267,7 +276,7 @@ class RTObject:
 
         result = self.db_query_one(sql)
         if result == None:
-        
+
             sql = "INSERT INTO Port (object_id,name,iif_id,type) VALUES (%d,'%s',1,24)" % (object_id,interface)
             self.db_insert(sql)
             port_id = self.db_fetch_lastid()
@@ -332,9 +341,9 @@ class RTObject:
 
         if result != None:
             old_ips = result
-        
+
         is_there = "no"
-            
+
         for old_ip in old_ips:
             if old_ip[0] == ip:
                 is_there = "yes"
@@ -347,14 +356,14 @@ class RTObject:
 
     def InterfaceAddIpv6IP(self,object_id,device,ip):
         '''Add/Update IPv6 IP on interface'''
-        #Create address object using ipaddr 
+        #Create address object using ipaddr
         addr6 = ipaddr.IPAddress(ip)
         #Create IPv6 format for Mysql
         ip6 = "".join(str(x) for x in addr6.exploded.split(':'))
 
         sql = "SELECT HEX(ip) FROM IPv6Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
         result = self.db_query_all(sql)
-        
+
         if result != None:
             old_ips = result
 
@@ -371,7 +380,7 @@ class RTObject:
             self.InsertLog(object_id,text)
 
 
-    
+
     def GetDictionaryId(self,searchstring):
         '''Search racktables dictionary using searchstring and return id of dictionary element'''
         sql = "SELECT dict_key FROM Dictionary WHERE dict_value LIKE '%"+searchstring+"%'"
@@ -405,7 +414,7 @@ class RTObject:
                 try:
                     test = new_virtuals_ids.index(old_id[0])
                 except ValueError:
-                    delete_virtual_id.append(old_id[0]) 
+                    delete_virtual_id.append(old_id[0])
         if len(delete_virtual_id) != 0:
             for virt_id in delete_virtual_id:
 
@@ -419,7 +428,7 @@ class RTObject:
         '''Clean unused ip from object. ip addresses is list of IP addresses configured on device (device) on host (object_id)'''
 
         sql = "SELECT INET_NTOA(ip) FROM IPv4Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
-        
+
         result = self.db_query_all(sql)
 
         if result != None:
@@ -430,7 +439,7 @@ class RTObject:
                 try:
                     test = ip_addresses.index(old_ip[0])
                 except ValueError:
-                    delete_ips.append(old_ip[0]) 
+                    delete_ips.append(old_ip[0])
         if len(delete_ips) != 0:
             for ip in delete_ips:
                 sql = "DELETE FROM IPv4Allocation WHERE ip = INET_ATON('%s') AND object_id = %d AND name = '%s'" % (ip,object_id,device)
@@ -469,7 +478,7 @@ class RTObject:
 
         if len(delete_ips) != 0:
             for ip in delete_ips:
-                db_ip6_format = "".join(str(x) for x in ip.split(':')) 
+                db_ip6_format = "".join(str(x) for x in ip.split(':'))
                 sql = "DELETE FROM IPv6Allocation WHERE ip = UNHEX('%s') AND object_id = %d AND name = '%s'" % (db_ip6_format,object_id,device)
                 self.db_insert(sql)
                 logstring = "Removed IP %s from %s" % (ip,device)
@@ -516,15 +525,15 @@ class RTObject:
                 self.InsertLog(server_id, "Unlinked from Blade Chassis %s" % (old_object_name))
                 self.InsertLog(chassis_id, "Linked with server %s" % (server_name))
                 self.InsertLog(server_id, "Linked with Blade Chassis %s" % (chassis_name))
-        
+
         else:
         # Object is not connected
             sql = "INSERT INTO EntityLink (parent_entity_type, parent_entity_id, child_entity_type, child_entity_id) VALUES ('object', %d, 'object', %d)" % (chassis_id, server_id)
             self.db_insert(sql)
             self.InsertLog(chassis_id, "Linked with server %s" % (server_name))
             self.InsertLog(server_id, "Linked with Blade Chassis %s" % (chassis_name))
-            
-            
+
+
 
     def GetAllServerChassisId(self):
         '''Get list of all server chassis IDs'''
