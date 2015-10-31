@@ -98,7 +98,7 @@ function localfunc_ObjectCopier($object_id)
 {
 $object = spotEntity ('object', $object_id );
 amplifyCell($object);
-global $virtual_obj_types, $tagtree, $taglist, $target_given_tags;
+global $virtual_obj_types, $taglist, $target_given_tags;
 $typelist = readChapter (CHAP_OBJTYPE, 'o');
 $typelist[0] = 'select type...';
 $typelist = cookOptgroups ($typelist);
@@ -118,7 +118,7 @@ echo '</th><th>Copy Tags</th></tr>';
 echo "\n" . "<tr><td valign=top ><textarea name=namelist cols=60 rows=35>\n</textarea></td>";
 echo "<td valign=top>";
 printf ("<input type=hidden name=global_type_id value='%s'>\n", $object['objtype_id']);
-//renderCopyEntityTagsPortlet ('Tag tree', $tagtree, $target_given_tags, $etype_by_pageno[$pageno]);
+//renderCopyEntityTagsPortlet ('Tag tree', getTagTree(), $target_given_tags, $etype_by_pageno[$pageno]);
 renderCopyEntityTags($object);
 echo "</td></tr>";
 echo "<tr><td colspan=2><input type=submit name=got_very_fast_data value='Go!'></td></tr></table>\n";
@@ -315,7 +315,7 @@ function renderCopyEntityTagsPortlet ($title, $tags, $preselect, $realm)
 
 function renderCopyEntityTags ($entity_id)
 {
-        global $tagtree, $taglist, $target_given_tags, $pageno, $etype_by_pageno;
+        global $taglist, $target_given_tags, $pageno, $etype_by_pageno;
         echo '<table border=0 width="10%"><tr>';
 
         if (count ($taglist) > getConfigVar ('TAGS_QUICKLIST_THRESHOLD'))
@@ -341,7 +341,7 @@ function renderCopyEntityTags ($entity_id)
 
         // do not do anything about empty tree, trigger function ought to work this out
         echo '<td class=pcright>';
-        renderCopyEntityTagsPortlet ('', $tagtree, $target_given_tags, $etype_by_pageno[$pageno]);
+        renderCopyEntityTagsPortlet ('', getTagTree(), $target_given_tags, $etype_by_pageno[$pageno]);
         echo '</td>';
 
         echo '</tr></table>';
