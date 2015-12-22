@@ -158,12 +158,15 @@ Usage:
   Syntax: OBJECTATTRIBUTE
   Value 1, OBJECTATTRIBUTE
   Value 2, Objectname: Specifies the name of the object
-  Value 3, attribute id: Specifies the numeric ID of the attribute (can be looked up in Attribute table)
+  Value 3, attribute id: Specifies the numeric ID of the attribute (can be looked up in Attribute table), also some general attributes are supported, in this case use: NAME / LABEL / ASSETTAG / HASPROBLEMS (yes|no) / COMMENT
   Value 4, attribute value; Specificies the value to be set for the attribute
 
   Examples:
   OBJECTATTRIBUTE;myRouter;3;mgmt.myrouter.com
   Sets the FQDN (3)  for the myRouter object.
+
+  OBJECTATTRIBUTE;myRouter;COMMENT;This is a comment
+  Sets the comment field for the myRouter object.
 
 * Creating Container Link:
 
@@ -855,27 +858,38 @@ function addObjectIP($csvdata,$row_number)
 	}
 }	
 
-// This function adds Rack assignment info for an object
+// This function sets attributes for an object
 function setObjectAttributes($csvdata,$row_number) 
 {
-
 	$object = 	trim ($csvdata[1]);
 	$attr_id = 	trim ($csvdata[2]);
-	$attr_value = trim ($csvdata[3]);
+	$attr_value = 	trim ($csvdata[3]);
 	
 	if (strlen($object ) > 0) 
 	{
-
-		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id from Object where Object.name='".$object."';");
+		$result = usePreparedSelectBlade ("SELECT  Object.* from Object where Object.name='".$object."';");
 		$db_object = $result->fetch (PDO::FETCH_ASSOC);
-
+		
 		// Go ahead when object exists
 		if ($db_object) 
 		{
-			commitUpdateAttrValue ($db_object['id'], $attr_id, $attr_value);
-			showSuccess("line $row_number: attribute for  ".$object. ": ".$attr_id." ".$attr_value." updated");	
+			if ($attr_id == "NAME") $db_object['name'] = $attr_value;
+			if ($attr_id == "LABEL") $db_object['label'] = $attr_value;
+			if ($attr_id == "HASPROBLEMS") $db_object['has_problems'] = $attr_value;
+			if ($attr_id == "ASSETTAG") $db_object['asset_no'] = $attr_value;
+			if ($attr_id == "COMMENT") $db_object['comment'] = $attr_value;
+
+			if (preg_match('/NAME|LABEL|HASPROBLEMS|ASSETTAG|COMMENT/',$attr_id)) 
+			{
+				commitUpdateObject ($db_object['id'],$db_object['name'],$db_object['label'],$db_object['has_problems'],$db_object['asset_no'],$db_object['comment']);
+                        }
+			else 
+			{
+				commitUpdateAttrValue ($db_object['id'], $attr_id, $attr_value);
+			}
+			showSuccess("line $row_number: attribute for  ".$object. ": ".$attr_id." ".$attr_value." updated");
 		}
-	    else
+		else
 		{
 			showError("line $row_number: attribute for  ".$object. ": ".$attr_id." ".$attr_value." not updated. Import FAILED.");
 		}
