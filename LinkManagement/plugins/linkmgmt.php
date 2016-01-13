@@ -1,4 +1,8 @@
 <?php
+// TODO linkchain cytoscape create libs?
+//	linkchain all objects graph cytoscape takes ages
+//	avoid create own linkchain for every port on global map
+//	highlight port cytoscape maps
 /*
  * Link Management for RT >= 0.20.9
  *
@@ -34,10 +38,40 @@
  *		7. To get a Graphviz Map of a single port click the port name on the left
  *
  *
+ * Changes:
+ *	switch to new linkchain class
+ *		- nicer looking graphviz maps
+ *		- better multilink support
+ *
+ *	add cytoscape.js maps
+ *		- path higlighting
+ *		- zooming
+ *
  * Requirements:
  *	PHP 5 (http://php.net/)
  *	GraphViz_Image 1.3.0 or newer (http://pear.php.net/package/Image_GraphViz)
  *		GraphViz (http://www.graphviz.org/)
+ *
+ *	to user cytoscape js map the following is required:
+ *
+ *	Cytoscape.js (http://js.cytoscape.org/)
+ *		Racktables wwwroot/js directory:
+ *		https://cytoscape.github.io/cytoscape.js/api/cytoscape.js-latest/cytoscape.min.js
+ *	dagre.js
+ *		Racktables wwwroot/js directory:
+ *		https://raw.githubusercontent.com/cpettitt/dagre/master/dist/dagre.min.js
+ *		https://raw.githubusercontent.com/cytoscape/cytoscape.js-dagre/master/cytoscape-dagre.js
+ *	qtip
+ *		Racktables wwwroot/css directory:
+ *		https://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.1/jquery.qtip.min.css
+ *
+ *		Racktables wwwroot/js directory:
+ *		https://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.1/jquery.qtip.min.js
+ *		https://raw.githubusercontent.com/cytoscape/cytoscape.js-qtip/master/cytoscape-qtip.js
+ *
+ *	jquery >= 1.10.0 (qtip requirement)
+ *		Racktables wwwroot/js directory:
+ *		https://code.jquery.com/jquery-1.11.3.min.js
  *
  * INSTALL:
  *
@@ -86,7 +120,7 @@ ALTER TABLE LinkBackend CONVERT to CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 /**
  * The newest version of this plugin can be found at:
  *
- * https://github.com/github138/myRT-contribs/tree/develop-0.20.9
+ * https://github.com/github138/myRT-contribs/tree/develop-0.20.x
  *
  */
 
@@ -95,12 +129,6 @@ ALTER TABLE LinkBackend CONVERT to CHARACTER SET utf8 COLLATE utf8_unicode_ci;
  *
  * - code cleanups
  * - bug fixing
- *
- * - fix loopdectect for multiport
- *	MAX_LOOP_COUNT
- *	loop highlight gv map
- *
- * - fix column alignment with multilinks
  *
  * - put selected object/port top left of graph
  * - multlink count for Graphviz maps empty or full dot
@@ -123,6 +151,8 @@ $ophandler['object']['linkmgmt']['Help'] = 'linkmgmt_opHelp';
 
 $ophandler['object']['linkmgmt']['map'] = 'linkmgmt_opmap';
 $ajaxhandler['lm_mapinfo'] = 'linkmgmt_ajax_mapinfo';
+
+$ophandler['object']['linkmgmt']['cytoscapemap'] = 'linkmgmt_cytoscapemap';
 
 /* ------------------------------------------------- */
 
@@ -151,6 +181,1092 @@ $lm_cache = array(
 //	return 'std';
 //} /* linkmgmt_tabtrigger */
 
+/* -------------------linkchain stuff------------------------------- */
+class linkchain_cache
+{
+	public $cache = array();
+
+	function getobject($object_id , &$rack = null)
+	{
+		if(!$object_id)
+			return null;
+
+		if(!isset($this->cache['o'.$object_id]))
+		{
+			$object = spotEntity('object', $object_id);
+			$object['IPV4OBJ'] = considerConfiguredConstraint ($object, 'IPV4OBJ_LISTSRC');
+
+			/* get more object info */
+
+			if($object['IPV4OBJ'])
+			{
+				// ip addresses
+				//amplifyCell($object); /* get ports, ipv4, ipv6, nat4 and files */
+				$object['ipv4'] = getObjectIPv4Allocations ($object_id);
+				$object['portip'] = array();
+				foreach($object['ipv4'] as $ipv4)
+				{
+					$object['portip'][$ipv4['osif']] = $ipv4['addrinfo']['ip'];
+				}
+			}
+
+			if($object['container_id'])
+			{
+				$container = $this->getobject($object['container_id']);
+			}
+
+			$this->cache['o'.$object_id] = $object;
+		}
+		else
+			$object = $this->cache['o'.$object_id];
+
+		$rack = $this->getrack($object['rack_id']);
+
+		return $object;
+	}
+
+	function getrack($rack_id)
+	{
+		// rack
+		if($rack_id)
+		{
+			if(!isset($this->cache['r'.$rack_id]))
+			{
+				$rack = spotEntity('rack', $rack_id);
+				$this->cache['r'.$rack_id] = $rack;
+			}
+			else
+				$rack = $this->cache['r'.$rack_id];
+		}
+		else
+			$rack = null;
+
+		return $rack;
+
+	}
+}
+
+$lc_cache = new linkchain_cache();
+
+/* recursive class */
+class lm_linkchain implements Iterator {
+
+	const B2B_LINK_BGCOLOR = '#d8d8d8';
+	const CURRENT_PORT_BGCOLOR = '#ffff99';
+	const CURRENT_OBJECT_BGCOLOR = '#ff0000';
+	const HL_PORT_BGCOLOR = '#A0FFA0';
+	const ALTERNATE_ROW_BGCOLOR = '#f0f0f0';
+
+	public $first = null;
+	public $last = null;
+	public $init = null;
+	public $linked = null;
+	public $linkcount = 0;
+
+	public $loop = false;
+	private $lastipobjport = null;
+
+	public $ports = array();
+
+	private $currentid = null;
+	private $back = null;
+	public $initback = null;
+
+	//public $cache = null;
+	private $object_id = null;
+
+	private $icount = 0;
+	public $exceed = false;
+
+	public $initalign = true;
+
+	public $portmulti = 0;
+	public $prevportmulti = 0;
+
+	private $initport = false;
+
+	private $lids = array(); // link ids porta portb linktype
+
+	public $pids = null; // port ids
+	public $oids = null; // object ids
+
+	/* $back = null follow front and back
+	 * 		true follow back only
+	 *		false follow front only
+	 * $prevport first port
+	 */
+	function __construct($port_id, $back = null, $prevport = null, $reverse = false, &$pids = null, &$oids = null)
+	{
+		global $lc_cache;
+
+		$this->init = $port_id;
+
+		$this->initback = $back;
+
+		if($pids === null)
+			$this->pids = array();
+		else
+			$this->pids = &$pids;
+
+		if($oids === null)
+			$this->oids = array();
+		else
+			$this->oids = &$oids;
+
+		if($back !== null)
+		{
+			$prevport_id = $prevport['id'];
+			$prevlinktype =  $this->getlinktype(!$back);
+			//if($this->setlinkid($port_id, $prevport_id, $prevlinktype))
+			{
+				$this->last = $this->_getlinks($port_id, $back, null, $reverse);
+			}
+			//else
+			{
+			//	$this->loop = true;
+			//	echo "SUBCHAIN LID exists $port_id $prevlinktype $prevport_id<br>";
+			}
+
+			// TODO set previous port ..use _set... function()
+			$this->ports[$port_id][$this->getlinktype(!$back)]['portcount'] = 1;
+			$this->ports[$port_id][$this->getlinktype(!$back)]['linked'] = 1;
+			$this->ports[$port_id][$this->getlinktype(!$back)]['remote_id'] = $prevport['id'];
+			$this->ports[$port_id][$this->getlinktype(!$back)]['remote_object_id'] = $prevport['object_id'];
+			$this->ports[$port_id][$this->getlinktype(!$back)]['remote_name'] = $prevport['name'];
+			$this->ports[$port_id][$this->getlinktype(!$back)]['remote_object_name'] = $prevport['object_name'];
+			$this->ports[$port_id][$this->getlinktype(!$back)]['cableid'] = $prevport['cableid'];
+
+
+			$prevport = $this->_setportlink($prevport, $this->getlinktype(!$back));
+			$prevport[$this->getlinktype($back)]['portcount'] = null; 
+			$prevport[$this->getlinktype($back)]['remote_id'] = null; 
+			$prevport[$this->getlinktype($back)]['remote_object_id'] = null; 
+
+			$this->ports[$prevport_id] = $prevport;
+			$this->first = $prevport_id;
+			$this->linkcount++;
+
+		//	self::var_dump_html($this->ports[$port_id], "PORT");
+		//	self::var_dump_html($prevport, "PREVPORT");
+			$this->object_id = $_GET['object_id'];
+		}
+		else
+		{
+			// Link
+			$this->last = $this->_getlinks($port_id, false);
+
+			if(!$this->loop)
+				$this->first = $this->_getlinks($port_id, true, null, true);
+
+			$this->object_id = $this->ports[$this->init]['object_id'];
+		}
+
+		if(0)
+		if($this->loop)
+		{
+			$linktype = $this->getlinktype($back);
+			$prevlinktype = $this->getlinktype(!$back);
+
+			/* set first object */
+			$object_id = $this->ports[$port_id]['object_id'];
+			$object = $lc_cache->getobject($object_id);
+
+			if($object['IPV4OBJ'])
+				$this->lastipobjport = $port_id;
+
+			$this->first = $this->lastipobjport;
+		}
+
+		$this->linked = ($this->linkcount > 0);
+
+		if($reverse)
+			$this->reverse();
+
+	}
+
+	function setlinkid($porta, $portb, $linktype)
+	{
+		if($porta > $portb)
+			$lid = "${portb}_${porta}";
+		else
+			$lid = "${porta}_${portb}";
+
+		$lid .= $linktype;
+
+		if(isset($this->lids[$lid]))
+			return false;
+
+		$this->lids[$lid] = true;
+
+		return true;
+	}
+
+	function hasport_id($port_id)
+	{
+		if(isset($this->pids[$port_id]))
+			return true;
+		else
+			return false;
+	}
+
+	function hasobject_id($object_id)
+	{
+		if(isset($this->oids[$object_id]))
+			return true;
+		else
+			return false;
+	}
+
+	function _setportprevlink($port, $linktype, $prevport)
+	{
+		$port[$linktype] = array(
+					'cableid' => $prevport[$linktype]['cableid'],
+					'linked' => $prevport[$linktype]['linked'],
+					'portcount' => null, //$prevport[$linktype]['linked'],
+					'remote_id' => $prevport['id'],
+					'remote_name' => $prevport['name'],
+					'remote_object_id' => $prevport['object_id'],
+					'remote_object_name' => $prevport['object_name'],
+				);
+
+		return $port;
+	}
+
+	function _setportlink($port, $linktype)
+	{
+		$port[$linktype] = array(
+					'cableid' => $port['cableid'],
+					'linked' => $port['linked'],
+					'portcount' => $port['portcount'],
+					'remote_id' => $port['remote_id'],
+					'remote_name' => $port['remote_name'],
+					'remote_object_id' => $port['remote_object_id'],
+					'remote_object_name' => $port['remote_object_name'],
+				);
+
+		unset($port['cableid']);
+		unset($port['linked']);
+		unset($port['portcount']);
+		unset($port['remote_id']);
+		unset($port['remote_name']);
+		unset($port['remote_object_id']);
+		unset($port['remote_object_name']);
+
+		return $port;
+	}
+
+	function _getportlink($port)
+	{
+		$linktype = $this->getlinktype($this->back);
+		return array_merge($port, $port[$linktype], array('linktype' => $linktype));
+	}
+
+	function isback($linktable)
+	{
+		if($linktable == 'back')
+			return true;
+		else
+			return false;
+	}
+
+	function getlinktype($back)
+	{
+		return ($back ? 'back' : 'front' );
+	}
+
+	function reverse()
+	{
+		$tmp = $this->first;
+		$this->first = $this->last;
+		$this->last = $tmp;
+
+	}
+
+
+	//recursive
+	function _getlinks($port_id, $back = false, $prevport_id = null, $reverse = false)
+	{
+		global $lc_cache;
+		$linktype = $this->getlinktype($back);
+
+		if($port_id == $this->init)
+			$this->initport = true;
+
+		$ports = lm_getPortInfo($port_id, $back);
+
+		$portcount = count($ports);
+
+		$port = $ports[0];
+
+		// check for loops on multilinked ports
+		// set main port to looping one
+		if($portcount > 1)
+			foreach($ports as $mport)
+			{
+				if(isset($this->ports[$mport['remote_id']]))
+				{
+					$port = $mport;
+					break;
+				}
+			}
+
+		$remote_id = $port['remote_id'];
+
+		$port['portcount'] = $portcount;
+
+		$object_id =  $port['object_id'];
+
+		$rack = null;
+		$object = $lc_cache->getobject($object_id, $rack);
+
+		$this->oids[$object_id] = true;
+
+		if($object['IPV4OBJ'])
+			$this->lastipobjport = $port_id;
+
+		if($object)
+			if(isset($object['portip'][$port['name']]))
+				$port['portip'] = $object['portip'][$port['name']];
+
+		$port = $this->_setportlink($port, $linktype);
+
+		if($prevport_id)
+		{
+			$prevlinktype =  $this->getlinktype(!$back);
+			$port = $this->_setportprevlink($port, $prevlinktype, $this->ports[$prevport_id]);
+		}
+
+		//if(!$back)
+		{
+			if($prevport_id)
+			{
+				/* mutlilink: multiple previous links */
+				$prevports = lm_getPortInfo($port_id, !$back);
+
+				$prevportcount = count($prevports);
+
+				if($prevportcount > 1)
+				{
+					if($this->initport)
+						$this->initalign = false;
+
+					$port[$this->getlinktype(!$back)]['portcount'] = $prevportcount;
+
+					$lcs = array();
+					foreach($prevports as $mport)
+					{
+						if($prevport_id != $mport['remote_id'])
+						{
+							if(isset($this->pids[$mport['remote_id']]))
+								continue;
+
+							$mport['portcount'] = 1;
+							$lc = new lm_linkchain($mport['remote_id'], $back, $mport, !$reverse, $this->pids, $this->oids);
+							$lcs[$mport['remote_id']] = $lc;
+							$this->linkcount += $lc->linkcount;
+						}
+					}
+
+					$port[$this->getlinktype(!$back)]['chains'] = $lcs;
+				}
+			}
+		}
+
+		if($portcount > 1)
+		{
+			/* mutlilink: multiple links */
+
+			$lcs = array();
+			foreach($ports as $mport)
+			{
+				if($remote_id != $mport['remote_id'])
+				{
+					if(isset($this->pids[$mport['remote_id']]))
+						continue;
+
+					$mport['portcount'] = 1;
+					$lc = new lm_linkchain($mport['remote_id'], !$back, $mport, $reverse, $this->pids, $this->oids);
+					$lcs[$mport['remote_id']] = $lc; 
+					$this->linkcount += $lc->linkcount;
+				}
+			}
+
+			$port[$linktype]['chains'] = $lcs;
+
+		}
+
+		if(isset($this->ports[$port_id]))
+		{
+			if(!isset($this->ports[$port_id][$linktype]))
+			{
+				$this->ports[$port_id][$linktype] = $port[$linktype];
+			}
+		}
+		else
+			$this->ports[$port_id] = $port;
+
+		$this->pids[$port_id] = true;
+
+		if($remote_id)
+		{
+			if($this->setlinkid($port_id, $remote_id, $linktype))
+			{
+				$this->linkcount++;
+				return $this->_getlinks($remote_id, !$back, $port_id, $reverse);
+			}
+			else
+			{
+				$prevlinktype =  $this->getlinktype(!$back);
+				$this->loop = true;
+				if(isset($port[$prevlinktype]))
+					$this->ports[$port_id][$prevlinktype] = $port[$prevlinktype];
+
+				$this->first = $remote_id;
+			}
+		}
+
+		return $port_id;
+	}
+
+	// TODO
+	function getchaintext()
+	{
+		//$this::var_dump_html($this->ports);
+		$chain = "";
+		foreach($this as $id => $port)
+		{
+			$linktype = $port['linktype']; //$this->getlinktype();
+			if($linktype == 'front')
+				$arrow = ' --> ';
+			else
+				$arrow = ' => ';
+
+			$text = $port['object_name']." [".$port['name']."]";
+
+			if($id == $this->init)
+				$chain .= "*$text*";
+			else
+				$chain .= "$text";
+
+			$remote_id = $port['remote_id'];
+
+			if($remote_id)
+				$chain .= $arrow;
+
+			if($this->loop && $remote_id == $this->first)
+			{
+				$chain .= "LOOP!";
+				break;
+			}
+		}
+		return $chain;
+	}
+
+	function getchainlabeltrstart($rowbgcolor = '#ffffff')
+	{
+
+		$port_id = $this->init;
+
+		$initport = $this->ports[$port_id];
+
+		$urlparams = array(
+				'module' => 'redirect',
+				'page' => 'object',
+				'tab' => 'linkmgmt',
+				'op' => 'map',
+				'usemap' => 1,
+				'object_id' => $initport['object_id'],
+				);
+
+		$hl_port_id = NULL;
+		if($hl_port_id !== NULL)
+			$urlparams['hl_port_id'] = $hl_port_id;
+		else
+			$urlparams['port_id'] = $port_id;
+
+		$title = "linkcount: ".$this->linkcount."\nTypeID: ${initport['oif_id']}\nPortID: $port_id";
+
+		$onclick = 'onclick=window.open("'.makeHrefProcess(array_merge($_GET, $urlparams)).'","Map","height=500,width=800,scrollbars=yes");';
+
+		if($hl_port_id == $port_id)
+		{
+			$hlbgcolor = "bgcolor=".self::HL_PORT_BGCOLOR;
+		}
+		else
+			$hlbgcolor = "bgcolor=$rowbgcolor";
+
+		if($rowbgcolor == '#ffffff')
+			$troutlinecolor = 'grey';
+		else
+			$troutlinecolor = 'white';
+
+		/* Current Port */
+		$chainlabel = '<tr '.$hlbgcolor.' style="outline: thin solid '.$troutlinecolor.';"><td nowrap="nowrap" bgcolor='.($this->loop ? '#ff9966' : self::CURRENT_PORT_BGCOLOR).' title="'.$title.
+			'"><a '.$onclick.'>'.
+			$initport['name'].': </a></td>';
+
+		return $chainlabel;
+	}
+
+	function getchainrow($allback = false, $rowbgcolor = '#ffffff', $isprev = false)
+	{
+		$port_id = $this->init;
+
+		$initport = $this->ports[$port_id];
+		$portmulti = 0;
+		$prevportmulti = 0;
+
+		$chain = "";
+
+		$remote_id = null;
+		$portalign = false;
+		$portmultis = array();
+		$i=0;
+		foreach($this as $id => $port)
+		{
+			if($this->loop && (($isprev && $id == $this->last) || ($this->initback  === null && !$isprev && $id == $this->first)))
+				$chain .= '<td bgcolor=#ff9966>LOOP</td>';
+
+			$object_text = $this->getprintobject($port);
+			$port_text = $this->getprintport($port);
+
+			if($this->initback !== null && (($isprev && $id == $this->last) || (!$isprev && $id == $this->first)))
+			{
+				$object_text = "";
+				$port_text = "";
+			}
+
+			$linktype = $port['linktype'];
+			$prevlinktype = ($linktype == 'front' ? 'back' : 'front');
+
+			if($port[$prevlinktype]['portcount'] > 1)
+			{
+				$prevportmulti++;
+				/* mutlilink: multiple previous links */
+
+				$notrowbgcolor = ($rowbgcolor == lm_linkchain::ALTERNATE_ROW_BGCOLOR ? '#ffffff' : lm_linkchain::ALTERNATE_ROW_BGCOLOR );
+				if($this->prevportmulti % 2)
+				{
+					$oddbgcolor = $rowbgcolor;
+					$evenbgcolor = $notrowbgcolor;
+				}
+				else
+				{
+					$oddbgcolor = $notrowbgcolor;
+					$evenbgcolor = $rowbgcolor;
+				}
+
+				$chain = "<td><table id=pmp frame=box><tr id=main><td><table id=pmmain align=right><tr>$chain</tr></table></td></tr><!-- main tr--><tr><td><table id=plcs align=right width=100%>"; // end table pmmain; end main tr
+
+				$mi = 0;
+				foreach($port[$prevlinktype]['chains'] as $mlc)
+				{
+					$mbgcolor = ($mi % 2 ? $evenbgcolor : $oddbgcolor);
+					$chain .= "<tr bgcolor=$mbgcolor align=right><td><table id=plc><tr>".$mlc->getchainrow($allback,$mbgcolor, true)."</tr></table><!-- end plc --></td></tr>"; // close table plc
+					$mi++;
+				}
+				$chain .= "</table><!--plcs--></td></tr></table><!--pmp--></td><td bgcolor=#ff0000></td>"; // clode tables plcs; pmp
+
+			}
+
+			if($port_text && !$this->loop && $id == $this->first)
+			{
+				$chain .= $this->_printlinkportsymbol($id, $prevlinktype);
+
+				if($prevlinktype == 'front')
+					$chain .= $this->printcomment($port);
+			}
+
+			// current port align	
+			if($this->initback === null && $port_text && !$portmulti && !$prevportmulti && $this->initalign && $id == $port_id)
+			{
+				$portalign = true;
+				$port_text = "</tr></table><!--t1 current--></td><!--end 1st td--><td id=2nd width=100%><table id=t2><tr>$port_text"; // close table t1 current; clode 1st td
+			}
+
+			$object_id = $port['object_id'];
+
+			$prevobject_id = $port[$prevlinktype]['remote_object_id'];
+			$remote_object_id = $port['remote_object_id'];
+
+			if($linktype == 'front')
+			{
+			//	$arrow = ' ---> ';
+				if($object_text)
+				{
+					if($prevobject_id != $object_id || $allback)
+						$chain .= $object_text."<td>></td>";
+
+					$chain .= $port_text;
+				}
+
+			}
+			else
+			{
+			//	$arrow = ' ===> ';
+				if($object_text)
+					$chain .= $port_text."<td><</td>".$object_text;
+			}
+
+			if($port['portcount'] > 1)
+			{
+				
+				/* mutlilink: multiple links */
+
+				$notrowbgcolor = ($rowbgcolor == lm_linkchain::ALTERNATE_ROW_BGCOLOR ? '#ffffff' : lm_linkchain::ALTERNATE_ROW_BGCOLOR );
+				if($this->portmulti % 2)
+				{
+					$oddbgcolor = $rowbgcolor;
+					$evenbgcolor = $notrowbgcolor;
+				}
+				else
+				{
+					$oddbgcolor = $notrowbgcolor;
+					$evenbgcolor = $rowbgcolor;
+				}
+	
+				$chain .= "<td bgcolor=#ff0000></td><td><table id=mp frame=box>";
+
+				$multichain = "<tr><td><table id=mlcs width=100%>";
+
+				$mi = 0;
+				foreach($port['chains'] as $mlc)
+				{
+
+					$mbgcolor = ($mi % 2 ? $evenbgcolor : $oddbgcolor);
+					$multichain .= "<tr bgcolor=$mbgcolor><td><table id=t9><tr>".$mlc->getchainrow(false, $mbgcolor)."</tr></table></td></tr>";
+					$mi++;
+				}
+
+				$multichain .= "</table><!-- mlcs --></td></tr>"; // close table mlcs
+
+				$portmultis[] = $multichain;
+				
+				// main
+				$chain .= "<tr id=mm><td><table id=pmm><tr>";
+
+				$portmulti++;
+
+			}
+
+			$remote_id = $port['remote_id'];
+
+			if($remote_id)
+				if($object_id != $remote_object_id || $allback || $linktype == 'front')
+					$chain .= $this->printlink($port, $linktype);
+				else
+					$chain .= "<td>></td>";
+
+			if($port_text && !($remote_id && $this->loop) && $id == $this->last)
+			{
+				$chain .= $this->_printlinkportsymbol($id, $linktype);
+
+				if($linktype == 'front')
+					$chain .= $this->printcomment($port);
+			}
+
+			$i++;
+		} // foreach port
+
+		if($this->loop && $remote_id)
+		{
+			$chain .= '<td bgcolor=#ff9966>LOOP</td>';
+			showWarning("Possible Loop on Port ($linktype) ".$initport['name']);
+		}
+
+		if($this->exceed)
+		{
+			$chain .= '<td bgcolor=#ff9966>LINKCOUNT EXCEEDED</td>';
+			$linktype = $this->getlinktype($this->back);
+			showWarning("Possible Loop linkcount(".$this->linkcount.") exceeded on Port ($linktype) ".$initport['name']);
+		}
+
+		foreach(array_reverse($portmultis) as $multitr)
+		{
+			$chain .= "</tr><!-- tr mm --></table><!-- pmm --></td></tr>$multitr</table><!-- mp--></td>"; // close table pmm; mp
+		}	
+
+		if($this->initback === null)
+		{
+			// TODO width..
+			$chain = "<td id=1st".(!$portalign ? " colspan=2" : " width=1%")."><table id=t1".(!$portalign ? "" : " align=right")."><tr>$chain";
+			$chain .= "</tr></table><!-- end t1/t2 --></td><!--1st/2nd td-->"; // close table t1/t2; close 1st/2nd td
+		}
+
+		$this->portmulti += $portmulti;
+		$this->prevportmulti += $prevportmulti;
+
+		return $chain;
+	}
+
+	/*
+	 */
+	function getprintobject($port) {
+		global $lc_cache;
+
+		$object_id = $port['object_id'];
+
+		if($object_id == $this->object_id) {
+                        $color='color: '.self::CURRENT_OBJECT_BGCOLOR;
+                } else {
+                        $color='';
+                }
+
+		$style = "font-size: 80%;";
+
+		$rack = null;
+		$object = $lc_cache->getobject($object_id, $rack);
+
+                if(!$rack)
+			$rackinfo = '<span style="'.$style.'">Unmounted</span>';
+                else
+		{
+                        $rackinfo = '<a style="'.$style.'" href='.makeHref(array('page'=>'row', 'row_id'=>$rack['row_id'])).'>'.$rack['row_name']
+                                .'</a>/<a style="'.$style.'" href='.makeHref(array('page'=>'rack', 'rack_id'=>$rack['id'])).'>'
+                                .$rack['name'].'</a>';
+		}
+
+                return '<td><table frame=box align=center cellpadding=5 cellspacing=0><tr><td align=center><a style="font-weight:bold;'
+                        .$color.'" href="'.makeHref(array('page'=>'object', 'tab' => 'linkmgmt', 'object_id' => $object_id))
+                        .'"><pre>'.$object['name'].($object['container_name'] ? " (".$object['container_name'].")" : "").'</pre></a><pre>'.$rackinfo
+                        .'</pre></td></tr></table></td>';
+
+	} /* printobject */
+
+	function getprintport($port, $multilink = false) {
+		global $lm_cache, $lm_multilink_port_types;
+
+		/* multilink port */
+		$multilink = in_array($port['oif_id'], $lm_multilink_port_types);
+
+		/* set bgcolor for current port */
+		if($this->initback === null && $port['id'] == $this->init) {
+			$bgcolor = 'bgcolor='.self::CURRENT_PORT_BGCOLOR;
+			$idtag = ' id='.$port['id'];
+		} else {
+			$bgcolor = 'bgcolor=#e0e0f8';
+			$idtag = '';
+		}
+
+		$mac = trim(preg_replace('/(..)/','$1:',$port['l2address']),':');
+
+		$title = "Label: ${port['label']}\nMAC: $mac\nTypeID: ${port['oif_id']}\nPortID: ${port['id']}";
+
+		if(isset($port['portip']))
+			$ip = "<br><p style=\"font-size: 80%\">".$port['portip']."</p>";
+		else
+			$ip = "";
+
+		return '<td><table><tr><td'.$idtag.' align=center '.$bgcolor.' title="'.$title.'"><pre>[<a href="'
+			.makeHref(array('page'=>'object', 'tab' => 'linkmgmt', 'object_id' => $port['object_id'], 'hl_port_id' => $port['id']))
+			.'#'.$port['id']
+			.'">'.$port['name'].'</a>]'.$ip.'</pre>'.($multilink && $lm_cache['allowbacklink'] ? $this->_getlinkportsymbol($port['id'], 'back') : '' ).'</td></tr></table></td>';
+
+	} /* printport */
+	
+	/*
+	 */
+	function printlink($port, $linktype) {
+
+		$link_id = $port['id']."_".$port['remote_id'];
+
+		if($linktype == 'back')
+		{
+			$arrow = '====>';
+			$link_id .= '_back';
+		}
+		else
+			$arrow = '---->';
+
+		$port_id = $port['id'];
+
+		/* link */
+		return '<td align=center>'
+			.'<pre><a class="editcable" id='.$link_id.'>'.$port['cableid']
+			."</a></pre><pre>$arrow</pre>"
+			.$this->_printUnLinkPort($port, $linktype)
+			.'</td>';
+	} /* printlink */
+
+	/*
+	 * return link symbol
+	 */
+	function _getlinkportsymbol($port_id, $linktype) {
+		$retval = '<span onclick=window.open("'.makeHrefProcess(array_merge($_GET,
+			array('op' => 'PortLinkDialog','port' => $port_id,'linktype' => $linktype ))).'","name","height=800,width=800");'
+		        .'>';
+
+                $img = getImageHREF ('plug', $linktype.' Link this port');
+
+		if($linktype == 'back')
+			$img = str_replace('<img',
+				'<img style="transform:rotate(180deg);-o-transform:rotate(180deg);-ms-transform:rotate(180deg);-moz-transform:rotate(180deg);-webkit-transform:rotate(180deg);"',
+				$img);
+
+		$retval .= $img;
+		$retval .= "</span>";
+		return $retval;
+
+	} /* _getlinkportsymbol */
+
+	/*
+	 * print link symbol
+	 *
+	 */
+       function _printlinkportsymbol($port_id, $linktype = 'front') {
+		global $lm_cache;
+
+		if($linktype == 'front' && !$lm_cache['allowlink'])
+			return;
+
+		if($linktype != 'front' && !$lm_cache['allowbacklink'])
+			return;
+
+               	return "<td align=center>"
+			.$this->_getlinkportsymbol($port_id, $linktype)
+			."</td>";
+
+        } /* _printlinkportsymbol */
+
+	/*
+	 */
+	function printcomment($port) {
+
+		if(!empty($port['reservation_comment'])) {
+			$prefix = '<b>Reserved: </b>';
+		} else
+			$prefix = '';
+
+		return '<td>'.$prefix.'<i><a class="editcmt" id='.$port['id'].'>'.$port['reservation_comment'].'</a></i></td>';
+
+	} /* printComment */
+
+	/*
+	 * return link cut symbol
+	 *
+         * TODO $opspec_list
+	 */
+	function _printUnLinkPort($src_port, $linktype) {
+		global $lm_cache;
+
+		if($linktype == 'front' && !$lm_cache['allowlink'])
+			return;
+
+		if($linktype != 'front' && !$lm_cache['allowbacklink'])
+			return;
+
+		$dst_port = $this->ports[$src_port['remote_id']];
+
+		return '<a href='.
+                               makeHrefProcess(array(
+					'op'=>'unlinkPort',
+					'port_id'=>$src_port['id'],
+					'remote_id' => $dst_port['id'],
+					'object_id'=> $this->object_id, //$this->ports[$this->init]['object_id'],
+					'tab' => 'linkmgmt',
+					'linktype' => $linktype)).
+                       ' onclick="return confirm(\'unlink ports '.$src_port['name']. ' -> '.$dst_port['name']
+					.' ('.$linktype.') with cable ID: '.$src_port['cableid'].'?\');">'.
+                       getImageHREF ('cut', $linktype.' Unlink this port').'</a>';
+
+	} /* _printUnLinkPort */
+
+	// TODO
+	// html table
+	function getchainhtml()
+	{
+		$remote_id = $this->first;
+
+		// if not Link use LinkBackend
+		$back = $this->ports[$remote_id]['front']['remote_id'];
+
+		$chain = "<table>";
+
+		for(;$remote_id;)
+		{
+			$back = !$back;
+			$linktype = $port['linktype'];
+
+			if($back)
+			{
+			//	$linktable = 'LinkBackend';
+				$arrow = ' => ';
+			}
+			else
+			{
+			//	$linktable = 'Link';
+				$arrow = ' --> ';
+			}
+
+			$port = $this->ports[$remote_id][$linktype];
+
+			if($this->init == $remote_id)
+				$chain .= "<tr><td><b>".$port['object_name']."</b></td><td><b> [".$port['name']."]</b></td>";
+			else
+				$chain .= "<tr><td>".$port['object_name']."</td><td> [".$port['name']."]</td>";
+
+			if($remote_id == $this->first || $remote_id == $this->last)
+				$chain .= "<td><div name=\"port${remote_id}-status\"></div></td>";
+			else
+				$chain .= "<td></td>";
+
+			$remote_id = $port['remote_id'];
+
+			if($remote_id)
+				$chain .= "<td>$arrow</td></tr>";
+			else
+				$chain .= "<td></td></tr>";
+
+			if($this->loop && $remote_id == $this->first)
+			{
+				$chain .= "LOOP!<br>";
+				break;
+			}
+
+		}
+
+		$chain .= "</table>";
+
+		return $chain;
+	}
+
+	function getport($id)
+	{
+		return $this->ports[$id];
+	}
+
+	/* Iterator */
+	function rewind() {
+		$this->currentid = $this->first;
+
+		$this->back = isset($this->ports[$this->currentid]['back']['remote_id']);
+
+		$this->icount = 0;
+	}
+
+	function current() {
+		return $this->_getportlink($this->ports[$this->currentid]);
+	}
+
+	function key() {
+		return $this->currentid;
+	}
+
+	function next() {
+		$port = $this->current();
+		$remote_id = $port['remote_id'];
+	
+		if($this->loop && $remote_id == $this->first)
+			$this->currentid = false;
+		else
+			$this->currentid = $remote_id;
+
+		$this->back = !$this->back;
+
+		$this->icount++;
+	}
+
+	function valid() {
+
+		/* linkcout exceeded */
+		if($this->icount > $this->linkcount+1)
+		{
+			$this->exceed = true;
+			return false;
+		}
+
+		return $this->currentid;
+	}
+
+	/* for debugging only */
+	function var_dump_html(&$var, $msg = "") {
+		echo "<pre>------------------Start Var Dump -------------$msg------------\n";
+		var_dump($var);
+		echo "\n---------------------END Var Dump -----------$msg-------------</pre>";
+	}
+} // lm_linkchain
+
+/*
+ *   from RT database.php fetchPortList()
+ *	with Link table selection
+ *	and multilink changes
+ */
+function lm_fetchPortList ($sql_where_clause, $query_params = array(), $linktable = 'Link')
+{
+	$query = <<<END
+SELECT
+	Port.id,
+	Port.name,
+	Port.object_id,
+	Object.name AS object_name,
+	Port.l2address,
+	Port.label,
+	Port.reservation_comment,
+	Port.iif_id,
+	Port.type AS oif_id,
+	(SELECT PortInnerInterface.iif_name FROM PortInnerInterface WHERE PortInnerInterface.id = Port.iif_id) AS iif_name,
+	(SELECT PortOuterInterface.oif_name FROM PortOuterInterface WHERE PortOuterInterface.id = Port.type) AS oif_name,
+
+	lk.cable AS cableid,
+	IF(lk.porta = Port.id, pb.id, pa.id) AS remote_id,
+	IF(lk.porta = Port.id, pb.name, pa.name) AS remote_name,
+	IF(lk.porta = Port.id, pb.object_id, pa.object_id) AS remote_object_id,
+	IF(lk.porta = Port.id, ob.name, oa.name) AS remote_object_name,
+
+	(SELECT COUNT(*) FROM PortLog WHERE PortLog.port_id = Port.id) AS log_count,
+	PortLog.user,
+	UNIX_TIMESTAMP(PortLog.date) as time
+FROM
+	Port
+	INNER JOIN Object ON Port.object_id = Object.id
+
+	LEFT JOIN $linktable AS lk ON lk.porta = Port.id or lk.portb = Port.id
+	LEFT JOIN Port AS pa ON pa.id = lk.porta
+	LEFT JOIN Object AS oa ON pa.object_id = oa.id
+	LEFT JOIN Port AS pb ON pb.id = lk.portb
+	LEFT JOIN Object AS ob ON pb.object_id = ob.id
+
+	LEFT JOIN PortLog ON PortLog.id = (SELECT id FROM PortLog WHERE PortLog.port_id = Port.id ORDER BY date DESC LIMIT 1)
+WHERE
+	$sql_where_clause
+END;
+
+	$result = usePreparedSelectBlade ($query, $query_params);
+
+	$ret = array();
+	while ($row = $result->fetch (PDO::FETCH_ASSOC))
+	{
+		$row['l2address'] = l2addressFromDatabase ($row['l2address']);
+		$row['linked'] = isset ($row['remote_id']) ? 1 : 0;
+
+		// last changed log
+		$row['last_log'] = array();
+		if ($row['log_count'])
+		{
+			$row['last_log']['user'] = $row['user'];
+			$row['last_log']['time'] = $row['time'];
+		}
+		unset ($row['user']);
+		unset ($row['time']);
+
+		$ret[] = $row;
+	}
+	return $ret;
+} /* lm_fetchPortList */
+
+function lm_getPortInfo ($port_id, $back = false)
+{
+	$linktable = ($back ? 'LinkBackend' : 'Link');
+	if($back)
+		$result = lm_fetchPortList ('Port.id = ?', array ($port_id), $linktable);
+	else
+		$result = fetchPortList ('Port.id = ?', array ($port_id));
+
+        //return empty ($result) ? NULL : $result[0];
+        return $result;
+} /* lm_getPortInfo */
+
+/* -------------------------------------------------------------------------- */
 /* -------------------------------------------------- */
 
 function linkmgmt_opHelp() {
@@ -285,6 +1401,7 @@ function lm_renderObjectCell ($cell)
 }
 /* -------------------------------------- */
 
+// TODO replace..
 class linkmgmt_RTport {
 
 	private $port_id = NULL;
@@ -690,9 +1807,6 @@ class lm_Image_GraphViz extends Image_GraphViz {
 
 	if($debug) echo "-- DEBUG --<br>";
 
-	$gvmap = new linkmgmt_gvmap($object_id, $port_id, $allports, $hl, $remote_id);
-
-	if($debug) echo "-- after gvmap --<br>";
 
 	switch($type) {
 		case 'gif':
@@ -715,8 +1829,16 @@ class lm_Image_GraphViz extends Image_GraphViz {
 		case 'cmapx':
 			$ctype = 'text/plain';
 			break;
-
 	}
+
+	$start = microtime(true);
+	$gvmap = new linkmgmt_gvmap($object_id, $port_id, $allports, $hl, $remote_id);
+	$stop = microtime(true);
+
+	if($debug)
+		echo "gvmap Time: ".( $stop - $start )."<br>";
+
+	if($debug) echo "-- after gvmap --<br>";
 
 	if($usemap)
 	{
@@ -841,7 +1963,13 @@ class lm_Image_GraphViz extends Image_GraphViz {
 			$gvmap->setFalseOnError(False);
 
 		$data2 = '';
+
+		$start = microtime(true);
 		$data = $gvmap->fetch($type, $command, 'cmapx', $data2);
+		$stop = microtime(true);
+
+		if($debug)
+			echo "DOT time: ".( $stop - $start )."<br>";
 
 		if($data === false)
 			echo "ERROR Fetching image data!<br>";
@@ -876,12 +2004,720 @@ class lm_Image_GraphViz extends Image_GraphViz {
 
 } /* linkmgmt_opmap */
 
+class cytoscapedata
+{
+	public $objects = array();
+
+	public $pids = array();
+
+	public $parents = array();
+	public $nodes = array();
+
+	public $edges = NULL;
+
+	public $debug = null;
+
+	function __construct()
+	{
+
+		$this->edges['parents'] = array();
+		$this->edges['nodes'] = array();
+	}
+
+	function addnode($id, $values = NULL, &$arr = NULL)
+	{
+		$data = array( 'id' => $id );
+
+		if($values != NULL)
+			$data = $data + $values;
+
+		$node['data'] = $data;
+
+		$this->objects[] = array('group' => 'nodes')  + $node;
+
+		switch($values['type'])
+		{
+			case 'port':
+				$this->nodes[$id] = array('group' => 'nodes')  + $node;
+				break;
+			case 'object':
+			case 'container':
+				$this->parents[$id] = array('group' => 'nodes')  + $node;
+				break;
+		}
+
+		if($arr !== NULL)
+			$arr[] = array('group' => 'nodes')  + $node;
+	}
+
+	function addedge($id, $source, $target, $values = NULL, &$arr = NULL)
+	{
+		$data = array(
+				'id' => $id,
+				'source' => $source,
+				'target' => $target
+			 );
+
+		if($values != NULL)
+			$data = $data + $values;
+
+		$edge['data'] = $data;
+
+		//$this->elements['edges'][] = $edge;
+
+		if($arr !== NULL)
+		{
+			$arr[$id] = array('group' => 'edges') + $edge;
+		}
+		else
+			$this->objects[] = array('group' => 'edges') + $edge;
+
+		//$this->edges[] = array('group' => 'edges') + $edge;
+	}
+
+	function _addobjectnode($object_id, $type = 'object')
+	{
+			global $lc_cache;
+
+			if(!isset($this->parents["o$object_id"]))
+			{
+				$rack = null;
+				$object = $lc_cache->getobject($object_id, $rack);
+
+				$clustertitle = "${object['dname']}";
+
+				//has_problems
+				//if($object['has_problems'] != 'no')
+
+				$rack_text = "";
+				if(!empty($rack['row_name']) || !empty($rack['name']))
+				{
+					$rack_text = "${rack['row_name']} / ${rack['name']}";
+				}
+
+				$data = array('label' => $object['name'], 'text' => $rack_text, 'type' => $type, 'has_problems' => $object['has_problems']);
+
+				$container_id = $object['container_id'];
+				if($container_id)
+				{
+					$data['parent'] = "o$container_id";
+					$this->_addobjectnode($container_id, 'container');
+				}
+
+				$this->addnode('o'.$object_id, $data);
+			}
+
+	}
+
+	// cytoscape
+	function addlinkchain($linkchain, $index) {
+
+		foreach($linkchain as $id => $port)
+		{
+
+			if(!$linkchain->linked)
+				continue;
+
+			$this->_addobjectnode($port['object_id']);
+
+			$text = (isset($port['portip']) ? $port['portip'] : "" );
+			$nodedata = array('label' => $port['name'], 'parent' => 'o'.$port['object_id'], 'text' => $text, 'type' => 'port', 'index' => $index , 'loop' => ($linkchain->loop ? '1' : '0'));
+
+			//$this->addnode('l_'.$port['id'], array( 'label' => $port['name'], 'parent' => 'p'.$port['id'], 'text' => $text ));
+
+			if($port['portcount'] > 1)
+				foreach($port['chains'] as $mlc)
+				{
+					$this->addlinkchain($mlc, 0); // TODO index
+				}
+
+			$prevlinktype = ($port['linktype'] == 'front' ? 'back' : 'front');
+			if($port[$prevlinktype]['portcount'] > 1)
+			{
+				foreach($port[$prevlinktype]['chains'] as $mlc)
+				{
+					$this->addlinkchain($mlc, 0, false); // TODO index
+				}
+			}
+
+			if($port['remote_id'])
+			{
+
+				$this->_addobjectnode($port['remote_object_id']);
+
+				$linktype = $port['linktype'];
+				$edgedata = array('label' => $port['cableid'], 'type' => $linktype, 'loop' => ($linkchain->loop ? '1' : '0'));
+
+				if($linkchain->loop && $port['remote_id'] == $linkchain->first)
+				{
+					$nodedata['loopedge'] = array('group' => 'edges', 'data' => array( 'id' => 'le'.$port['id']."_".$port['remote_id'], 'source' => 'p'.$port['id'], 'target' => 'p'.$port['remote_id']) +  $edgedata);
+				}
+				else
+				{
+
+					$this->addedge('e'.$port['id']."_".$port['remote_id'], 'p'.$port['id'], 'p'.$port['remote_id'], $edgedata);
+					$this->addedge('e'.$port['id']."_".$port['remote_id'], 'p'.$port['id'], 'p'.$port['remote_id'], $edgedata, $this->edges['nodes']);
+					$id1 = $port['object_id'];
+					if($id1 > $port['remote_object_id'])
+					{
+						$id1 = $port['remote_object_id'];
+						$id2 = $port['object_id'];
+					}
+					else
+						$id2 = $port['remote_object_id'];
+
+					$peid = "pe".$id1."_".$id2;
+
+					if(isset($this->edges['parents'][$peid]))
+						$this->edges['parents'][$peid]['data']['linkcount']++;
+					else
+						$this->addedge($peid, 'o'.$id1, 'o'.$id2, array('type' => $linktype, 'linkcount' => 1), $this->edges['parents']);
+				}
+			}
+
+			$this->addnode('p'.$port['id'], $nodedata);
+		}
+
+		if(0)
+		if($linkchain->first != $linkchain->last )
+		{
+				$first = $linkchain->first;
+				$last = $linkchain->last;
+				$this->addedge("l${first}_${last}",'p'.$first, 'p'.$last, array('type' => 'logical', 'label' => "logical"));
+		}
+
+		//portlist::var_dump_html($this->parents);
+	}
+
+	function getlinkchains($object_id) {
+
+		$this->objects = array();
+		$this->parents = array();
+		$this->nodes = array();
+		$this->edges['parents'] = array();
+		$this->edges['nodes'] = array();
+
+		$this->_getlinkchains($object_id);
+	}
+
+	function getelements()
+	{
+		//lm_linkchain::var_dump_html($this);
+		return array('parents' => array_values($this->parents),
+			'nodes' =>  array_values($this->nodes),
+			'edges' =>  array(
+					'parents' => array_values($this->edges['parents']),
+					'nodes' => array_values($this->edges['nodes'])
+					),
+			'debug' => $this->debug
+			);
+
+	}
+
+	function gettest()
+	{
+		return array_merge(array_values($this->parents), array_values($this->edges['parents']));
+		//return array_merge(array_values($this->parents), array_values($this->edges['parents']), array_values($this->nodes), array_values($this->edges['nodes']));
+	}
+
+	function _getlinkchains($object_id) {
+
+
+		// container
+	//	$object = spotEntity('object', $object_id);
+		$object['ports'] = getObjectPortsAndLinks ($object_id);
+
+		$i = 0;
+		foreach($object['ports'] as $key => $port)
+		{
+
+			if(isset($this->pids[$port['id']]))
+				continue;
+
+			$i++;
+			$lc = new lm_linkchain($port['id']);
+
+			$this->pids += $lc->pids;
+
+			$this->addlinkchain($lc, $i);
+
+		}
+
+		$children = getEntityRelatives ('children', 'object', $object_id);
+
+		foreach($children as $child)
+			$this->_getlinkchains($child['entity_id']);
+	}
+
+	function allobjects()
+	{
+
+		$this->objects = array();
+		$this->parents = array();
+		$this->nodes = array();
+		$this->edges['parents'] = array();
+		$this->edges['nodes'] = array();
+
+		$objects = listCells('object');
+
+		$i = 0;
+		foreach($objects as $object)
+		{
+			//echo $object['id']."<br>";
+			$this->_getlinkchains($object['id']);
+			$i++;
+			if($i > 20 ) break;
+		}
+	}
+}
+
+function linkmgmt_cytoscapemap() {
+
+
+	$object_id = $_GET['object_id'];
+
+	if(isset($_GET['json']))
+	{
+		ob_start();
+		$data = new cytoscapedata();
+		$data->getlinkchains($object_id);
+		//$data->allobjects(); // ugly graph;
+		//echo json_encode($data->objects);
+
+		if(ob_get_length())
+			$data->debug = ob_get_contents();
+
+		ob_end_clean();
+
+		echo json_encode($data->getelements());
+
+		exit;
+	}
+
+	echo (<<<HTMLEND
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+  font: 14px helvetica neue, helvetica, arial, sans-serif;
+}
+
+#cy {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+</style>
+<meta charset=utf-8 />
+<meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui">
+<title>Compound nodes</title>
+<!--<script src="js/jquery-1.4.4.min.js"></script>-->
+
+<script src="js/jquery-1.11.3.min.js"></script>
+<script src="js/cytoscape.min.js"></script>
+<script src="js/dagre.min.js"></script>
+<script src="js/cytoscape-dagre.js"></script>
+<link rel="stylesheet" type="text/css" href="css/jquery.qtip.min.css">
+<script src="js/jquery.qtip.min.js"></script>
+<script src="js/cytoscape-qtip.js"></script>
+
+<!--<script src="js/cytoscape-css-renderer_mod.js"></script>-->
+<!--<script src="js/cytoscape.js-navigator.js_mod"></script>-->
+<script>
+var cy = null;
+var cy2 = null;
+var layout = null;
+var data = null;
+
+$(function(){ // on dom ready
+  var cystyle = [
+    {
+      selector: 'node',
+      css: {
+        'content': 'data(id)',
+	'text-wrap': 'wrap'
+      },
+      style: {
+        'background-color': '#666',
+        'label': 'data(label)',
+	'width': 'label',
+	'min-zoomed-font-size' : 8,
+        'text-valign': 'center',
+        'text-halign': 'center',
+	'text-wrap': 'wrap',
+	'shape': function(ele) {
+			if(ele.data('type') != 'port')
+				return 'rectangle';
+			else
+				return 'ellipse';
+		},
+
+      }
+    },
+    {
+      selector: '\$node > node',
+      css: {
+        'padding-top': '10px',
+        'padding-left': '10px',
+        'padding-bottom': '10px',
+        'padding-right': '10px',
+        'text-valign': 'top',
+        'text-halign': 'center',
+        'background-color': '#bbb',
+	'min-zoomed-font-size' : 6,
+      }
+    },
+    {
+      selector: 'edge',
+      css: {
+        'target-arrow-shape': 'triangle',
+	'line-color': function(ele){
+				if(ele.data('type') == 'front')
+					return 'black';
+				else
+					return 'grey';
+			 },
+	'line-style': function(ele){
+				if(ele.data('type') == 'front')
+					return 'solid';
+				else
+					return 'dashed';
+			 },
+	'width': function(ele){
+				var ret = 1;
+				if(ele.data('type') == 'front')
+					ret = 3;
+				else
+					ret = 5;
+
+				if(1)
+				if(ele.data('linkcount'))
+				{
+					ret = (ele.data('linkcount') * ret);
+				}
+
+				//console.log(ele.data('id') + ret);
+				return ret;
+			 },
+//	'curve-style': 'segments',
+	'font-size': '8',
+	'min-zoomed-font-size' : 8,
+        'label': 'data(label)',
+	'edge-text-rotation': 'autorotate',
+	'source-arrow-shape': 'none',
+	'target-arrow-shape': 'none'
+      }
+    },
+	{
+		selector: '.logical',
+		css: {
+			'line-color': '#0000ff',
+			'width': 5,
+			'curve-style': 'segments',
+			'z-index': 0
+		}
+	},
+    {
+      selector: ':selected',
+      css: {
+        'background-color': 'black',
+        'line-color': 'black',
+        'target-arrow-color': 'black',
+        'source-arrow-color': 'black'
+      }
+    },
+    {
+	selector: '.highlighted',
+	css: {
+        'line-color': '#ff0000',
+        'background-color': '#ff0000'
+      }
+	},
+    {
+	selector: '.clhighlighted',
+	css: {
+        'line-color': '#00ff00',
+        'background-color': '#00ff00'
+	}
+   }
+  ];
+
+var cylayout = { name: 'dagre', nodeSep: 3, ready: layoutready, stop: layoutstop };
+
+function highlight(evt) {
+
+	//cy = evt.cy;
+
+	var hlclass = evt.data.hlclass;
+	var ele = evt.cyTarget;
+
+	if(!ele.data)
+		return;
+
+	if(ele.data('source'))
+		ele = cy.$( '#' + ele.data('source'));
+
+	var id = ele.data('id');
+
+	if(ele.isParent())
+	{
+	//	var childs = cy.$('#' + id).children()
+	//	childs.layout({name:'grid', cols: 2, condense: true});
+		return;
+	}
+
+
+//	console.log('Event ' + hlclass + ' ' + id );
+
+	// remove existing highlights
+	cy.$('.' + hlclass).removeClass(hlclass);
+
+	var hleles = ele.closedNeighborhood();
+
+	var hlcount = hleles.length;
+
+	// max 100
+	for(i=0;i<100;i++)
+	{
+		hleles = hleles.closedNeighborhood();
+
+		if(hlcount == hleles.length)
+			break;
+
+		hlcount = hleles.length;
+
+	}
+	//console.log('End Loop ' + i );
+	hleles.addClass(hlclass);
+
+//	console.log('Event Type: ' + evt.originalEvent.type)
+//	console.log('Event Type: ' + evt.type)
+
+	if(evt.type != 'click')
+		return;
+
+	var hleles2 = hleles.clone();
+	hleles2 = hleles2.add(hleles.parents().clone());
+
+	//var cy2 = evt.data.cy2;
+
+	//var ret = evt.data.ret;
+
+	//var j = ret.parents.concat(ret.nodes).concat(ret.edges.nodes);
+
+	cy2.remove(cy2.elements());
+	cy2.add(hleles2);
+	//cy2.add(j);
+	cy2.layout({name: 'dagre', rankDir: 'LR', ready: layoutready});
+}
+
+function cytoscapeswitch(evt)
+{
+	var b = evt.target;
+
+	var j = null;
+	if(b.value == "1")
+	{
+		j = data.parents.concat(data.edges.parents);
+		b.value = "0";
+		b.innerHTML = "Ports";
+	}
+	else
+	{
+		j = data.parents.concat(data.nodes).concat(data.edges.nodes);
+		b.value = "1";
+		b.innerHTML = "Objects";
+	}
+
+	//layout.stop();
+	cy.remove(cy.elements());
+
+	cy.add(j);
+
+	cy.layout(cylayout);
+	//layout.run();
+}
+
+$.ajax({
+	type: "GET",
+	url: "{$_SERVER['PHP_SELF']}",
+	data: { module: 'redirect',
+		page: 'object',
+		tab: 'linkmgmt',
+		object_id: $object_id,
+		op: 'cytoscapemap',
+		json: 'json'
+		},
+	dataTye: 'json',
+	error: function(){ alert("Error loading"); },
+	success: function(jdata) {
+
+			data = JSON.parse(jdata);
+
+			if(data.debug)
+				$('#debug').html(data.debug);
+
+			//j = data.parents.concat(data.edges.parents);
+			j = data.parents.concat(data.nodes).concat(data.edges.nodes);
+
+			if(j.length == 0)
+			{
+				alert("No Links to display. Closing Window");
+				window.close();
+				return;
+			}
+
+			cy2 = cytoscape({
+				container: document.getElementById('cy2'),
+				//renderer: { name: 'css' },
+
+				boxSelectionEnabled: false,
+				autounselectify: true,
+				style: cystyle,
+				wheelSensitivity: 0.1,
+			});
+			cy2.style().selector('node').style('label', function(node) { return node.data('label') + '\\n' + node.data('text'); });
+
+			cystyle.push({
+				selector: '.loopedge',
+				css: {
+					'curve-style': 'segments',
+				}
+			});
+
+			cy = cytoscape({
+				container: document.getElementById('cy'),
+
+				boxSelectionEnabled: false,
+				autounselectify: true,
+				style: cystyle,
+				wheelSensitivity: 0.1,
+				elements: j,
+				layout: cylayout,
+			});
+
+			cy.on('mouseover', { hlclass: 'highlighted' }, highlight );
+			cy.on('click', { hlclass: 'clhighlighted' }, highlight );
+
+			$('#switch').click(cytoscapeswitch);
+
+			/*
+				TODO: node ranking
+			*/
+
+			if(0)
+			cy.layout({
+				name: 'dagre',
+				/*
+				nodeSep: 5,
+				rankDir: 'TB',
+				*/
+				//edgeSep: 10,
+				/*
+				edgeWeight: function(edge) {
+						if(edge.data('type') == 'front')
+							return 10;
+						else
+							return 1;
+						
+					},
+				*/
+				ready: layoutready,
+				stop: layoutstop
+				});
+
+			if(1)
+			cy.$(':child').qtip({
+
+				content: function() {
+
+						return this.id() + '<br>' 
+						+ 'Index: ' + this.data('index') + '<br>'
+						+ 'Name: ' + this.data('label') + '<br>'
+						+ 'Text: ' + this.data('text');
+					},
+				position: {
+					my: 'top center',
+					at: 'bottom center'
+					},
+				style: {
+					classes: 'qtip-bootstrap',
+					tip: {
+						width: 16,
+						height: 8
+						},
+					}
+			}); // qtip
+		} // success function
+	});
+
+
+}); // on dom ready
+
+function layoutready(evt) {
+	var _cy = evt.cy;
+
+	// highlight current object
+	var object = _cy.$('#o$object_id');
+	if(object.data('has_problems') == 'no')
+		object.style('background-color','#ffcccc');
+
+	// highlight object with problems
+	_cy.$('node[type = "object"][has_problems != "no"]').style('background-color','#ff0000');
+
+	var e = _cy.$('node[loop = "1"]').style('background-color','#ff6666');
+
+//	console.log(e[0].data('loop'));
+
+//	cy.add({group: 'edges', data: {id:'l691_2991', source: 'p691', target: 'p2991', label: 'test'}, classes: 'logical'});
+
+}
+
+function layoutstop(evt) {
+	var _cy = evt.cy;
+//	cy.elements().locked = true;
+//	cy.add({group: 'nodes', data: {id:'l2493', parent:'p2943', label: 'test'}});
+
+
+	var les = _cy.$('[loopedge]');
+
+	if(les)
+	{
+		_cy.batch( function() {
+			les.each(function(i, ele) {
+				var le = ele.data('loopedge');
+				var edge = _cy.add(le);
+				edge.addClass('loopedge');
+				//edge.style('line-color', '#ffffff'); // TypeError text-transform undefined
+			});	
+		});
+		_cy.$('edge[loop = "1"]').style('line-color','#ff6666');
+	}
+}
+</script>
+</head>
+<body>
+<div id="cy" style="position: absolute; height: 80%; width: 100%; left: 0; top: 20%;"></div>
+<div id="cy2" style="position: absolute; height: 20%; width: 100%; left: 0; top: 0%;"></div>
+<div id="debug"></div>
+<button type="button" id="switch" style="position: absolute;" value="1">Object</button>
+</body>
+</html>
+HTMLEND
+); // echo
+	exit;
+}
+
 /* ------------------------------------- */
 class linkmgmt_gvmap {
 
 	private $object_id = NULL;
 	private $port_id = NULL;
 	private $remote_id = NULL;
+	private $hl = NULL;
 
 	private $gv = NULL;
 
@@ -894,12 +2730,57 @@ class linkmgmt_gvmap {
 
 	private $errorlevel = NULL;
 
+	public $data = NULL;
+
+	private $pids = array();
+
+	function addlinkchainsobject($object_id)
+	{
+
+		$object['ports'] = getObjectPortsAndLinks ($object_id);
+
+		if(empty($object['ports']))
+		{
+
+			$hl = false;
+			$alpha = $this->alpha;
+			if($this->hl == 'o' && $this->object_id == $object_id)
+			{
+				$hl = true;
+				$this->alpha = 'ff';
+			}
+
+			$this->_addCluster($object_id, $hl, empty($object['ports']));
+
+			$this->alpha = $alpha;
+			return;
+		}
+
+		$i = 0;
+		foreach($object['ports'] as $key => $port)
+		{
+
+			if(isset($this->pids[$port['id']]))
+				continue;
+
+			$i++;
+			$lc = new lm_linkchain($port['id']);
+
+			$this->pids += $lc->pids;
+
+			if($this->allports ||($lc->linkcount > 0))
+				$this->addlinkchain($lc, $i);
+		}
+
+	}
+
 	function __construct($object_id = NULL, $port_id = NULL, $allports = false, $hl = NULL, $remote_id = NULL) {
 		$this->allports = $allports;
 
 		$this->object_id = $object_id;
 		$this->port_id = $port_id;
 		$this->remote_id = $remote_id;
+		$this->hl = $hl;
 
 		$hllabel = "";
 
@@ -910,7 +2791,7 @@ class linkmgmt_gvmap {
 		error_reporting($this->errorlevel & ~E_STRICT);
 
 		$graphattr = array(
-					'rankdir' => 'RL',
+					'rankdir' => 'LR',
 				//	'ranksep' => '0',
 					'nodesep' => '0',
 				//	'overlay' => false,
@@ -924,9 +2805,18 @@ class linkmgmt_gvmap {
 
 		unset($_GET['all']);
 
+		switch($hl)
+		{
+			case 'o':
+			case 'p':
+				$this->alpha = '30';
+				break;
+		}
+
 		//$this->gv = new Image_GraphViz(true, $graphattr, "map".$object_id);
 		$this->gv = new lm_Image_GraphViz(true, $graphattr, "map".$object_id);
 
+		/* --------------------------- */
 		if($object_id === NULL)
 		{
 			/* all objects ! */
@@ -942,7 +2832,8 @@ class linkmgmt_gvmap {
 			$objects = listCells('object');
 
 			foreach($objects as $obj)
-				$this->_add($this->gv, $obj['id'], NULL);
+				//$this->addlinkchainsobject($obj['id']); // longer runtimes !!
+				$this->_add($this->gv, $obj['id'], NULL); // for all still faster and nicer looking graph
 
 			return;
 		}
@@ -956,34 +2847,14 @@ class linkmgmt_gvmap {
 						)
 				);
 
-			$this->_add($this->gv, $object_id, $port_id);
+			$this->addlinkchainsobject($object_id);
+			//$this->_add($this->gv, $object_id, $port_id);
 
 			$children = getEntityRelatives ('children', 'object', $object_id); //'entity_id'
 
 			foreach($children as $child)
-				$this->_add($this->gv, $child['entity_id'], NULL);
-		}
-
-		switch($hl)
-		{
-			case 'p':
-			case 'port':
-				$hllabel = " (Port highlight)";
-				$this->alpha = '30';
-				$this->_add($this->gv, $object_id, NULL);
-				break;
-			case 'o':
-			case 'object':
-				$hllabel = " (Object highlight)";
-				$this->alpha = '30';
-				/* all objects */
-				$objects = listCells('object');
-
-				foreach($objects as $obj)
-					$this->_add($this->gv, $obj['id'], NULL);
-
-				break;
-
+				$this->addlinkchainsobject($child['entity_id']);
+			//	$this->_add($this->gv, $child['entity_id'], NULL);
 		}
 
 		/* add hl label */
@@ -992,6 +2863,9 @@ class linkmgmt_gvmap {
 				));
 
 	//	portlist::var_dump_html($this->gv);
+//		portlist::var_dump_html($this->data);
+
+//		echo json_encode($this->data);
 
 	//	$this->gv->saveParsedGraph('/tmp/graph.txt');
 	//	error_reporting( E_ALL ^ E_NOTICE);
@@ -999,6 +2873,280 @@ class linkmgmt_gvmap {
 
 	function __destruct() {
 		error_reporting($this->errorlevel);
+	}
+
+	function _addCluster($object_id, $hl = false, $adddummy = false)
+	{
+			global $lc_cache;
+
+			$cluster_id = "c".$object_id;
+
+			if(
+				!isset($this->gv->graph['clusters'][$cluster_id]) &&
+				!isset($this->gv->graph['subgraphs'][$cluster_id])
+				|| $hl
+			) {
+				$rack = null;
+				$object = $lc_cache->getobject($object_id, $rack);
+
+			//	$object['attr'] = getAttrValues($object_id);
+
+				$clusterattr = array();
+
+				$this->_getcolor('cluster', 'default', $this->alpha, $clusterattr, 'color');
+				$this->_getcolor('cluster', 'default', $this->alpha, $clusterattr, 'fontcolor');
+
+				if($this->object_id == $object_id)
+				{
+					$clusterattr['rank'] = 'source';
+
+					$this->_getcolor('cluster', 'current', $this->alpha, $clusterattr, 'color');
+					$this->_getcolor('cluster', 'current', $this->alpha, $clusterattr, 'fontcolor');
+				}
+
+				$clustertitle = htmlspecialchars($object['dname']);
+				$clusterattr['tooltip'] = $clustertitle;
+
+				unset($_GET['module']); // makeHrefProcess adds this
+				unset($_GET['port_id']);
+				unset($_GET['remote_id']);
+				$_GET['object_id'] = $object_id;
+				//$_GET['hl'] = 'o';
+
+				$clusterattr['URL'] = $this->_makeHrefProcess($_GET);
+
+				//has_problems
+				if($object['has_problems'] != 'no')
+				{
+					$clusterattr['style'] = 'filled';
+					$this->_getcolor('cluster', 'problem', $this->alpha, $clusterattr, 'fillcolor');
+				}
+
+				if(!empty($object['container_name']))
+					$clustertitle .= "<BR/>(${object['container_name']})";
+
+				if(!empty($rack['row_name']) || !empty($rack['name']))
+					$clustertitle .= "<BR/><FONT point-size=\"10\">{$rack['row_name']} / {$rack['name']}</FONT>";
+
+				$embedin = $object['container_id'];
+				if(empty($embedin))
+					$embedin = 'default';
+				else
+				{
+					$embedin = "c$embedin"; /* see cluster_id */
+
+					// TODO
+					/* add container / cluster if not already exists */
+					$this->addlinkchainsobject($object['container_id']);
+				}
+
+				$clusterattr['id'] = "$object_id----"; /* used for js context menu */
+
+				$this->gv->addCluster($cluster_id, $clustertitle, $clusterattr, $embedin);
+
+				/* needed because of  gv_image empty cluster bug (invalid foreach argument) */
+				if($adddummy)
+					$this->gv->addNode("dummy$cluster_id", array(
+					//	'label' =>'No Ports found/connected',
+						'label' =>'',
+						'fontsize' => 0,
+						'size' => 0,
+						'width' => 0,
+						'height' => 0,
+						'shape' => 'point',
+						'style' => 'invis',
+						), $cluster_id);
+
+
+			}
+	 } // _addCluster
+
+	function _addEdge($port, $linkchain, $loopedge = false)
+	{
+		global $lm_multilink_port_types;
+		if(
+			!isset($this->gv->graph['edgesFrom'][$port['id']][$port['remote_id']]) &&
+			!isset($this->gv->graph['edgesFrom'][$port['remote_id']][$port['id']])
+			|| $loopedge
+		) {
+			$remote_id = $port['remote_id'];
+
+			$linktype = $port['linktype'];
+
+			$edgetooltip = $port['object_name'].':'.$port['name'].
+					' - '.$port['cableid'].' -> '.
+					$port['remote_name'].':'.$port['remote_object_name'];
+
+			$edgeattr = array(
+					'fontsize' => 8,
+					'label' => htmlspecialchars($port['cableid']),
+					'tooltip' => $edgetooltip,
+					'sametail' => $linktype,
+					'samehead' => $linktype,
+					'arrowhead' => 'none',
+					'arrowtail' => 'none',
+				);
+
+			$this->_getcolor('edge', ($linkchain->loop ? 'loop' : 'default'), $this->alpha, $edgeattr, 'color');
+			$this->_getcolor('edge', 'default', $this->alpha, $edgeattr, 'fontcolor');
+
+			if($linktype == 'back' )
+			{
+				$edgeattr['style'] =  'dashed';
+
+				/* multilink ports */
+				if(in_array($port['oif_id'], $lm_multilink_port_types))
+				{
+					$edgeattr['dir'] = 'both';
+					$edgeattr['arrowtail'] = 'dot';
+				}
+
+				if(in_array($linkchain->ports[$remote_id]['oif_id'], $lm_multilink_port_types))
+				{
+					$edgeattr['dir'] = 'both';
+					$edgeattr['arrowhead'] = 'dot';
+				}
+			}
+
+			if(
+				($port['id'] == $this->port_id && $port['remote_id'] == $this->remote_id) ||
+				($port['id'] == $this->remote_id && $port['remote_id'] == $this->port_id)
+			)
+			{
+				$this->_getcolor('edge', 'highlight', 'ff', $edgeattr, 'color');
+				$edgeattr['penwidth'] = 2; /* bold */
+			}
+
+			unset($_GET['module']);
+			$_GET['object_id'] = $port['object_id'];
+			$_GET['port_id'] = $port['id'];
+			$_GET['remote_id'] = $port['remote_id'];
+
+			$edgeattr['URL'] = $this->_makeHrefProcess($_GET);
+
+			$edgeattr['id'] = $port['object_id']."-".$port['id']."-".$port['remote_id']."-".$linktype; /* for js context menu  */
+
+			if($loopedge)
+			{
+					$edgeattr = array_merge($edgeattr, array(
+					'sametail' => 'loop',
+					'samehead' => 'loop',
+					'dir' => 'both',
+					'arrowhead' => 'invodot',
+					'arrowtail' => 'invodot',
+					));
+			}
+
+			$this->gv->addEdge(array($port['id'] => $port['remote_id']),
+						$edgeattr,
+						array(
+							$port['id'] => $linktype,
+							$port['remote_id'] => $linktype,
+						)
+					);
+
+		}
+	} // _addEdge
+
+	function addlinkchain($linkchain, $index)
+	{
+		global $lm_multilink_port_types;
+
+		$hl = false;
+		$alpha = $this->alpha;
+		if(
+			($this->hl == 'p' && $linkchain->hasport_id($this->port_id))
+			|| ($this->hl == 'o' && $linkchain->hasobject_id($this->object_id))
+		)
+		{
+			$hl = true;
+			$this->alpha = 'ff';
+		}
+
+		$remote_id = null;
+		foreach($linkchain as $id => $port)
+		{
+			$this->_addCluster($port['object_id'], $hl);
+
+			$nodelabel = htmlspecialchars("${port['name']}");
+			$text = $nodelabel;
+
+			if($port['iif_id'] != '1' )
+			{
+				$nodelabel .= "<BR/><FONT POINT-SIZE=\"8\">${port['iif_name']}</FONT>";
+				$text .= "\n".$port['iif_name'];
+			}
+
+			$nodelabel .= "<BR/><FONT POINT-SIZE=\"8\">${port['oif_name']}</FONT>";
+			$text .= "\n".$port['oif_name'];
+
+			// add ip address
+			if(isset($port['portip']))
+				$nodelabel .= "<BR/><FONT POINT-SIZE=\"8\">".$port['portip']."</FONT>";
+
+			$nodeattr = array(
+					'label' => $nodelabel,
+					);
+
+			$this->_getcolor('port', ($linkchain->loop ? 'loop' : 'default'),$this->alpha, $nodeattr, 'fontcolor');
+			$this->_getcolor('oif_id', $port['oif_id'],$this->alpha, $nodeattr, 'color');
+
+			if($this->port_id == $port['id']) {
+				$nodeattr['style'] = 'filled';
+				$nodeattr['fillcolor'] = $this->_getcolor('port', 'current', $this->alpha);
+			}
+
+			if($this->remote_id == $port['id']) {
+				$nodeattr['style'] = 'filled';
+				$nodeattr['fillcolor'] = $this->_getcolor('port', 'remote', $this->alpha);
+			}
+
+			$nodeattr['tooltip'] = htmlspecialchars("${port['name']}");
+
+			unset($_GET['module']);
+			unset($_GET['remote_id']);
+			$_GET['object_id'] = $port['object_id'];
+			$_GET['port_id'] = $port['id'];
+			$_GET['hl'] = 'p';
+
+			$nodeattr['URL'] = $this->_makeHrefProcess($_GET);
+			$nodeattr['id'] = "${port['object_id']}-${port['id']}--"; /* for js context menu */
+
+			$this->gv->addNode($port['id'],
+					$nodeattr,
+					"c${port['object_id']}"); /* see cluster_id */
+
+			$remote_id = $port['remote_id'];
+
+			if($port['portcount'] > 1)
+				foreach($port['chains'] as $mlc)
+				{
+					$this->addlinkchain($mlc, 0); // TODO index
+				}
+
+			$prevlinktype = ($port['linktype'] == 'front' ? 'back' : 'front');
+			if($port[$prevlinktype]['portcount'] > 1)
+			{
+				foreach($port[$prevlinktype]['chains'] as $mlc)
+				{
+					$this->addlinkchain($mlc, 0, false); // TODO index
+				}
+			}
+
+			if($remote_id)
+				$this->_addEdge($port, $linkchain);
+
+		} //foreach
+
+		if($linkchain->loop && $remote_id)
+		{
+			// TODO separate loop link
+			// add loop edge
+			$this->_addEdge($port, $linkchain, true);
+		}
+
+		// reset alpha to start value
+		$this->alpha = $alpha;
 	}
 
 	function setFalseOnError($newvalue)
@@ -1057,6 +3205,7 @@ class linkmgmt_gvmap {
 				return;
 		}
 
+		$object = NULL;
 		if($object_id !== NULL) {
 			if(
 				!isset($gv->graph['clusters'][$cluster_id]) &&
@@ -1064,6 +3213,15 @@ class linkmgmt_gvmap {
 			) {
 
 				$object = spotEntity ('object', $object_id);
+
+				// ip addresses
+				amplifyCell($object);
+				$object['portip'] = array();
+				foreach($object['ipv4'] as $ipv4)
+				{
+					$object['portip'][$ipv4['osif']] = $ipv4['addrinfo']['ip'];
+				}
+
 			//	$object['attr'] = getAttrValues($object_id);
 
 				$clusterattr = array();
@@ -1080,6 +3238,7 @@ class linkmgmt_gvmap {
 				}
 
 				$clustertitle = "${object['dname']}";
+				$text = "${object['dname']}";
 				$clusterattr['tooltip'] = $clustertitle;
 
 				unset($_GET['module']); // makeHrefProcess adds this
@@ -1098,14 +3257,20 @@ class linkmgmt_gvmap {
 				}
 
 				if(!empty($object['container_name']))
+				{
 					$clustertitle .= "<BR/>${object['container_name']}";
+					$text .= "\n${object['container_name']}";
+				}
 
 				if($object['rack_id'])
 				{
 					$rack = spotEntity('rack', $object['rack_id']);
 
 					if(!empty($rack['row_name']) || !empty($rack['name']))
+					{
 						$clustertitle .= "<BR/>${rack['row_name']} / ${rack['name']}";
+						$text .= "\n${rack['row_name']} / ${rack['name']}";
+					}
 				}
 
 				$embedin = $object['container_id'];
@@ -1134,11 +3299,24 @@ class linkmgmt_gvmap {
 
 
 				$nodelabel = htmlspecialchars("${port['name']}");
+				$text = $nodelabel;
 
 				if($port['iif_id'] != '1' )
+				{
 					$nodelabel .= "<BR/><FONT POINT-SIZE=\"8\">${port['iif_name']}</FONT>";
+					$text .= "\n".$port['iif_name'];
+				}
 
 				$nodelabel .= "<BR/><FONT POINT-SIZE=\"8\">${port['oif_name']}</FONT>";
+				$text .= "\n".$port['oif_name'];
+
+				// add ip address
+				if($object)
+					if(isset($object['portip'][$port['name']]))
+					{
+						$nodelabel .= "<BR/><FONT POINT-SIZE=\"8\">".$object['portip'][$port['name']]."</FONT>";
+						$text .= "\n".$object['portip'][$port['name']];
+					}
 
 				$nodeattr = array(
 							'label' => $nodelabel,
@@ -1248,6 +3426,7 @@ class linkmgmt_gvmap {
 									$port['remote_id'] => $linktype,
 								)
 							);
+
 				}
 			}
 
@@ -1362,6 +3541,7 @@ class linkmgmt_gvmap {
 		$port = array(
 				'current' => '#ffff90',
 				'remote' => '#ffffD0',
+				'loop' => '#ff6666',
 				);
 
 		$cluster = array(
@@ -1371,6 +3551,7 @@ class linkmgmt_gvmap {
 
 		$edge = array (
 				'highlight' => '#ff0000',
+				'loop' => '#ff6666',
 				);
 
 		$oif_id = array(
@@ -1475,8 +3656,6 @@ function linkmgmt_opunlinkPort() {
 	$port_id = $_REQUEST['port_id'];
 	$linktype = $_REQUEST['linktype'];
 
-	portlist::var_dump_html($_REQUEST);
-
 	/* check permissions */
 	if(!permitted(NULL, NULL, 'set_link')) {
 		exit;
@@ -1494,26 +3673,18 @@ function linkmgmt_opunlinkPort() {
 					$port_id, $remote_id,
 					$port_id, $remote_id)
 			);
+
+		if($retval == 0)
+			showWarning("Link not found");
+		else
+			showSuccess("Backend Link deleted");
+
 	}
 	else
 	{
-		$table = 'Link';
-
-		$retval = usePreparedDeleteBlade ($table, array('porta' => $port_id, 'portb' => $port_id), 'OR');
+		// RT function for normal links
+		unlinkPort();
 	}
-
-	if($retval == 0)
-		echo " Link not found";
-	else
-		echo " $retval Links deleted";
-
-
-	unset($_GET['module']);
-	unset($_GET['op']);
-
-	header('Location: ?'.http_build_query($_GET));
-	//header('Location: ?page='.$_REQUEST['page'].'&tab='.$_REQUEST['tab'].'&object_id='.$_REQUEST['object_id']);
-	exit;
 } /* opunlinkPort */
 
 /* -------------------------------------------------- */
@@ -2175,11 +4346,12 @@ function linkmgmt_tabhandler($object_id) {
 	//$parents = getEntityRelatives ('parents', 'object', $object_id);
 	$children = getEntityRelatives ('children', 'object', $object_id); //'entity_id'
 
-	//portlist::var_dump_html($children);
-
 	foreach($children as $child) {
-		echo '<h1>Links for Child: '.$child['name'].'</h1>';
+		$childobj = spotEntity($child['entity_type'], $child['entity_id']);
+
+		echo '<h1>Links for Child: '.$childobj['name'].'</h1>';
 		linkmgmt_renderObjectLinks($child['entity_id']);
+		unset($childobj);
 	}
 
 	return;
@@ -2238,6 +4410,10 @@ function linkmgmt_renderObjectLinks($object_id) {
 	echo '<td width=100><span onclick=window.open("'.makeHrefProcess(portlist::urlparamsarray(
                                 array('op' => 'map','usemap' => 1))).'","name","height=800,width=800,scrollbars=yes");><a>Object Map</a></span></td>';
 
+	/* cytoscape map */
+	echo '<td width=100><span onclick=window.open("'.makeHrefProcess(portlist::urlparamsarray(
+                                array('op' => 'cytoscapemap'))).'","name","height=800,width=800,scrollbars=yes");><a>Cytoscape Object Map</a></span></td>';
+
 	/* Help */
 	echo '<td width=200><span onclick=window.open("'.makeHrefProcess(portlist::urlparamsarray(
                                 array('op' => 'Help'))).'","name","height=400,width=500");><a>Help</a></span></td>';
@@ -2255,16 +4431,23 @@ function linkmgmt_renderObjectLinks($object_id) {
 	/*  switch display order depending on backend links */
 	$first = portlist::hasbackend($object_id);
 
+
 	$rowcount = 0;
+
 	foreach($ports as $key => $port) {
 
-		$plist = new portlist($port, $object_id, $allports, $allback);
+		$lc = new lm_linkchain($port['id']);
 
-		//echo "<td><img src=\"index.php?module=redirect&page=object&tab=linkmgmt&op=map&object_id=$object_id&port_id=${port['id']}&allports=$allports\" ></td>";
+		if($allports || $lc->linkcount > 0)
+		{
+			if($port['id'] == $hl_port_id)
+				$rowbgcolor = lm_linkchain::HL_PORT_BGCOLOR;
+			else
+				$rowbgcolor = ($rowcount % 2 ? lm_linkchain::ALTERNATE_ROW_BGCOLOR : "#ffffff");
 
-		if($plist->printportlistrow($first, $hl_port_id, ($rowcount % 2 ? portlist::ALTERNATE_ROW_BGCOLOR : "#ffffff")) )
+			echo $lc->getchainlabeltrstart($rowbgcolor).$lc->getchainrow($allback, $rowbgcolor)."</tr>";
 			$rowcount++;
-
+		}
 	}
 
 	echo "</table>";
@@ -2490,7 +4673,9 @@ class portlist {
 	//	$this->var_dump_html($retval);
 
 		/* return reference */
-		return ($this->list[$port_id] = &$retval);
+		$this->list[$port_id] = &$retval;
+
+		return $retval;
 
 	} /* _getportdata */
 
@@ -2878,7 +5063,7 @@ class portlist {
 		if($linktype != 'front' && !$lm_cache['allowbacklink'])
 			return;
 
-                echo "<td align=center>";
+		echo "<td align=center>";
 
 		echo $this->_getlinkportsymbol($port_id, $linktype);
 
