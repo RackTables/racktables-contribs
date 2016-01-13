@@ -14,6 +14,7 @@
  *		- ifxTable
  *		- ipAddrTable (ipv4 only)
  *		- ipAddressTable (ipv4 + ipv6)
+ *		- ipv6AddrAddress (ipv6)
  *
  *	Features:
  *		- update object attributes
@@ -1565,9 +1566,12 @@ function snmpgeneric_list($object_id) {
 
 				case 'ipv6':
 
-					/* format ipaddr for ip6_parse */
-					$ipaddr =  preg_replace('/((..):(..))/','\\2\\3',$ipaddr);
-					$ipaddr =  preg_replace('/%.*$/','',$ipaddr);
+					if(ip_checkparse($ipaddr) === false)
+					{
+						/* format ipaddr for ip6_parse */
+						$ipaddr =  preg_replace('/((..):(..))/','\\2\\3',$ipaddr);
+						$ipaddr =  preg_replace('/%.*$/','',$ipaddr);
+					}
 
 					if(ip_checkparse($ipaddr) === false)
 						continue(2); // 2 because of switch
@@ -1645,11 +1649,11 @@ function snmpgeneric_list($object_id) {
 	$ifsnmp->printifInfoTableHeader("<th>add ip</th><th>add port</th><th>upd label</th><th title=\"update mac\">upd mac</th><td>upd port type</th><th>porttypeid</th><th>comment</th></tr>");
 
 	echo '<tr><td colspan="11"></td>
-		<td><input type="checkbox" id="ipaddr" onclick="setchecked(this.id)">IPv4<br>
-		<input type="checkbox" id="ipv6addr" onclick="setchecked(this.id)">IPv6</td>
+		<td><input type="checkbox" id="ipaddr" onclick="setchecked(this.id);" checked="checked">IPv4<br>
+		<input type="checkbox" id="ipv6addr" onclick="setchecked(this.id);" checked="checked">IPv6</td>
 		<td><input type="checkbox" id="ports" onclick="setchecked(this.id)"></td>
-		<td><input type="checkbox" id="label" onclick="setchecked(this.id)" checked="checked"></td>
-		<td><input type="checkbox" id="mac" onclick="setchecked(this.id)" checked="checked"></td>
+		<td><input type="checkbox" id="label" onclick="setchecked(this.id);" checked="checked"></td>
+		<td><input type="checkbox" id="mac" onclick="setchecked(this.id);" checked="checked"></td>
 		<td><input type="checkbox" id="porttype" onclick="setchecked(this.id);"></td></tr>';
 
 	foreach($ifsnmp as $if) {
@@ -1792,9 +1796,12 @@ function snmpgeneric_list($object_id) {
 					case 'ipv6':
 						$inputname = 'ipv6';
 
-						/* format ipaddr for ip6_parse */
-						$ipaddr =  preg_replace('/((..):(..))/','\\2\\3',$ipaddr);
-						$ipaddr =  preg_replace('/%.*$/','',$ipaddr);
+						if(ip_checkparse($ipaddr) === false)
+						{
+							/* format ipaddr for ip6_parse */
+							$ipaddr =  preg_replace('/((..):(..))/','\\2\\3',$ipaddr);
+							$ipaddr =  preg_replace('/%.*$/','',$ipaddr);
+						}
 
 						if(ip_checkparse($ipaddr) === false)
 							continue(2); // 2 because of switch
@@ -2390,6 +2397,7 @@ class SNMPgeneric {
 				snmp_set_quick_print($value);
 				break;
 			case 'oid_output_format':
+				/* needs php >= 5.2.0 */
 				snmp_set_oid_output_format($value);
 				break;
 			case 'enum_print':
@@ -2551,20 +2559,14 @@ class mySNMP extends SNMPgeneric implements Iterator {
 
 		parent::__construct($version, $host, $community);
 
-		//snmp_set_valueretrieval(SNMP_VALUE_LIBRARY);
-
 		/* Return values without SNMP type hint */
-		//snmp_set_valueretrieval(SNMP_VALUE_PLAIN);
 		$this->valueretrieval = SNMP_VALUE_PLAIN;
-
-		/* needs php >= 5.2.0 */
-	//	snmp_set_oid_output_format(SNMP_OID_OUTPUT_FULL);
-
-	//	snmp_set_quick_print(1);
 
 	} /* __construct */
 
 	function init() {
+
+		$this->oid_output_format = SNMP_OID_OUTPUT_FULL;
 		/* .iso.org.dod.internet.mgmt.mib-2.system */
 		$this->system = $this->walk(".1.3.6.1.2.1.1");
 
@@ -2851,6 +2853,59 @@ class ifSNMP implements Iterator {
 	//		sg_var_dump_html($ipAddressPrefix);
 		} /* ipaddressifindex */
 
+		/* ipv6 MIB  */
+		/* overwrites ipv6 from ipaddresstable */
+		$ipv6interfaces = $this->snmpdevice->get('ipv6Interfaces.0');
+
+		if($ipv6interfaces)
+		{
+			echo"Found $ipv6interfaces ipv6 interfaces<br>";
+
+			$ipv6addraddress =  $this->snmpdevice->walk('ipv6AddrAddress');
+
+			if(!empty($ipv6addraddress)) {
+				$ipv6addrpfxlength =  $this->snmpdevice->walk('ipv6AddrPfxLength');
+			//	$ipv6addrtype =  $this->snmpdevice->walk('ipv6AddrType'); /* 1 stateless, 2 stateful, 3 unknown */
+
+				reset($ipv6addrpfxlength);
+				//reset($ipv6addrtype);
+
+				foreach($ipv6addraddress as $oid => $addr_bin) {
+
+					$addr = ip_format($addr_bin);
+
+					//$type = current($ipv6addrtype);
+					//next($ipv6addrtype);
+
+					if(!preg_match('/.*(ipv6).*\.([0-9]+)\..*$/',$oid, $matches))
+						continue;
+
+					$ifindex =  array_search($matches[2],$this->ifTable['ifIndex']);
+
+					if($ifindex === false)
+						continue;
+
+					$maskbits = current($ipv6addrpfxlength);
+					next($ipv6addrpfxlength);
+
+					$range = constructIPRange($addr_bin, $maskbits);
+
+					$net = ip_format($range['ip_bin']);
+					$bcast = NULL;
+
+					$this->ifTable['ipaddress'][$ifindex][$addr] = array(
+										'addrtype' => $matches[1],
+										'maskbits' => $maskbits,
+										'net' => $net,
+										'bcast' => $bcast,
+									//	'type' => ($type == 1 ? "stateless" : $type == 2 ? "statefull" : "unknown" )
+										);
+				}
+				unset($oid);
+				unset($value);
+
+			} /* ipv6addraddress */
+		} /* ipv6interfaces */
 	}
 
 	function printifInfoTableHeader($suffix = "") {
