@@ -1,8 +1,8 @@
 <?php
-// Custom Racktables Report v.0.3.2
+// Custom Racktables Report v.0.3.3
 // Libary file
 
-// 2013-08-28 - Mogilowski Sebastian <sebastian@mogilowski.net>
+// 2016-02-04 - Mogilowski Sebastian <sebastian@mogilowski.net>
 
 error_reporting(E_ERROR | E_PARSE);
 
@@ -15,6 +15,24 @@ error_reporting(E_ERROR | E_PARSE);
 function getLocation($aObject) {
     $sRowName = 'unknown';
     $sRackName = 'unknown';
+
+    # Location parsing for other realms than objects
+    if ($aObject['realm'] == 'rack') {
+    	$sLocation = $aObject["location_name"] . ': '. $aObject["row_name"];
+    	return $sLocation;
+    }
+
+    if ($aObject['realm'] == 'row') {
+    	$sLocation = $aObject["location_name"];
+    	return $sLocation;
+    }
+
+    if ($aObject['realm'] == 'location') {
+    	if ($aObject["parent_name"] == null)
+    		return '';
+    	$sLocation = $aObject["parent_name"];
+    	return $sLocation;
+    }
 
     # Try to read the mount informations of the object
     if ( function_exists('getMountInfo') ) {
@@ -80,7 +98,7 @@ function getLocation($aObject) {
  {
  	# prepend http:// to www.xyz.com strings
  	$sText = preg_replace("/([^\/](www\.))(([^(\s|,)<]{4,68})[^(\s|,)<]*)/", ' http://$2$3', $sText);
- 	
+
  	# add html hyperlink to http:// and https:// strings
  	$sText = preg_replace("/(http:\/\/|https:\/\/)(([^(\s|,)<]{4,68})[^(\s|,)<]*)/", '<a href="$1$2" target="_blank">$2$4</a>', $sText);
 
@@ -152,7 +170,7 @@ if ( !function_exists('ip6_format') )
  */
 function getObjectContainerList ($object_id) {
 	$ret = array();
-	
+
 	$result = usePreparedSelectBlade
 	(
 		'SELECT el.parent_entity_id AS container_id, ro.name as container_name '.
@@ -161,10 +179,10 @@ function getObjectContainerList ($object_id) {
 		'WHERE el.child_entity_type = "object" AND el.parent_entity_type = "object" AND el.child_entity_id = ?',
 		array ($object_id)
 	);
-	
+
 	while ($row = $result->fetch (PDO::FETCH_ASSOC))
 		$ret[$row['container_id']] = array ('container_name' => $row['container_name']);
-	
+
 	return $ret;
 }
 
@@ -176,7 +194,7 @@ function getObjectContainerList ($object_id) {
  */
 function getObjectChildObjectList ($object_id) {
 	$ret = array();
-	
+
 	$result = usePreparedSelectBlade
 	(
 		'SELECT el.child_entity_id AS object_id, ro.name as object_name '.
@@ -185,10 +203,10 @@ function getObjectChildObjectList ($object_id) {
 		'WHERE el.child_entity_type = "object" AND el.parent_entity_type = "object" AND el.parent_entity_id = ?',
 		array ($object_id)
 	);
-	
+
 	while ($row = $result->fetch (PDO::FETCH_ASSOC))
 		$ret[$row['object_id']] = array ('object_name' => $row['object_name']);
-	
+
 	return $ret;
 }
 

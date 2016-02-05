@@ -1,8 +1,8 @@
 <?php
-// Custom Racktables Report v.0.3.2
+// Custom Racktables Report v.0.3.3
 // List all virtual machines
 
-// 2013-08-28 - Mogilowski Sebastian <sebastian@mogilowski.net>
+// 2016-02-04 - Mogilowski Sebastian <sebastian@mogilowski.net>
 
 $tabhandler['reports']['vm'] = 'renderVMReport'; // register a report rendering function
 $tab['reports']['vm'] = 'Virtual Machines';      // The title of the report tab
@@ -92,7 +92,7 @@ function renderVMReport()
             $aCSVRow[3] = str_replace('&quot;',"'",$aRow['sComment']);
             $aCSVRow[4] = $aRow['sContact'];
             $aCSVRow[5] = $aRow['sOS'];
-            
+
             $aCSVRow[6] = '';
             foreach ( $aRow['container'] as $key => $aDetails ) {
             	$aCSVRow[6] .= trim($aDetails['container_name']).' ';
@@ -170,7 +170,7 @@ function renderVMReport()
 
         foreach ( $aRow['container'] as $key => $aDetails )
         	echo '<a href="'. makeHref ( array( 'page' => 'object', 'object_id' => $key) )  .'">'.$aDetails['container_name'].'</a><br/>';
-                
+
         echo   '</td>
               </tr>';
     }

@@ -1,8 +1,8 @@
 <?php
-// Custom Racktables Report v.0.3
+// Custom Racktables Report v.0.3.3
 // List all virtual machines
 
-// 2012-10-23 - Mogilowski Sebastian <sebastian@mogilowski.net>
+// 2016-02-04 - Mogilowski Sebastian <sebastian@mogilowski.net>
 
 $tabhandler['reports']['switches'] = 'renderSwitchReport'; // register a report rendering function
 $tab['reports']['switches'] = 'Switches';                  // The title of the report tab

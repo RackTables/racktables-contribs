@@ -1,8 +1,8 @@
 <?php
-// Custom Racktables Report v.0.3.2
+// Custom Racktables Report v.0.3.3
 // Custom report builder
 
-// 2013-08-28 - Mogilowski Sebastian <sebastian@mogilowski.net>
+// 2016-02-04 - Mogilowski Sebastian <sebastian@mogilowski.net>
 
 $tabhandler['reports']['custom'] = 'renderCustomReport'; // register a report rendering function
 $tab['reports']['custom'] = 'Custom';                    // The title of the report tab
@@ -27,7 +27,7 @@ function renderCustomReport()
 
         $aResult = getResult($_POST); // Get Result
         $_POST['name'] = validateColums($_POST); // Fix empty colums
-        
+
         $csvDelimiter = (isset( $_POST['csvDelimiter'] )) ? $_POST['csvDelimiter'] : ',';
 
         /* Create Header */
@@ -38,7 +38,7 @@ function renderCustomReport()
 
         if ( isset( $_POST['label'] ) )
             array_push($aCSVRow, "Label");
-        
+
         if ( isset( $_POST['type'] ) )
         	array_push($aCSVRow, "Type");
 
@@ -73,10 +73,10 @@ function renderCustomReport()
 
         if ( isset( $_POST['Ports'] ) )
             array_push($aCSVRow, "Ports");
-        
+
         if ( isset( $_POST['Containers'] ) )
        	    array_push($aCSVRow, "Containers");
-        
+
         if ( isset( $_POST['Childs'] ) )
             array_push($aCSVRow, "Child objects");
 
@@ -91,7 +91,7 @@ function renderCustomReport()
 
             if ( isset( $_POST['label'] ) )
                 array_push($aCSVRow, $Result['label']);
-            
+
             if ( isset( $_POST['type'] ) )
             	array_push($aCSVRow, $phys_typelist[$Result['objtype_id']]);
 
@@ -179,26 +179,26 @@ function renderCustomReport()
 
                 array_push($aCSVRow, $sTemp);
             }
-            
+
             if ( isset( $_POST['Containers'] ) ) {
             	$sTemp = '';
-            	
+
             	foreach ( getObjectContainerList($Result['id']) as $key => $aDetails ) {
             	    $sTemp .= trim($aDetails['container_name']).' ';
             	}
             	$sTemp = trim($sTemp);
-            	
+
             	array_push($aCSVRow, $sTemp);
             }
-            
+
             if ( isset( $_POST['Childs'] ) ) {
             	$sTemp = '';
-            	
+
             	foreach ( getObjectChildObjectList($Result['id']) as $key => $aDetails ) {
             	    $sTemp .= trim($aDetails['object_name']).' ';
             	}
             	$sTemp = trim($sTemp);
-            	 
+
             	array_push($aCSVRow, $sTemp);
             }
 
@@ -211,7 +211,7 @@ function renderCustomReport()
 
     }
 
-    echo '<h2>Custom report</h2><ul>';
+    echo '<h2> Custom report</h2><ul>';
 
     // Load stylesheet and jquery scripts
     addCSS ('css/extensions/style.css');
@@ -317,7 +317,7 @@ function renderCustomReport()
 
     echo '<td valign="top">
             <table class="searchTable">
-              <tr><td><input type="checkbox" name="csv" value="1"> CSV Export</td></tr>
+              <tr class="odd"><td><input type="checkbox" name="csv" value="1"> CSV Export</td></tr>
               <tr><td><input type="text" name="csvDelimiter" value="," size="1"> CSV Delimiter</td></tr>
               <tr class="odd"><td>Name Filter: <i>(Regular Expression)</i></td></tr>
               <tr><td><input type="text" name="name_preg" value="'; if (isset($_POST['name_preg'])) echo $_POST['name_preg']; echo '" style="height: 11pt;"></td></tr>
@@ -329,8 +329,11 @@ function renderCustomReport()
               <tr>
                 <td>
                   Save:
-                  <input id="nameQuery" type="text" name="nameQuery" value="" style="height: 11pt; width:155px"/> <input type="button" value=" Ok " onclick="saveQuery();">
-                  <br/>
+                  <input id="nameQuery" type="text" name="nameQuery" value="" style="height: 11pt; width:150px"/> <input type="button" value=" Ok " onclick="saveQuery();">
+              	</td>
+              </tr>
+              <tr class="odd">
+                <td>
                   Load:<br/>
                    <span id="loadButtons"></span>
                    <script type="text/javascript">
@@ -338,7 +341,7 @@ function renderCustomReport()
                    </script>
                 </td>
               </tr>
-              <tr class="odd"><td>&nbsp;</td></tr>
+              <tr><td>&nbsp;</td></tr>
               <tr><td align="right"><input type="submit" value=" Search "></td></tr>
             </table>
           </td>
@@ -365,7 +368,7 @@ function renderCustomReport()
 
         if ( isset( $_POST['label'] ) )
             echo '<th>Label</th>';
-        
+
         if ( isset( $_POST['type'] ) )
         	echo '<th>Type</th>';
 
@@ -402,11 +405,11 @@ function renderCustomReport()
         if ( isset ($_POST['Ports']) ) {
             echo '<th>Ports</th>';
         }
-        
+
         if ( isset( $_POST['Containers'] ) ) {
         	echo '<th>Containers</th>';
         }
-        
+
         if ( isset( $_POST['Childs'] ) ) {
         	echo '<th>Child objects</th>';
         }
@@ -416,7 +419,7 @@ function renderCustomReport()
               <tbody>';
 
         foreach ( $aResult as $Result ) {
-        	
+
             echo '<tr>';
 
             if ( isset( $_POST['sName'] ) ) {
@@ -438,7 +441,7 @@ function renderCustomReport()
                  echo '&nbsp;';
                 echo '</td>';
             }
-            
+
             if ( isset( $_POST['type'] ) ) {
             	echo '<td>';
             	if ( isset( $Result['objtype_id'] ) )
@@ -563,24 +566,24 @@ function renderCustomReport()
 
                 echo '</td>';
             }
-            
+
             if ( isset ($_POST['Containers']) ) {
             	echo '<td>';
-            
+
             	foreach ( getObjectContainerList($Result['id']) as $key => $aDetails ) {
-            	    echo '<a href="'. makeHref ( array( 'page' => 'object', 'object_id' => $key) )  .'">'.$aDetails['container_name'].'</a><br/>'; 
+            	    echo '<a href="'. makeHref ( array( 'page' => 'object', 'object_id' => $key) )  .'">'.$aDetails['container_name'].'</a><br/>';
             	}
-            
+
             	echo '</td>';
             }
-            
+
             if ( isset ($_POST['Childs']) ) {
             	echo '<td>';
-            
+
             	foreach ( getObjectChildObjectList($Result['id']) as $key => $aDetails ) {
             	    echo '<a href="'. makeHref ( array( 'page' => 'object', 'object_id' => $key) )  .'">'.$aDetails['object_name'].'</a><br/>';
             	}
-            
+
             	echo '</td>';
             }
 
@@ -629,15 +632,43 @@ function renderCustomReport()
  */
 function getResult ( $post ) {
 
+	#Get available objects
+	$phys_typelist = readChapter (CHAP_OBJTYPE, 'o');
+
+	$rackObjectTypeID     = array_search('Rack', $phys_typelist);
+	$rowObjectTypeID      = array_search('Row', $phys_typelist);
+	$locationObjectTypeID = array_search('Location', $phys_typelist);
+
+	$rackRealm     = false;
+	$rowRealm      = false;
+	$locationRealm = false;
+
     $sFilter = '';
     if ( isset ($post['objectIDs']) ) {
-        foreach ( $post['objectIDs'] as $sFilterValue )
+        foreach ( $post['objectIDs'] as $sFilterValue ) {
             $sFilter.='{$typeid_'.$sFilterValue.'} or ';
+
+            if (($rackObjectTypeID) && ($sFilterValue == $rackObjectTypeID))
+            	$rackRealm = true;
+            if (($rowObjectTypeID) && ($sFilterValue == $rowObjectTypeID))
+            		$rowRealm = true;
+            if (($locationObjectTypeID) && ($sFilterValue == $locationObjectTypeID))
+            	$locationRealm = true;
+
+        }
         $sFilter=substr($sFilter, 0, -4);
         $sFilter = '('.$sFilter.')';
     }
 
     $aResult = scanRealmByText ( 'object', $sFilter );
+
+    # Get other realms than objects if user selected them
+    if ($rackRealm)
+    	$aResult = array_merge($aResult, scanRealmByText ( 'rack') );
+    if ($rowRealm)
+    	$aResult = array_merge($aResult, scanRealmByText ( 'row') );
+    if ($locationRealm)
+    	$aResult = array_merge($aResult, scanRealmByText ( 'location') );
 
     // Add tags
     $aTemp = array();

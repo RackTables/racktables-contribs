@@ -1,6 +1,6 @@
-Racktables Extensions v0.3.2 for RackTables 0.20.x
+Racktables Extensions v0.3.3
 ---------------------------------------------------------------
-2013-08-28 - Mogilowski Sebastian <sebastian@mogilowski.net>
+2016-02-04 - Mogilowski Sebastian <sebastian@mogilowski.net>
 ---------------------------------------------------------------
 Website and HowTo: http://www.mogilowski.net/projects/racktables
 ---------------------------------------------------------------
@@ -9,7 +9,7 @@ INSTALL:
 
 To enable all additional reports, just move all the contents of the "plugins" folder into the racktables "plugins" folder, for example:
 
-$ cp -r plugins/* /usr/local/racktables/plugins
+$ cp -r plugins/* /usr/local/racktables/plugins/
 
 ---------------------------------------------------------------
 
