@@ -505,7 +505,7 @@ function fetchNetworksByAttr ($attribute_id, $attribute_value, $use_key = FALSE)
 	foreach (fetchNetworkRowsByAttr ($attribute_id, $attribute_value, $use_key) as $row)
 	{
 		$net_cell = spotEntity ($row['realm'], $row['net_id']);
-		$ret[mkKey ($net_cell)] = $net_cell;
+		$ret[$net_cell['realm'] . '-' . $net_cell['id']] = $net_cell;
 	}
 	return $ret;
 }
