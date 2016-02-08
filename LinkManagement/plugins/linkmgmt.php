@@ -53,24 +53,20 @@
  *		GraphViz (http://www.graphviz.org/)
  *
  *	to user cytoscape js map the following is required:
+ *	create plugins/linkmgmt directory and place the following 7 files in it
  *
  *	Cytoscape.js (http://js.cytoscape.org/)
- *		Racktables wwwroot/js directory:
  *		https://cytoscape.github.io/cytoscape.js/api/cytoscape.js-latest/cytoscape.min.js
  *	dagre.js
- *		Racktables wwwroot/js directory:
  *		https://raw.githubusercontent.com/cpettitt/dagre/master/dist/dagre.min.js
  *		https://raw.githubusercontent.com/cytoscape/cytoscape.js-dagre/master/cytoscape-dagre.js
  *	qtip
- *		Racktables wwwroot/css directory:
  *		https://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.1/jquery.qtip.min.css
  *
- *		Racktables wwwroot/js directory:
  *		https://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.1/jquery.qtip.min.js
  *		https://raw.githubusercontent.com/cytoscape/cytoscape.js-qtip/master/cytoscape-qtip.js
  *
  *	jquery >= 1.10.0 (qtip requirement)
- *		Racktables wwwroot/js directory:
  *		https://code.jquery.com/jquery-1.11.3.min.js
  *
  * INSTALL:
@@ -90,7 +86,7 @@ CREATE TABLE `LinkBackend` (
   CONSTRAINT `LinkBackend_FK_b` FOREIGN KEY (`portb`) REFERENCES `Port` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 collate=utf8_unicode_ci;
 
- *	2. copy jquery.jeditable.mini.js to js/ directory (http://www.appelsiini.net/download/jquery.jeditable.mini.js)
+ *	2. copy jquery.jeditable.mini.js to plugins/linkmgmt directory (http://www.appelsiini.net/download/jquery.jeditable.mini.js)
  *	3. copy linkmgmt.php to plugins directory
  *
  *	 Ready to go!
@@ -2316,16 +2312,16 @@ body {
 <title>Compound nodes</title>
 <!--<script src="js/jquery-1.4.4.min.js"></script>-->
 
-<script src="js/jquery-1.11.3.min.js"></script>
-<script src="js/cytoscape.min.js"></script>
-<script src="js/dagre.min.js"></script>
-<script src="js/cytoscape-dagre.js"></script>
-<link rel="stylesheet" type="text/css" href="css/jquery.qtip.min.css">
-<script src="js/jquery.qtip.min.js"></script>
-<script src="js/cytoscape-qtip.js"></script>
+<script src="?module=chrome&uri=linkmgmt/jquery-1.11.3.min.js"></script>
+<script src="?module=chrome&uri=linkmgmt/cytoscape.min.js"></script>
+<script src="?module=chrome&uri=linkmgmt/dagre.min.js"></script>
+<script src="?module=chrome&uri=linkmgmt/cytoscape-dagre.js"></script>
+<link rel="stylesheet" type="text/css" href="?module=chrome&uri=linkmgmt/jquery.qtip.min.css">
+<script src="?module=chrome&uri=linkmgmt/jquery.qtip.min.js"></script>
+<script src="?module=chrome&uri=linkmgmt/cytoscape-qtip.js"></script>
 
-<!--<script src="js/cytoscape-css-renderer_mod.js"></script>-->
-<!--<script src="js/cytoscape.js-navigator.js_mod"></script>-->
+<!--<script src="?module=chrome&uri=linkmgmt/cytoscape-css-renderer_mod.js"></script>-->
+<!--<script src="?module=chrome&uri=linkmgmt/cytoscape.js-navigator.js_mod"></script>-->
 <script>
 var cy = null;
 var cy2 = null;
@@ -4321,7 +4317,7 @@ function linkmgmt_tabhandler($object_id) {
 
 	$target = makeHrefProcess(portlist::urlparams('op','update'));
 
-	addJS('js/jquery.jeditable.mini.js');
+	addJS('linkmgmt/jquery.jeditable.mini.js');
 
 	/* TODO  if (permitted (NULL, 'ports', 'set_reserve_comment')) */
 	/* TODO Link / unlink permissions  */
