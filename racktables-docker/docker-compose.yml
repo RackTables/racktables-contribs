@@ -1,0 +1,26 @@
+mariadb:
+  image: mariadb
+  environment:
+  - MYSQL_DATABASE=racktables
+  - MYSQL_USER=racktables
+  - MYSQL_PASSWORD=foobarbaz
+  - MYSQL_RANDOM_ROOT_PASSWORD=yes_since_this_isnt_production
+racktables:
+  build: .
+  links:
+  - mariadb
+  environment:
+  - DBHOST=mariadb
+  - DBNAME=racktables
+  - DBUSER=racktables
+  - DBPASS=foobarbaz
+nginx:
+  image: nginx
+  links:
+  - racktables
+  volumes_from:
+  - racktables
+  volumes:
+  - ./nginx.conf:/etc/nginx/nginx.conf
+  ports:
+  - 8000:80
