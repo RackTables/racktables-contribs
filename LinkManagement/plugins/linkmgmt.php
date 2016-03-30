@@ -4287,6 +4287,8 @@ function linkmgmt_renderPopupPortSelectorbyName()
         // display results
         startPortlet ('Possible Backend Link List');
 	echo "Select links to create:<br>";
+
+	//portlist::var_dump_html($link_list);
         if (empty ($link_list))
                 echo '(nothing found)';
         else
@@ -4299,7 +4301,20 @@ function linkmgmt_renderPopupPortSelectorbyName()
 				'multiple' => 'multiple',
 				);
 
-                echo getSelect ($link_list,$options, NULL, FALSE);
+                //echo getSelect ($link_list,$options, NULL, FALSE); / !! max option length 30 see stringForOption()
+
+		echo "<select id=link_list[] tabindex=1 name=link_list[] size=".($linkcount <= $maxsize ? $linkcount : $maxsize)." multiple=multiple>";
+
+		foreach ($link_list as $key => $value)
+		{
+			$selected = is_array ($selected_id) ? in_array ($key, $selected_id) : $key == $selected_id;
+			$ret .= "<option value='${key}'" . ($selected ? ' selected' : '') . '>';
+			$ret .= stringForOption ($value, 60) . '</option>';
+		}
+
+		echo $ret;
+
+		echo "</select>";
 
                 echo "<p>$linktype Cable ID: <input type=text id=cable name=cable>";
                 echo "<p><input type='submit' value='Link $linktype' name='do_link'>";
