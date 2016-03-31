@@ -4205,16 +4205,18 @@ function linkmgmt_renderPopupPortSelector()
         {
 		$linkcount = count($spare_ports);
 
-                $options = array(
-				'name' => 'remote_ports[]',
-				'size' => getConfigVar ('MAXSELSIZE'),
-				'size' => ($linkcount <= $maxsize ? $linkcount : $maxsize),
-				);
+		echo "<select id=remote_ports[] tabindex=1 name=remote_ports[] size=".($linkcount <= $maxsize ? $linkcount : $maxsize).($multilink ? " multiple=multiple>" : "");
 
-		if($multilink)
-			$options['multiple'] = 'multiple';
+		foreach ($spare_ports as $key => $value)
+		{
+			$selected = is_array ($selected_id) ? in_array ($key, $selected_id) : $key == $selected_id;
+			$ret .= "<option value='${key}'" . ($selected ? ' selected' : '') . '>';
+			$ret .= stringForOption ($value, 60) . '</option>';
+		}
 
-                echo getSelect ($spare_ports, $options, NULL, FALSE);
+		echo $ret;
+
+		echo "</select>";
 
                 echo "<p>$linktype Cable ID: <input type=text id=cable name=cable>";
                 echo "<p><input type='submit' value='Link $linktype' name='do_link'>";
