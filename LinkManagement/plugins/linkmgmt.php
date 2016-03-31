@@ -4295,14 +4295,6 @@ function linkmgmt_renderPopupPortSelectorbyName()
         {
 		$linkcount = count($link_list);
 
-		$options = array(
-				'name' => 'link_list[]',
-				'size' => ($linkcount <= $maxsize ? $linkcount : $maxsize),
-				'multiple' => 'multiple',
-				);
-
-                //echo getSelect ($link_list,$options, NULL, FALSE); / !! max option length 30 see stringForOption()
-
 		echo "<select id=link_list[] tabindex=1 name=link_list[] size=".($linkcount <= $maxsize ? $linkcount : $maxsize)." multiple=multiple>";
 
 		foreach ($link_list as $key => $value)
