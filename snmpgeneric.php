@@ -53,6 +53,8 @@
  * INSTALL
  * 	just place file in plugins directory
  *
+ *	Increase max_input_vars in php.ini if not all ports were added on one run.
+ *
  */
 
 /**
