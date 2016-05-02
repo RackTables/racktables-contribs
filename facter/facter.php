@@ -213,7 +213,11 @@ function Update()
 	if($resultarray) {
 		$id=$resultarray[0]['id'];
 		// Update SW type (OS)
-		$osrelease = $facter['operatingsystem'] . '%GSKIP%' . $facter['operatingsystem'] . ' V' . $facter['operatingsystemrelease'];
+		$os_release_lts = "";
+		if ($facter['operatingsystem'] == 'Ubuntu' && explode(".", $facter['operatingsystemrelease'])[0] % 2 == 0) {
+			$os_release_lts = " LTS";
+		}
+		$osrelease = $facter['operatingsystem'] . '%GSKIP%' . $facter['operatingsystem'] . ' ' . $facter['operatingsystemrelease'] . $os_release_lts;
 		$os_dict_key = getdict($hw=$osrelease, $chapter=13);
 		commitUpdateAttrValue ($object_id = $newmachine, $attr_id = $id, $value = $os_dict_key);
 	}
