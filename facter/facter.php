@@ -12,18 +12,18 @@
 *  To get VMs to auto add you have to create a facter function to return a list like:
 *  export FACTER_VMs=$(virsh list | awk '$3 == "running" {printf $2","}' | sed -e 's/,$//');
 *  Whatever you use for VMs it should return a list like: vms => vm1,vm2
-*  
+*
 *
 * Author: Torstein Hansen <huleboer@users.sourceforge.net>, sponsored by eniro.no
 *
 * This script is based on yaml_import for racktables by Tommy Botten Jensen
-* 
+*
 * 2011-08-25 modified by Neil Scholten <neil.scholten@gamigo.com>
 * - adjusted path for racktables > 0.19.1
 * - modified .yaml parsing to match to 'facter -py' format
 * - modified interface-type detection to use virtual port on VMs
 * - modified OS detection to match more better default sets (Testcase: CentOS).
-* 
+*
 * 2012-12-13 modified by Daniel Kasen <djtech@gmail.com>
 * - added generic looping to easially add fields
 * - Corrected issues with VM's breaking script
@@ -166,7 +166,7 @@ function Update()
         		$resultarray = $result->fetchAll (PDO::FETCH_ASSOC);
         		if($resultarray) {
               		$id=$resultarray[0]['id'];
-					// Update Hypervisor type 
+					// Update Hypervisor type
 					$hypervisor_type = $facter['is_hypervisor'];
         	      	$hypervisor_type_dict_key = getdict($hw=$hypervisor_type, $chapter=10005);
                 	commitUpdateAttrValue ($object_id = $newmachine, $attr_id = $id, $value = $hypervisor_type_dict_key);
@@ -178,7 +178,7 @@ function Update()
         	$resultarray = $result->fetchAll (PDO::FETCH_ASSOC);
         	if($resultarray) {
 				$id=$resultarray[0]['id'];
-				// Update Hypervisor type 
+				// Update Hypervisor type
 				$hypervisor = "Yes";
 				$hypervisor_dict_key = getdict($hypervisor, $chapter=29);
                	commitUpdateAttrValue ($object_id = $newmachine, $attr_id = $id, $value = $hypervisor_dict_key);
@@ -189,7 +189,7 @@ function Update()
             for ($i = 0; $i < $vm_count; $i++) {
 				//addToParent
 				addVmToParent ($vms[$i], $newmachine);
-			}        
+			}
 		} else {
 			$query = "select id from Attribute where name REGEXP '^ *Hypervisor' LIMIT 1";
         	        unset($result);
@@ -204,7 +204,7 @@ function Update()
 			}
 		}
 	}
-	
+
 	// Find SW type id (OS)
 	$query = "select id from Attribute where name REGEXP '^ *SW type$' LIMIT 1";
 	unset($result);
@@ -263,7 +263,7 @@ function Update()
 					commitUpdateAttrValue ($newmachine, $id, strtotime($value) );
 				} else {
 					commitUpdateAttrValue ($newmachine, $id, $value );
-				}	
+				}
 			}
 		}
 	}
@@ -291,11 +291,11 @@ function Update()
 			// Get IP
 			if (isset($facter['ipaddress_' . $nics[$i]]))
 			$ip = $facter['ipaddress_' . $nics[$i]];
-	
+
 			// Get MAC
 			if (isset($facter['macaddress_' . $nics[$i]]))
 			$mac = $facter['macaddress_' . $nics[$i]];
-	
+
 			//check if VM or not
 			if ($facter['is_virtual']=="false")
 			{
@@ -313,16 +313,16 @@ function Update()
 			if($resultarray) {
 				$nictypeid=$resultarray[0]['id'];
 			}
-	
+
 			// Remove newline from ip
 			$ip=str_replace("\n","", $ip);
-	
+
 			// Check to se if the interface has an ip assigned
 			$query = "SELECT object_id FROM IPv4Allocation where object_id=$newmachine and name=\"$nics[$i]\"";
 			unset($result);
 			$result = usePreparedSelectBlade ($query);
 			$resultarray = $result->fetchAll (PDO::FETCH_ASSOC);
-	
+
 			if($resultarray) {
 				unset($id);
 				$ipcheck=$resultarray;
@@ -332,7 +332,7 @@ function Update()
 			unset($result);
 			$result = usePreparedSelectBlade ($query);
 			$resultarray = $result->fetchAll (PDO::FETCH_ASSOC);
-	
+
 			if($resultarray) {
 				$portid = $resultarray[0]['id'];
 				unset($id);
