@@ -285,7 +285,7 @@ function Update()
 		// 2011-08-31 <neil.scholten@gamigo.com>
 		// * Only Document real interfaces, dont do bridges, bonds, vlan-interfaces
 		//   when they have no IP defined.
-		if ( preg_match('(_|^(bond|lo|sit|vnet|virbr|veth|peth))',$nics[$i]) != 0 ) {
+		if ( preg_match('/^(docker|lo|sit|vnet|virbr|veth|peth)/',$nics[$i]) != 0 ) {
 			// do nothing
 		} else {
 			// Get IP
