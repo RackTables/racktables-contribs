@@ -218,8 +218,9 @@ function Update()
 		commitUpdateAttrValue ($object_id = $newmachine, $attr_id = $id, $value = $os_dict_key);
 	}
 
-	//Generic to read in from file	
-	$manifest_file = fopen("../plugins/manifest", "r") or die("Could not open manifest, make sure it is in the websrv root and called manifest \n");
+	//Generic to read in from file
+	global $racktables_plugins_dir;
+	$manifest_file = fopen($racktables_plugins_dir . "/manifest", "r") or die("Could not open manifest, make sure it is in the websrv root and called manifest \n");
 	while ( ! feof ($manifest_file)) {
 		$tmp_line = fgets($manifest_file);
 		if (!empty($tmp_line) && !preg_match("/\/\//",$tmp_line)) {
