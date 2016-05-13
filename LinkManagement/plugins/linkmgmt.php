@@ -4390,6 +4390,11 @@ function linkmgmt_renderObjectLinks($object_id) {
 	} else
 		$allback = FALSE;
 
+	if(isset($_GET['firstlast'])) {
+		$firstlast = $_GET['firstlast'];
+	} else
+		$firstlast = FALSE;
+
 	echo '<table><tr>';
 
 	if($allports) {
@@ -4419,6 +4424,15 @@ function linkmgmt_renderObjectLinks($object_id) {
 	echo '<td width=100><span onclick=window.open("'.makeHrefProcess(portlist::urlparamsarray(
                                 array('op' => 'cytoscapemap'))).'","name","height=800,width=800,scrollbars=yes");><a>Cytoscape Object Map</a></span></td>';
 
+	/* fristlast */
+	if(!$firstlast)
+	{
+		$_GET['allports'] = 1;
+		echo '<td width=200><a href="'.makeHref(portlist::urlparams('firstlast','1','0')).'">FirstLast View</a></td>';
+	}
+	else
+		echo '<td width=200><a href="'.makeHref(portlist::urlparams('firstlast','0','0')).'">Default View</a></td>';
+
 	/* Help */
 	echo '<td width=200><span onclick=window.open("'.makeHrefProcess(portlist::urlparamsarray(
                                 array('op' => 'Help'))).'","name","height=400,width=500");><a>Help</a></span></td>';
@@ -4439,6 +4453,18 @@ function linkmgmt_renderObjectLinks($object_id) {
 
 	$rowcount = 0;
 
+	if($firstlast)
+	{
+		echo '<tr><th class=tdleft>Current name</th>';
+		echo '<th class=tdleft>First Object name</th>';
+		echo '<th class=tdleft>First Local name</th><th class=tdleft>First Visible label</th>';
+		echo '<th class=tdleft>First Interface</th><th class=tdleft>First L2 address</th>';
+		echo '<th class=tdleft>Last Object name</th>';
+		echo '<th class=tdleft>Last name</th><th class=tdleft>Last Visible label</th>';
+		echo '<th class=tdleft>Last Interface</th><th class=tdleft>Last L2 address</th>';
+		echo '</tr>';
+	}
+
 	foreach($ports as $key => $port) {
 
 		$lc = new lm_linkchain($port['id']);
@@ -4450,7 +4476,41 @@ function linkmgmt_renderObjectLinks($object_id) {
 			else
 				$rowbgcolor = ($rowcount % 2 ? lm_linkchain::ALTERNATE_ROW_BGCOLOR : "#ffffff");
 
-			echo $lc->getchainlabeltrstart($rowbgcolor).$lc->getchainrow($allback, $rowbgcolor)."</tr>";
+			if(!$firstlast)
+			{
+				echo $lc->getchainlabeltrstart($rowbgcolor).$lc->getchainrow($allback, $rowbgcolor)."</tr>";
+				continue;
+			}
+
+
+			$first_port = $lc->ports[$lc->first];
+			$last_port = $lc->ports[$lc->last];
+
+			echo '<tr style="background: '.$rowbgcolor.'"';
+			if ($is_highlighted && false)
+				echo ' class=highlight';
+			$a_class = isEthernetPort ($port) ? 'port-menu' : '';
+			echo "><td class='tdleft $name_class' NOWRAP><a name='port-${port['id']}' class='interactive-portname nolink $a_class'>${port['name']}</a></td>";
+			echo "<td class=tdleft>" .
+				formatPortLink ($first_port['object_id'], $first_port['object_name'], $first_port['id'], NULL) .
+				"</td>";
+
+			echo "<td class='tdleft $name_class' NOWRAP><a name='port-${first_port['id']}' class='interactive-portname nolink $a_class'>${first_port['name']}</a></td>";
+			echo "<td class=tdleft>${first_port['label']}</td>";
+			echo "<td class=tdleft>" . formatPortIIFOIF ($first_port) . "</td><td class=tdleft><tt>${first_port['l2address']}</tt></td>";
+
+			if($last_port['id'] != $first_port['id'])
+			{
+				echo "<td class=tdleft>" .
+					formatPortLink ($last_port['object_id'], $last_port['object_name'], $last_port['id'], NULL) .
+					"</td>";
+
+				echo "<td class='tdleft $name_class' NOWRAP><a name='port-${last_port['id']}' class='interactive-portname nolink $a_class'>${last_port['name']}</a></td>";
+				echo "<td class=tdleft>${last_port['label']}</td>";
+				echo "<td class=tdleft>" . formatPortIIFOIF ($last_port) . "</td><td class=tdleft><tt>${last_port['l2address']}</tt></td>";
+			}
+			echo "</tr>";
+
 			$rowcount++;
 		}
 	}
