@@ -4487,15 +4487,13 @@ function linkmgmt_renderObjectLinks($object_id) {
 			$last_port = $lc->ports[$lc->last];
 
 			echo '<tr style="background: '.$rowbgcolor.'"';
-			if ($is_highlighted && false)
-				echo ' class=highlight';
 			$a_class = isEthernetPort ($port) ? 'port-menu' : '';
-			echo "><td class='tdleft $name_class' NOWRAP><a name='port-${port['id']}' class='interactive-portname nolink $a_class'>${port['name']}</a></td>";
+			echo "><td class='tdleft' NOWRAP><a name='port-${port['id']}' class='interactive-portname nolink $a_class'>${port['name']}</a></td>";
 			echo "<td class=tdleft>" .
 				formatPortLink ($first_port['object_id'], $first_port['object_name'], $first_port['id'], NULL) .
 				"</td>";
 
-			echo "<td class='tdleft $name_class' NOWRAP><a name='port-${first_port['id']}' class='interactive-portname nolink $a_class'>${first_port['name']}</a></td>";
+			echo "<td class='tdleft' NOWRAP><a name='port-${first_port['id']}' class='interactive-portname nolink $a_class'>${first_port['name']}</a></td>";
 			echo "<td class=tdleft>${first_port['label']}</td>";
 			echo "<td class=tdleft>" . formatPortIIFOIF ($first_port) . "</td><td class=tdleft><tt>${first_port['l2address']}</tt></td>";
 
@@ -4505,7 +4503,7 @@ function linkmgmt_renderObjectLinks($object_id) {
 					formatPortLink ($last_port['object_id'], $last_port['object_name'], $last_port['id'], NULL) .
 					"</td>";
 
-				echo "<td class='tdleft $name_class' NOWRAP><a name='port-${last_port['id']}' class='interactive-portname nolink $a_class'>${last_port['name']}</a></td>";
+				echo "<td class='tdleft' NOWRAP><a name='port-${last_port['id']}' class='interactive-portname nolink $a_class'>${last_port['name']}</a></td>";
 				echo "<td class=tdleft>${last_port['label']}</td>";
 				echo "<td class=tdleft>" . formatPortIIFOIF ($last_port) . "</td><td class=tdleft><tt>${last_port['l2address']}</tt></td>";
 			}
