@@ -1067,6 +1067,52 @@ class lm_linkchain implements Iterator {
 
 	} /* _printUnLinkPort */
 
+	// recursive
+	function getporttds($port_id, $back = false, $class = '')
+	{
+		if($port_id == 'first' || $port_id == 'last' || $port_id == 'init')
+			$port_id = $this->{$port_id};
+
+		if($port_id == $this->first || $port_id == $this->last)
+			$class = '';
+
+		$port = $this->ports[$port_id];
+
+		// see interface.php renderObjectPortRow()
+		// highlight port name with yellow if it's name is not canonical
+		$canon_pn = shortenPortName ($port['name'], $port['object_id']);
+		$name_class = $canon_pn == $port['name'] ? '' : 'trwarning';
+
+		echo "<td class='tdleft $class'>" .
+			formatPortLink ($port['object_id'], $port['object_name'], $port['id'], NULL) .
+			"</td>";
+
+		$a_class = isEthernetPort ($port) ? 'port-menu' : '';
+		echo "<td class='tdleft $class' NOWRAP><a name='port-${port['id']}' class='interactive-portname nolink $a_class'>${port['name']}</a></td>";
+		echo "<td class='tdleft $class'>${port['label']}</td>";
+		echo "<td class='tdleft $class'>" . formatPortIIFOIF ($port) . "</td><td class='tdleft $class'><tt>${port['l2address']}</tt></td>";
+
+		$remote_port = $port[( $back ? 'back' : 'front')];
+		if ($remote_port['remote_id'])
+		{
+			$editable = permitted ('object', 'ports', 'editPort') ? 'editable' : '';
+			echo "<td class='tdleft hidden'><span class='rsvtext $editable id-${remote_port['remote_id']} op-upd-reservation-cable'>";
+			if($back)
+				echo "=${remote_port['cableid']}=>";
+			else
+				echo "-${remote_port['cableid']}->";
+
+			echo "</span></td>";
+
+			// recursive call
+			$this->getporttds($remote_port['remote_id'], !$back, 'hidden');
+		}
+		else
+			echo implode ('', formatPortReservation ($port)) . '<td></td>';
+
+		return;
+	} // getporttds
+
 	// TODO
 	// html table
 	function getchainhtml()
@@ -4431,7 +4477,24 @@ function linkmgmt_renderObjectLinks($object_id) {
 		echo '<td width=200><a href="'.makeHref(portlist::urlparams('firstlast','1','0')).'">FirstLast View</a></td>';
 	}
 	else
+	{
 		echo '<td width=200><a href="'.makeHref(portlist::urlparams('firstlast','0','0')).'">Default View</a></td>';
+		addJS(<<<JSEND
+		function toggledetails(elem)
+		{
+			var h = $('.hidden');
+			$('.nothidden').addClass('hidden');
+			h.addClass('nothidden');
+			h.removeClass('hidden');
+			if(elem.innerText == 'Show Details')
+				elem.innerText = 'Hide Details';
+			else
+				elem.innerText = 'Show Details';
+		}
+JSEND
+		, true);
+		echo '<td width=200><a onclick="toggledetails(this);">Show Details</a></td>';
+	}
 
 	/* Help */
 	echo '<td width=200><span onclick=window.open("'.makeHrefProcess(portlist::urlparamsarray(
@@ -4459,11 +4522,13 @@ function linkmgmt_renderObjectLinks($object_id) {
 		echo '<th class=tdleft>First Object name</th>';
 		echo '<th class=tdleft>First Local name</th><th class=tdleft>First Visible label</th>';
 		echo '<th class=tdleft>First Interface</th><th class=tdleft>First L2 address</th>';
-		echo '<th class=tdleft>Last Object name</th>';
-		echo '<th class=tdleft>Last name</th><th class=tdleft>Last Visible label</th>';
-		echo '<th class=tdleft>Last Interface</th><th class=tdleft>Last L2 address</th>';
+		echo "<th class='tdleft nothidden'>Last Object name</th>";
+		echo "<th class='tdleft nothidden'>Last name</th><th class='tdleft nothidden'>Last Visible label</th>";
+		echo "<th class='tdleft nothidden'>Last Interface</th><th class='tdleft nothidden'>Last L2 address</th>";
 		echo '</tr>';
 	}
+
+	addCSS('.hidden {display: none;}', TRUE);
 
 	foreach($ports as $key => $port) {
 
@@ -4476,40 +4541,19 @@ function linkmgmt_renderObjectLinks($object_id) {
 			else
 				$rowbgcolor = ($rowcount % 2 ? lm_linkchain::ALTERNATE_ROW_BGCOLOR : "#ffffff");
 
+			$rowcount++;
+
 			if(!$firstlast)
 			{
 				echo $lc->getchainlabeltrstart($rowbgcolor).$lc->getchainrow($allback, $rowbgcolor)."</tr>";
 				continue;
 			}
 
-
-			$first_port = $lc->ports[$lc->first];
-			$last_port = $lc->ports[$lc->last];
-
-			echo '<tr style="background: '.$rowbgcolor.'"';
 			$a_class = isEthernetPort ($port) ? 'port-menu' : '';
+			echo '<tr style="background: '.$rowbgcolor.'"';
 			echo "><td class='tdleft' NOWRAP><a name='port-${port['id']}' class='interactive-portname nolink $a_class'>${port['name']}</a></td>";
-			echo "<td class=tdleft>" .
-				formatPortLink ($first_port['object_id'], $first_port['object_name'], $first_port['id'], NULL) .
-				"</td>";
-
-			echo "<td class='tdleft' NOWRAP><a name='port-${first_port['id']}' class='interactive-portname nolink $a_class'>${first_port['name']}</a></td>";
-			echo "<td class=tdleft>${first_port['label']}</td>";
-			echo "<td class=tdleft>" . formatPortIIFOIF ($first_port) . "</td><td class=tdleft><tt>${first_port['l2address']}</tt></td>";
-
-			if($last_port['id'] != $first_port['id'])
-			{
-				echo "<td class=tdleft>" .
-					formatPortLink ($last_port['object_id'], $last_port['object_name'], $last_port['id'], NULL) .
-					"</td>";
-
-				echo "<td class='tdleft' NOWRAP><a name='port-${last_port['id']}' class='interactive-portname nolink $a_class'>${last_port['name']}</a></td>";
-				echo "<td class=tdleft>${last_port['label']}</td>";
-				echo "<td class=tdleft>" . formatPortIIFOIF ($last_port) . "</td><td class=tdleft><tt>${last_port['l2address']}</tt></td>";
-			}
+			echo $lc->getporttds('first');
 			echo "</tr>";
-
-			$rowcount++;
 		}
 	}
 
