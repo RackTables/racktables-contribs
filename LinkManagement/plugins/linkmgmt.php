@@ -1067,6 +1067,13 @@ class lm_linkchain implements Iterator {
 
 	} /* _printUnLinkPort */
 
+	function printports()
+	{
+
+		$back = isset($this->ports[$this->first]['back']['remote_id']);
+		$this->getporttds($this->first, $back);
+	}
+
 	// recursive
 	function getporttds($port_id, $back = false, $class = '')
 	{
@@ -1095,8 +1102,23 @@ class lm_linkchain implements Iterator {
 		$remote_port = $port[( $back ? 'back' : 'front')];
 		if ($remote_port['remote_id'])
 		{
+			if($port['id'] == $this->first)
+			{
+				echo "<td class='tdcenter nothidden'>";
+
+				if( $this->linkcount == 1 )
+					if($back)
+						echo "=${remote_port['cableid']}=>";
+					else
+						echo "-${remote_port['cableid']}->";
+				else
+					if( $this->linkcount > 1 )
+						echo "*".$this->linkcount."*>";
+				echo "</td>";
+			}
+
 			$editable = permitted ('object', 'ports', 'editPort') ? 'editable' : '';
-			echo "<td class='tdleft hidden'><span class='rsvtext $editable id-${remote_port['remote_id']} op-upd-reservation-cable'>";
+			echo "<td class='tdcenter hidden'><span class='rsvtext $editable id-${remote_port['remote_id']} op-upd-reservation-cable'>";
 			if($back)
 				echo "=${remote_port['cableid']}=>";
 			else
@@ -4508,7 +4530,7 @@ JSEND
 	echo '</tr></table>';
 
 
-	echo '<br><br><table id=renderobjectlinks0>';
+	echo '<br><br><table id=renderobjectlinks0 style="white-space: nowrap">';
 
 	/*  switch display order depending on backend links */
 	$first = portlist::hasbackend($object_id);
@@ -4522,6 +4544,7 @@ JSEND
 		echo '<th class=tdleft>First Object name</th>';
 		echo '<th class=tdleft>First Local name</th><th class=tdleft>First Visible label</th>';
 		echo '<th class=tdleft>First Interface</th><th class=tdleft>First L2 address</th>';
+		echo "<th class='tdleft nothidden'></th>";
 		echo "<th class='tdleft nothidden'>Last Object name</th>";
 		echo "<th class='tdleft nothidden'>Last name</th><th class='tdleft nothidden'>Last Visible label</th>";
 		echo "<th class='tdleft nothidden'>Last Interface</th><th class='tdleft nothidden'>Last L2 address</th>";
@@ -4552,7 +4575,7 @@ JSEND
 			$a_class = isEthernetPort ($port) ? 'port-menu' : '';
 			echo '<tr style="background: '.$rowbgcolor.'"';
 			echo "><td class='tdleft' NOWRAP><a name='port-${port['id']}' class='interactive-portname nolink $a_class'>${port['name']}</a></td>";
-			echo $lc->getporttds('first');
+			echo $lc->printports();
 			echo "</tr>";
 		}
 	}
