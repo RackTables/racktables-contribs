@@ -1071,19 +1071,20 @@ class lm_linkchain implements Iterator {
 	{
 
 		$back = isset($this->ports[$this->first]['back']['remote_id']);
-		$this->getporttds($this->first, $back);
+		//$this->getporttds($this->first, $back);
+		foreach($this as $port_id => $port)
+		{
+			$class = 'hidden';
+			if($port_id == $this->first || $port_id == $this->last)
+				$class = '';
+
+			$this->getporttds($port, $class);
+		}
 	}
 
-	// recursive
-	function getporttds($port_id, $back = false, $class = '')
+	function getporttds($port, $class = '')
 	{
-		if($port_id == 'first' || $port_id == 'last' || $port_id == 'init')
-			$port_id = $this->{$port_id};
-
-		if($port_id == $this->first || $port_id == $this->last)
-			$class = '';
-
-		$port = $this->ports[$port_id];
+		$back = ($port['linktype'] == 'front' ? false : true );
 
 		// see interface.php renderObjectPortRow()
 		// highlight port name with yellow if it's name is not canonical
@@ -1118,21 +1119,20 @@ class lm_linkchain implements Iterator {
 			}
 
 			$editable = permitted ('object', 'ports', 'editPort') ? 'editable' : '';
-			echo "<td class='tdcenter hidden'><span class='rsvtext $editable id-${remote_port['remote_id']} op-upd-reservation-cable'>";
+			echo "<td class='tdcenter hidden'>";
 			if($back)
 				echo "=${remote_port['cableid']}=>";
 			else
 				echo "-${remote_port['cableid']}->";
 
-			echo "</span></td>";
-
-			// recursive call
-			$this->getporttds($remote_port['remote_id'], !$back, 'hidden');
+			echo "</td>";
 		}
 		else
-			echo implode ('', formatPortReservation ($port)) . '<td></td>';
+		{
+			if(!empty($port['reservation_comment']))
+				echo implode ('', formatPortReservation ($port));
+		}
 
-		return;
 	} // getporttds
 
 	// TODO
@@ -4573,7 +4573,7 @@ JSEND
 			}
 
 			$a_class = isEthernetPort ($port) ? 'port-menu' : '';
-			echo '<tr style="background: '.$rowbgcolor.'"';
+			echo '<tr style="background: '.($lc->loop ? '#ff9966' : $rowbgcolor ).'"';
 			echo "><td class='tdleft' NOWRAP><a name='port-${port['id']}' class='interactive-portname nolink $a_class'>${port['name']}</a></td>";
 			echo $lc->printports();
 			echo "</tr>";
