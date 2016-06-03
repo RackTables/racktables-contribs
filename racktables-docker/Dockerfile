@@ -9,7 +9,7 @@ ENV DBHOST="mariadb" \
     DBPASS=""
 
 COPY entrypoint.sh /entrypoint.sh
-RUN apk --no-cache add php-fpm php-gd php-pdo_mysql php-ldap php-snmp php-pcntl php-json php-bcmath php-curl \
+RUN apk --no-cache add php5-fpm php5-gd php5-pdo_mysql php5-ldap php5-snmp php5-pcntl php5-json php5-bcmath php5-curl \
     && chmod +x /entrypoint.sh \
     && wget -O /racktables.tar.gz 'http://downloads.sourceforge.net/project/racktables/RackTables-0.20.11.tar.gz?r=&ts=1456138604&use_mirror=netassist' \
     && mkdir /opt \
@@ -19,7 +19,7 @@ RUN apk --no-cache add php-fpm php-gd php-pdo_mysql php-ldap php-snmp php-pcntl 
     && sed -i \
     -e 's|^listen =.*$|listen = 9000|' \
     -e 's|^;daemonize =.*$|daemonize = no|' \
-    /etc/php/php-fpm.conf
+    /etc/php5/php-fpm.conf
 
 VOLUME /opt/racktables/wwwroot
 EXPOSE 9000
