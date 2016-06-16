@@ -13,8 +13,8 @@
  *			 e.g.
  * 			(Object)>[port] -- front --> [port]<(Object) == back == > (Object)>[port] -- front --> [port]<(Object)
  * 		- Link object backend ports by name (e.g. handy for patch panels)
- *		- change/create CableID (needs jquery.jeditable.mini.js)
- *		- change/create Port Reservation Comment (needs jquery.jeditable.mini.js)
+ *		- change/create CableID
+ *		- change/create Port Reservation Comment
  *		- multiple backend links for supported port types (e.g. AC-in, DC)
  *		- GraphViz Maps (Objects, Ports and Links) (needs GraphViz_Image 1.3.0)
  *			- object,port or link  highligthing (just click on it)
@@ -86,8 +86,7 @@ CREATE TABLE `LinkBackend` (
   CONSTRAINT `LinkBackend_FK_b` FOREIGN KEY (`portb`) REFERENCES `Port` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 collate=utf8_unicode_ci;
 
- *	2. copy jquery.jeditable.mini.js to plugins/linkmgmt directory (http://www.appelsiini.net/download/jquery.jeditable.mini.js)
- *	3. copy linkmgmt.php to plugins directory
+ *	2. copy linkmgmt.php to plugins directory
  *
  *	 Ready to go!
  *
@@ -110,7 +109,7 @@ ALTER TABLE LinkBackend CONVERT to CHARACTER SET utf8 COLLATE utf8_unicode_ci;
  * TESTED on FreeBSD 9.0, nginx/1.0.11, php 5.3.9
  *	GraphViz_Image 1.3.0
  *
- * (c)2012-2015 Maik Ehinger <m.ehinger@ltur.de>
+ * (c)2012-2016 Maik Ehinger <m.ehinger@ltur.de>
  */
 
 /**
@@ -147,6 +146,7 @@ $ophandler['object']['linkmgmt']['Help'] = 'linkmgmt_opHelp';
 
 $ophandler['object']['linkmgmt']['map'] = 'linkmgmt_opmap';
 $ajaxhandler['lm_mapinfo'] = 'linkmgmt_ajax_mapinfo';
+$ajaxhandler['lm-upd-reservation-cable'] = 'linkmgmt_updateCableIdAJAX';
 
 $ophandler['object']['linkmgmt']['cytoscapemap'] = 'linkmgmt_cytoscapemap';
 
@@ -964,13 +964,8 @@ class lm_linkchain implements Iterator {
 	 */
 	function printlink($port, $linktype) {
 
-		$link_id = $port['id']."_".$port['remote_id'];
-
 		if($linktype == 'back')
-		{
 			$arrow = '====>';
-			$link_id .= '_back';
-		}
 		else
 			$arrow = '---->';
 
@@ -978,8 +973,8 @@ class lm_linkchain implements Iterator {
 
 		/* link */
 		return '<td align=center>'
-			.'<pre><a class="editcable" id='.$link_id.'>'.$port['cableid']
-			."</a></pre><pre>$arrow</pre>"
+			.'<pre><span class="editable id1-'.$port_id.' id2-'.$port['remote_id'].' op-lm-upd-reservation-cable linktype-'.$linktype.'">'.$port['cableid']
+			."</span></pre><pre>$arrow</pre>"
 			.$this->_printUnLinkPort($port, $linktype)
 			.'</td>';
 	} /* printlink */
@@ -1033,7 +1028,7 @@ class lm_linkchain implements Iterator {
 		} else
 			$prefix = '';
 
-		return '<td>'.$prefix.'<i><a class="editcmt" id='.$port['id'].'>'.$port['reservation_comment'].'</a></i></td>';
+		return '<td>'.$prefix.'</td><td><i><span class="editable op-upd-reservation-port id-'.$port['id'].'">'.$port['reservation_comment'].'</span</i></td>';
 
 	} /* printComment */
 
@@ -3662,34 +3657,33 @@ class linkmgmt_gvmap {
 
 /* -------------------------------------------------- */
 
-function linkmgmt_opupdate() {
+function linkmgmt_updateCableIdAJAX()
+{
+	$text = strip_tags(genericAssertion ('text', 'string0'));
+	$linktype = genericAssertion ('linktype', 'string');
+	$id1 = genericAssertion ('id1', 'uint');
+	$id2 = genericAssertion ('id2', 'uint');
 
-	if(!isset($_POST['id']))
-		exit;
+	$port_info = getPortInfo ($id1);
+	fixContext (spotEntity ('object', $port_info['object_id']));
+	assertPermission ('object', 'ports', 'editPort');
 
-	$ids = explode('_',$_POST['id'],3);
-	$retval = strip_tags($_POST['value']);
+	if(!permitted(NULL, NULL, 'set_link'))
+		return 'Permission denied!';
 
-	if(isset($ids[1])) {
-		if(permitted(NULL, NULL, 'set_link'))
-			if(isset($ids[2]) && $ids[2] == 'back')
-				linkmgmt_commitUpdatePortLink($ids[0], $ids[1], $retval, TRUE);
-			else
-				linkmgmt_commitUpdatePortLink($ids[0], $ids[1], $retval);
-		else
-			$retval = "Permission denied!";
-	} else {
-		if(permitted(NULL, NULL, 'set_reserve_comment'))
-			commitUpdatePortComment($ids[0], $retval);
-		else
-			$retval = "Permission denied!";
+	if($linktype == 'back')
+		linkmgmt_commitUpdatePortLink($id1, $id2, $text, TRUE);
+	else
+	{
+		if (! $port_info['linked'])
+			throw new RackTablesError ('Can\'t update cable ID: port is not linked');
+		linkmgmt_commitUpdatePortLink($id1, $id2, $text);
 	}
 
-	/* return what jeditable should display after edit */
-	echo $retval;
-
-	exit;
-} /* opupdate */
+	//if ($port_info['reservation_comment'] !== $text)
+	//	commitUpdatePortLink ($port_info['id'], $text);
+	echo 'OK';
+}
 
 /* -------------------------------------------------- */
 
@@ -4392,10 +4386,6 @@ function linkmgmt_renderPopupPortSelectorbyName()
 function linkmgmt_tabhandler($object_id) {
 	global $lm_cache;
 
-	$target = makeHrefProcess(portlist::urlparams('op','update'));
-
-	addJS('linkmgmt/jquery.jeditable.mini.js');
-
 	/* TODO  if (permitted (NULL, 'ports', 'set_reserve_comment')) */
 	/* TODO Link / unlink permissions  */
 
@@ -4405,12 +4395,8 @@ function linkmgmt_tabhandler($object_id) {
 
 	//portlist::var_dump_html($lm_cache);
 
-	/* init jeditable fields/tags */
-	if($lm_cache['allowcomment'])
-		addJS('$(document).ready(function() { $(".editcmt").editable("'.$target.'",{placeholder : "add comment"}); });' , TRUE);
-
-	if($lm_cache['allowlink'])
-		addJS('$(document).ready(function() { $(".editcable").editable("'.$target.'",{placeholder : "edit cableID"}); });' , TRUE);
+	if($lm_cache['allowlink'] || $lm_cache['allowcomment'])
+		addJS('js/inplace-edit.js');
 
 	/* linkmgmt for current object */
 	linkmgmt_renderObjectLinks($object_id);
@@ -4843,7 +4829,7 @@ class portlist {
 		} else
 			$prefix = '';
 
-		echo '<td>'.$prefix.'<i><a class="editcmt" id='.$port['id'].'>'.$port['reservation_comment'].'</a></i></td>';
+		echo '<td>'.$prefix.'</td><td><i><span class="portlist editable op-upd-reservation-port id-'.$port['id'].'">'.$port['reservation_comment'].'</span</i></td>';
 
 	} /* printComment */
 
@@ -4876,7 +4862,7 @@ class portlist {
 		/* link */
 		echo '<td align=center>';
 
-		echo '<pre><a class="editcable" id='.$dst_link['link_id'].'>'.$dst_link['cable']
+		echo '<pre><span class="portlist editable id1-'.$src_port_id.' id2-'.$dst_link['id'].' op-lm-upd-reservation-cable linktype-'.$linktype.'">'.$dst_link['cable']
 			."</a></pre><pre>$arrow</pre>"
 			.$this->_printUnLinkPort($src_port_id, $dst_link, $linktype);
 
