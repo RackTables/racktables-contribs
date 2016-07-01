@@ -913,6 +913,34 @@ class lm_linkchain implements Iterator {
 		$rack = null;
 		$object = $lc_cache->getobject($object_id, $rack);
 
+		$rackinfo = $this->_getprintrack($rack, $style);
+
+		if($object['container_id'])
+		{
+			$container_rack = null;
+			$container = $lc_cache->getobject($object['container_id'], $container_rack);
+			$container_rackinfo = $this->_getprintrack($container_rack, $style);
+
+			$txt = '<a style="font-weight:bold;'
+                        .$color.'" href="'.makeHref(array('page'=>'object', 'tab' => 'linkmgmt', 'object_id' => $container['id']))
+                        .'"><pre>'.$container['name'].'</pre></a><pre>'.$container_rackinfo
+                        .'</pre>';
+
+			$txt = "<tr><td><label style=\"font-size: 60%;\">Container:</label>$txt<hr></td></tr>";
+		}
+		else
+			$txt = '';
+
+
+                return '<td><table frame=box align=center cellpadding=5 cellspacing=0>'.$txt.'<tr><td align=center><a style="font-weight:bold;'
+                        .$color.'" href="'.makeHref(array('page'=>'object', 'tab' => 'linkmgmt', 'object_id' => $object_id))
+                        .'"><pre>'.$object['name'].'</pre></a><pre>'.$rackinfo
+                        .'</pre></td></tr></table></td>';
+
+	} /* getprintobject */
+
+	function _getprintrack($rack, $style)
+	{
                 if(!$rack)
 			$rackinfo = '<span style="'.$style.'">Unmounted</span>';
                 else
@@ -922,12 +950,8 @@ class lm_linkchain implements Iterator {
                                 .$rack['name'].'</a>';
 		}
 
-                return '<td><table frame=box align=center cellpadding=5 cellspacing=0><tr><td align=center><a style="font-weight:bold;'
-                        .$color.'" href="'.makeHref(array('page'=>'object', 'tab' => 'linkmgmt', 'object_id' => $object_id))
-                        .'"><pre>'.$object['name'].($object['container_name'] ? " (".$object['container_name'].")" : "").'</pre></a><pre>'.$rackinfo
-                        .'</pre></td></tr></table></td>';
-
-	} /* printobject */
+		return $rackinfo;
+	}
 
 	function getprintport($port, $multilink = false) {
 		global $lm_cache, $lm_multilink_port_types;
