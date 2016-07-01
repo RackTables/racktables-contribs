@@ -913,13 +913,13 @@ class lm_linkchain implements Iterator {
 		$rack = null;
 		$object = $lc_cache->getobject($object_id, $rack);
 
-		$rackinfo = $this->_getprintrack($rack, $style);
+		$rackinfo = $this->_getprintrack($object_id, $rack, $style);
 
 		if($object['container_id'])
 		{
 			$container_rack = null;
 			$container = $lc_cache->getobject($object['container_id'], $container_rack);
-			$container_rackinfo = $this->_getprintrack($container_rack, $style);
+			$container_rackinfo = $this->_getprintrack($object['container_id'], $container_rack, $style);
 
 			$txt = '<a style="font-weight:bold;'
                         .$color.'" href="'.makeHref(array('page'=>'object', 'tab' => 'linkmgmt', 'object_id' => $container['id']))
@@ -939,16 +939,40 @@ class lm_linkchain implements Iterator {
 
 	} /* getprintobject */
 
-	function _getprintrack($rack, $style)
+	function _getprintrack($object_id, $rack, $style)
 	{
-                if(!$rack)
-			$rackinfo = '<span style="'.$style.'">Unmounted</span>';
-                else
+		$slot = null;
+		$attrData = getAttrValues ($object_id);
+		if (isset ($attrData['28'])) // slot number
 		{
-                        $rackinfo = '<a style="'.$style.'" href='.makeHref(array('page'=>'row', 'row_id'=>$rack['row_id'])).'>'.$rack['row_name']
+			$slot = $attrData['28']['value'];
+			if (preg_match ('/\d+/', $slot, $matches))
+				$slot = $matches[0];
+		}
+
+		if(!$slot)
+			$txt = 'Unmounted';
+		else
+			$txt = "Slot: $slot";
+
+
+		if($slot)
+			$rackinfo = '<span style="'.$style.'">Slot: '.$slot.'</span>';
+		else
+			$rackinfo = '';
+
+                if($rack)
+		{
+			if($slot)
+				$rackinfo .= "<br>";
+
+                        $rackinfo .= '<a style="'.$style.'" href='.makeHref(array('page'=>'row', 'row_id'=>$rack['row_id'])).'>'.$rack['row_name']
                                 .'</a>/<a style="'.$style.'" href='.makeHref(array('page'=>'rack', 'rack_id'=>$rack['id'])).'>'
                                 .$rack['name'].'</a>';
 		}
+
+		if(!$rackinfo)
+			$rackinfo = '<span style="'.$style.'">Unmounted</span>';
 
 		return $rackinfo;
 	}
