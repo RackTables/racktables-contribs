@@ -418,7 +418,7 @@ class lm_linkchain implements Iterator {
 		$port[$linktype] = array(
 					'cableid' => $prevport[$linktype]['cableid'],
 					'linked' => $prevport[$linktype]['linked'],
-					'portcount' => null, //$prevport[$linktype]['linked'],
+					'portcount' => null, // TODO prev port count
 					'remote_id' => $prevport['id'],
 					'remote_name' => $prevport['name'],
 					'remote_object_id' => $prevport['object_id'],
@@ -1129,6 +1129,12 @@ class lm_linkchain implements Iterator {
 	{
 		$back = ($port['linktype'] == 'front' ? false : true );
 
+		$prev_port = $port[( !$back ? 'back' : 'front')];
+		if ($prev_port['portcount'] > 1)
+			echo '<td style="color: red;" class="hidden">+'.($prev_port['portcount'] - 1).'</td>';
+		else
+			echo '<td class="hidden"></td>';
+
 		// see interface.php renderObjectPortRow()
 		// highlight port name with yellow if it's name is not canonical
 		$canon_pn = shortenPortName ($port['name'], $port['object_id']);
@@ -1162,6 +1168,12 @@ class lm_linkchain implements Iterator {
 			}
 
 			$editable = permitted ('object', 'ports', 'editPort') ? 'editable' : '';
+
+			if($remote_port['portcount'] > 1)
+				echo '<td style="color: red;" class="hidden">'.($remote_port['portcount'] - 1).'+</td>';
+			else
+				echo '<td class="hidden"></td>';
+
 			echo "<td class='tdcenter hidden'>";
 			if($back)
 				echo "=${remote_port['cableid']}=>";
@@ -4575,6 +4587,7 @@ JSEND
 	if($firstlast)
 	{
 		echo '<tr><th class=tdleft>Current name</th>';
+		echo '<th class=hidden></th>';
 		echo '<th class=tdleft>First Object name</th>';
 		echo '<th class=tdleft>First Local name</th><th class=tdleft>First Visible label</th>';
 		echo '<th class=tdleft>First Interface</th><th class=tdleft>First L2 address</th>';
