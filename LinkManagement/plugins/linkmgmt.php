@@ -4329,7 +4329,7 @@ function linkmgmt_renderPopupPortSelector()
         {
 		$linkcount = count($spare_ports);
 
-		echo "<select id=remote_ports[] tabindex=1 name=remote_ports[] size=".($linkcount <= $maxsize ? $linkcount : $maxsize).($multilink ? " multiple=multiple>" : "");
+		echo "<select id=remote_ports[] tabindex=1 name=remote_ports[] size=".($linkcount <= $maxsize ? $linkcount : $maxsize).($multilink ? " multiple=multiple" : "").">";
 
 		$ret = '';
 		foreach ($spare_ports as $key => $value)
