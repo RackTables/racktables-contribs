@@ -4331,10 +4331,10 @@ function linkmgmt_renderPopupPortSelector()
 
 		echo "<select id=remote_ports[] tabindex=1 name=remote_ports[] size=".($linkcount <= $maxsize ? $linkcount : $maxsize).($multilink ? " multiple=multiple>" : "");
 
+		$ret = '';
 		foreach ($spare_ports as $key => $value)
 		{
-			$selected = is_array ($selected_id) ? in_array ($key, $selected_id) : $key == $selected_id;
-			$ret .= "<option value='${key}'" . ($selected ? ' selected' : '') . '>';
+			$ret .= "<option value='${key}'>";
 			$ret .= stringForOption ($value, 60) . '</option>';
 		}
 
@@ -4423,10 +4423,10 @@ function linkmgmt_renderPopupPortSelectorbyName()
 
 		echo "<select id=link_list[] tabindex=1 name=link_list[] size=".($linkcount <= $maxsize ? $linkcount : $maxsize)." multiple=multiple>";
 
+		$ret = '';
 		foreach ($link_list as $key => $value)
 		{
-			$selected = is_array ($selected_id) ? in_array ($key, $selected_id) : $key == $selected_id;
-			$ret .= "<option value='${key}'" . ($selected ? ' selected' : '') . '>';
+			$ret .= "<option value='${key}'>";
 			$ret .= stringForOption ($value, 60) . '</option>';
 		}
 
