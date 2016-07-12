@@ -4014,7 +4014,7 @@ function linkmgmt_findSparePorts($port_info, $filter, $linktype, $multilink = fa
 
 	if($objectsonly)
 	{
-		$query .= " remotePort.object_id, CONCAT(IFNULL(remoteObject.name, CONCAT('[',remoteObjectDictionary.dict_value,']')), ' (', count(remotePort.id), ')') as name";
+		$query .= " remoteObject.id, CONCAT(IFNULL(remoteObject.name, CONCAT('[',remoteObjectDictionary.dict_value,']')), ' (', count(remoteObject.id), ')') as name";
 		$group .= " GROUP by remoteObject.id";
 	}
 	else
@@ -4070,7 +4070,9 @@ function linkmgmt_findSparePorts($port_info, $filter, $linktype, $multilink = fa
 		/* exclude current port */
 		$where .= " remotePort.id <> ?";
 		$whereparams[] = $port_info['id'];
-		$order .= " ,remotePort.name";
+
+		if(! $objectsonly)
+			$order .= " ,remotePort.name";
 
 		/* add info to remoteport */
 		$join .= " LEFT JOIN $linkinfotable as infolnk_a on remotePort.id = infolnk_a.porta";
