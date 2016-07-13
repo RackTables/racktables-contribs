@@ -1391,8 +1391,8 @@ function lm_getPortInfo ($port_id, $back = false)
 function linkmgmt_opHelp() {
 ?>
 	<table cellspacing=10><tr><th>Help</th><tr>
-		<tr><td width=150></td><td width=150 style="font-weight:bold;color:<?php echo portlist::CURRENT_OBJECT_BGCOLOR; ?>">Current Object</td></tr>
-		<tr><td></td><td bgcolor=<?php echo portlist::CURRENT_PORT_BGCOLOR; ?>>[current port]</td></tr>
+		<tr><td width=150></td><td width=150 style="font-weight:bold;color:<?php echo lm_linkchain::CURRENT_OBJECT_BGCOLOR; ?>">Current Object</td></tr>
+		<tr><td></td><td bgcolor=<?php echo lm_linkchain::CURRENT_PORT_BGCOLOR; ?>>[current port]</td></tr>
 		<tr><td>front link</td><td>[port]<(Object)</td><td>back link</td></tr>
 		<tr><td>back link</td><td>(Object)>[port]</td><td>front link</td></tr>
 		<tr><td></td><td><pre>----></pre></td><td>Front link</td></tr>
@@ -2305,7 +2305,7 @@ class cytoscapedata
 				$this->addedge("l${first}_${last}",'p'.$first, 'p'.$last, array('type' => 'logical', 'label' => "logical"));
 		}
 
-		//portlist::var_dump_html($this->parents);
+		//lm_linkchain::var_dump_html($this->parents);
 	}
 
 	function getlinkchains($object_id) {
@@ -2981,8 +2981,8 @@ class linkmgmt_gvmap {
 			'label' =>  $this->gv->graph['attributes']['label'].$hllabel,
 				));
 
-	//	portlist::var_dump_html($this->gv);
-//		portlist::var_dump_html($this->data);
+	//	lm_linkchain::var_dump_html($this->gv);
+//		lm_linkchain::var_dump_html($this->data);
 
 //		echo json_encode($this->data);
 
@@ -3551,7 +3551,7 @@ class linkmgmt_gvmap {
 
 		}
 
-	//	portlist::var_dump_html($port);
+	//	lm_linkchain::var_dump_html($port);
 	}
 
 	function fetch($type = 'png', $command = NULL, $format2 = NULL, &$data2 = NULL) {
@@ -3819,7 +3819,7 @@ function linkmgmt_oplinkPort() {
 	}
 
 	if(!isset($_REQUEST['link_list'])) {
-		//portlist::var_dump_html($_REQUEST);
+		//lm_linkchain::var_dump_html($_REQUEST);
 		$porta = $_REQUEST['port'];
 
 		foreach($_REQUEST['remote_ports'] as $portb)
@@ -3936,7 +3936,7 @@ function linkmgmt_linkPorts ($porta, $portb, $linktype, $cable = NULL)
  * similar to renderPopupHTML in popup.php
  */
 function linkmgmt_opPortLinkDialog() {
-//	portlist::var_dump_html($_REQUEST);
+//	lm_linkchain::var_dump_html($_REQUEST);
 header ('Content-Type: text/html; charset=UTF-8');
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" style="height: 100%;">
@@ -4208,7 +4208,7 @@ function linkmgmt_renderPopupPortSelector()
 			$linktype = 'front';
 	}
 
-//	portlist::var_dump_html($_POST);
+//	lm_linkchain::var_dump_html($_POST);
 
 	$portcompat = true;
 
@@ -4228,9 +4228,9 @@ function linkmgmt_renderPopupPortSelector()
 	else
 		$in_rack = true;
 
-//	portlist::var_dump_html($port_info);
-//	portlist::var_dump_html($_GET);
-//	portlist::var_dump_html($_POST);
+//	lm_linkchain::var_dump_html($port_info);
+//	lm_linkchain::var_dump_html($_GET);
+//	lm_linkchain::var_dump_html($_POST);
 
         // fill port filter structure
         $filter = array
@@ -4414,7 +4414,7 @@ function linkmgmt_renderPopupPortSelectorbyName()
         startPortlet ('Possible Backend Link List');
 	echo "Select links to create:<br>";
 
-	//portlist::var_dump_html($link_list);
+	//lm_linkchain::var_dump_html($link_list);
         if (empty ($link_list))
                 echo '(nothing found)';
         else
@@ -4455,7 +4455,7 @@ function linkmgmt_tabhandler($object_id) {
 	$lm_cache['allowlink'] = permitted(NULL, NULL, 'set_link'); /* RackCode {$op_set_link} */
 	$lm_cache['allowbacklink'] = permitted(NULL, NULL, 'set_backlink'); /* RackCode {$op_set_backlink} */
 
-	//portlist::var_dump_html($lm_cache);
+	//lm_linkchain::var_dump_html($lm_cache);
 
 	if($lm_cache['allowlink'] || $lm_cache['allowcomment'])
 		addJS('js/inplace-edit.js');
@@ -4514,41 +4514,54 @@ function linkmgmt_renderObjectLinks($object_id) {
 	echo '<table><tr>';
 
 	if($allports) {
-
-		echo '<td width=200><a href="'.makeHref(portlist::urlparams('allports','0','0'))
+		unset($_GET['allports']);
+		echo '<td width=200><a href="'.makeHref($_GET)
 			.'">Hide Ports without link</a></td>';
-	} else
-		echo '<td width=200><a href="'.makeHref(portlist::urlparams('allports','1','0'))
+	}
+	else
+	{
+		$_GET['allports'] = 1;
+		echo '<td width=200><a href="'.makeHref($_GET)
 			.'">Show All Ports</a></td>';
+		unset($_GET['allports']);
+	}
 
-	echo '<td width=200><span onclick=window.open("'.makeHrefProcess(portlist::urlparamsarray(
-                                array('op' => 'PortLinkDialog','linktype' => 'back','byname' => '1'))).'","name","height=700,width=800,scrollbars=yes");><a>Link Object Ports by Name</a></span></td>';
+	echo '<td width=200><span onclick=window.open("'.makeHrefProcess(array('op' => 'PortLinkDialog','linktype' => 'back','byname' => '1')).
+		'","name","height=700,width=800,scrollbars=yes");><a>Link Object Ports by Name</a></span></td>';
 
 	if($allback) {
-
-		echo '<td width=200><a href="'.makeHref(portlist::urlparams('allback','0','0'))
+		unset($_GET['allback']);
+		echo '<td width=200><a href="'.makeHref($_GET)
 			.'">Collapse Backend Links on same Object</a></td>';
-	} else
-		echo '<td width=200><a href="'.makeHref(portlist::urlparams('allback','1','0'))
+	}
+	else
+	{
+		$_GET['allback'] = 1;
+		echo '<td width=200><a href="'.makeHref($_GET)
 			.'">Expand Backend Links on same Object</a></td>';
+		unset($_GET['allback']);
+	}
 
 	/* Graphviz map */
-	echo '<td width=100><span onclick=window.open("'.makeHrefProcess(portlist::urlparamsarray(
-                                array('op' => 'map','usemap' => 1))).'","name","height=800,width=800,scrollbars=yes");><a>Object Map</a></span></td>';
+	echo '<td width=100><span onclick=window.open("'.makeHrefProcess(array('op' => 'map','usemap' => 1))
+		.'","name","height=800,width=800,scrollbars=yes");><a>Object Map</a></span></td>';
 
 	/* cytoscape map */
-	echo '<td width=100><span onclick=window.open("'.makeHrefProcess(portlist::urlparamsarray(
-                                array('op' => 'cytoscapemap'))).'","name","height=800,width=800,scrollbars=yes");><a>Cytoscape Object Map</a></span></td>';
+	echo '<td width=100><span onclick=window.open("'.makeHrefProcess(array('op' => 'cytoscapemap'))
+		.'","name","height=800,width=800,scrollbars=yes");><a>Cytoscape Object Map</a></span></td>';
 
 	/* fristlast */
 	if(!$firstlast)
 	{
 		$_GET['allports'] = 1;
-		echo '<td width=200><a href="'.makeHref(portlist::urlparams('firstlast','1','0')).'">FirstLast View</a></td>';
+		$_GET['firstlast'] = 1;
+		echo '<td width=200><a href="'.makeHref($_GET).'">FirstLast View</a></td>';
+		unset($_GET['firstlast']);
 	}
 	else
 	{
-		echo '<td width=200><a href="'.makeHref(portlist::urlparams('firstlast','0','0')).'">Default View</a></td>';
+		unset($_GET['firstlast']);
+		echo '<td width=200><a href="'.makeHref($_GET).'">Default View</a></td>';
 		addJS(<<<JSEND
 		function toggledetails(elem)
 		{
@@ -4567,8 +4580,8 @@ JSEND
 	}
 
 	/* Help */
-	echo '<td width=200><span onclick=window.open("'.makeHrefProcess(portlist::urlparamsarray(
-                                array('op' => 'Help'))).'","name","height=400,width=500");><a>Help</a></span></td>';
+	echo '<td width=200><span onclick=window.open("'.makeHrefProcess(array('op' => 'Help'))
+		.'","name","height=400,width=500");><a>Help</a></span></td>';
 
 	if(isset($_REQUEST['hl_port_id']))
 		$hl_port_id = $_REQUEST['hl_port_id'];
@@ -4579,10 +4592,6 @@ JSEND
 
 
 	echo '<br><br><table id=renderobjectlinks0 style="white-space: nowrap">';
-
-	/*  switch display order depending on backend links */
-	$first = portlist::hasbackend($object_id);
-
 
 	$rowcount = 0;
 
@@ -5092,7 +5101,7 @@ class portlist {
 
 		$title = "linkcount: ".$this->count." (".$this->front_count."/".$this->back_count.")\nTypeID: ${port['type']}\nPortID: $id";
 
-		$onclick = 'onclick=window.open("'.makeHrefProcess(portlist::urlparamsarray(
+		$onclick = 'onclick=window.open("'.makeHrefProcess($this->urlparamsarray(
                                 $urlparams)).'","Map","height=500,width=800,scrollbars=yes");';
 
 		/* Current Port */
@@ -5212,7 +5221,7 @@ class portlist {
 	 * return link symbol
 	 */
 	function _getlinkportsymbol($port_id, $linktype) {
-		$retval = '<span onclick=window.open("'.makeHrefProcess(portlist::urlparamsarray(
+		$retval = '<span onclick=window.open("'.makeHrefProcess($this->urlparamsarray(
 			array('op' => 'PortLinkDialog','port' => $port_id,'linktype' => $linktype ))).'","name","height=800,width=800");'
 		        .'>';
 
