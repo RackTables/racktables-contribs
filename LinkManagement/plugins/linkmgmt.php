@@ -136,7 +136,7 @@ ALTER TABLE LinkBackend CONVERT to CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
 $tab['object']['linkmgmt'] = 'Link Management';
 $tabhandler['object']['linkmgmt'] = 'linkmgmt_tabhandler';
-//$trigger['object']['linkmgmt'] = 'linkmgmt_tabtrigger';
+$trigger['object']['linkmgmt'] = 'trigger_ports';
 
 $ophandler['object']['linkmgmt']['update'] = 'linkmgmt_opupdate';
 $ophandler['object']['linkmgmt']['unlinkPort'] = 'linkmgmt_opunlinkPort';
