@@ -15,7 +15,9 @@
                          passwd="pass", 	# your password
                          db="racktables") 		# name of the data base
 
-4) In order to build a topology, properly tag all your routers with the same tag.
+4) In order to build a topology, properly tag all your routers with the same tag. For examples, have a look at:
+
+https://notedisabbia.wordpress.com/
 
 5) Run the script and invoke the tag used at step 4.
 
