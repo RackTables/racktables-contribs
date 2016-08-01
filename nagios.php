@@ -30,7 +30,7 @@ function NagiosTabHandler()
  $object = spotEntity ('object', $_REQUEST['object_id']);
  
  $attributes = getAttrValues ($_REQUEST['object_id']);
- if(@strlen($attributes[$attribute_id]['value'])) {.
+ if(@strlen($attributes[$attribute_id]['value'])) {
     $target = $attributes[$attribute_id]['value'];
  } else {
     $target = $object['name'];
