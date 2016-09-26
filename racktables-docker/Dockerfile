@@ -9,12 +9,23 @@ ENV DBHOST="mariadb" \
     DBPASS=""
 
 COPY entrypoint.sh /entrypoint.sh
-RUN apk --no-cache add php5-fpm php5-gd php5-pdo_mysql php5-ldap php5-snmp php5-pcntl php5-json php5-bcmath php5-curl \
+RUN apk --no-cache add \
+    ca-certificates \
+    curl \
+    php5-bcmath \
+    php5-curl \
+    php5-fpm \
+    php5-gd \
+    php5-json \
+    php5-ldap \
+    php5-pcntl \
+    php5-pdo_mysql \
+    php5-snmp \
     && chmod +x /entrypoint.sh \
-    && wget -O /racktables.tar.gz 'http://downloads.sourceforge.net/project/racktables/RackTables-0.20.11.tar.gz?r=&ts=1456138604&use_mirror=netassist' \
+    && curl -sSLo /racktables.tar.gz 'https://github.com/RackTables/racktables/archive/RackTables-0.20.11.tar.gz' \
     && mkdir /opt \
     && tar -xz -C /opt -f /racktables.tar.gz \
-    && mv /opt/RackTables-0.20.11 /opt/racktables \
+    && mv /opt/racktables-RackTables-0.20.11 /opt/racktables \
     && rm -f /racktables.tar.gz \
     && sed -i \
     -e 's|^listen =.*$|listen = 9000|' \

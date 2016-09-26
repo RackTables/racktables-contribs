@@ -15,7 +15,7 @@ racktables:
   - DBUSER=racktables
   - DBPASS=foobarbaz
 nginx:
-  image: nginx
+  image: nginx:stable-alpine
   links:
   - racktables
   volumes_from:
