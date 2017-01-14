@@ -15,7 +15,7 @@
                          passwd="pass", 	# your password
                          db="racktables") 		# name of the data base
 
-4) Copy both the graph.php and draw.py to the /var/www/racktables/plugins directory;
+4) Copy both the graph.php and draw_topology.py to the /var/www/racktables/plugins directory;
 
 5) Copy both logo.png and not.gif to the /var/www/racktables/wwwroot/pix directory;
 
