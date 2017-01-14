@@ -15,10 +15,16 @@
                          passwd="pass", 	# your password
                          db="racktables") 		# name of the data base
 
-4) In order to build a topology, properly tag all your routers with the same tag. For examples, have a look at:
+4) Copy both the graph.php and draw_topology.py to the /var/www/racktables/plugins directory;
+
+5) Copy both logo.png and not.gif to the /var/www/racktables/wwwroot/pix directory;
+
+6) Make sure permissions are convenient (in my setup the racktables folder belongs to www-data:www-data). This is importante because topologies are stored under /wwwroot/pix/topo folder.
+
+7) In order to build a topology, properly tag all your routers with the same tag. For examples, have a look at:
 
 https://notedisabbia.wordpress.com/
 
-5) Run the script and invoke the tag used at step 4.
+8) Go to the 'Topology' icon under the main page of Racktables, and invoke the tag used at step 7.
 
 enjoy!
