@@ -3,6 +3,7 @@
 # Name: draw_topo_02.py
 # Version: 0.22.0
 # Author: Lucas Aimaretto
+# mail: laimaretto@gmail.com
 # Date: 14-jun-2015 
 #
 # - 0.1: first draft
@@ -30,6 +31,8 @@
 # - 2.1: Bug regarding getting the system IP of router: fnc_build_query_attributes(.)
 #		 TxType now considered when MIX TX is needed (ie: DWDM+MW)
 # - 2.2: Option to graph nodes with the names, only.
+# - 2.3: Implementing argv to pass parameters in line
+#	 change \n to &#92;n in port an router when mode 1,2,3
 
 
 #!/usr/bin/python
@@ -47,7 +50,7 @@ from itertools import groupby
 ########################################################################
 
 ipran_tx = ["LAG_Y","HAIRPIN_Y","SDH","RADIO","DWDM","CDWM","FO",""]
-version_script="0.22.0"
+version_script="21"
 
 ########################################################################
 # Functions
@@ -68,64 +71,64 @@ def fnc_chains_ring(vector):
 	tempList=[]
 	len_vector= len(vector)
 	i=1
-	
+
 	# We can have many topos inside vector
 	for topo in vector:
-		
+
 		topoString = topo
 		charCount = topoString.count("_")
 		nameList=topoString.split("_")
-		
-		print nameList, charCount
+
+		#print nameList, charCount
 
 		if fnc_isNumber(nameList[0]==0):
-			
+
 			if charCount == 1:
 				name1 = nameList[0]
 				testNumber1 = nameList[1]
-				
+
 				# SF903_002
 				if fnc_isNumber(testNumber1)==1:
 					tempList.append(("Anillo",name1,name1+"_"+testNumber1))
 				else:
-					print "Wrong ring number: " + testNumber1
-					quit()
-			
+					print "Wrong ring number: " + testNumber1 + " .Quitting..."
+					sys.exit(-1)
+
 			elif charCount == 2:
 				name1 = nameList[0]
 				name2 = nameList[0] + "_" + nameList[1]
 				testNumber1 = nameList[1]
 				testNumber2 = nameList[2]
-				
+
 				# SF903_002_ARSAT
 				if fnc_isNumber(testNumber1):
 					tempList.append(("Anillo_TX",name1,name1+"_"+testNumber1))
-				# CF164_CFR17_001
-				elif fnc_isNumber(testNumber2):
+				# CF164_CFR17_001 or c1744_c3983_radial
+				elif fnc_isNumber(testNumber2) or testNumber2=="RADIAL":
 					tempList.append(("Cadena",name2,name2+"_"+testNumber2))
 				else:
-					print "Wrong chain number: " + testNumber1 + " or " + testNumber2
-					quit()
+					print "Wrong chain name. Verify either: " + testNumber1 + " or " + testNumber2 + " .Quitting..."
+					sys.exit(-1)
 
 			elif charCount == 3:
 				name1 = nameList[0] + "_" + nameList[1]
 				testNumber1 = nameList[2]
-				
+
 				# CF164_CFR17_001_MW
 				if fnc_isNumber(testNumber1)==1:
 					tempList.append(("Cadena_TX",name1,name1+"_"+testNumber1))
 				else:
-					print "Wrong chain_tx number: " + testNumber1
-					quit()
+					print "Wrong chain_tx number: " + testNumber1 + " .Quitting..."
+					sys.exit(-1)
 
 			elif charCount == 0:
 				name1 = vector[0]
 				tempList.append(("Other",name1,name1))
-				
+
 			else:
-				print "Wrong topo name."
-				quit()
-		
+				print "Wrong topo name. Quitting..."
+				sys.exit(-1)
+
 	return tempList
 
 # Function that builds the filename
@@ -143,20 +146,20 @@ def fnc_build_filename(vector):
 		topoName2 = tipoTopo
 		topoName3 = " - MR LR - "
 		topoName4 = topologia
-		filename = "topo/" + agregador + "/" + topoName1 + topoName2 + topoName3 + topoName4
-		
+		filename = "pix/topo/" + agregador + "/" + topoName1 + topoName2 + topoName3 + topoName4
+
 	elif len_vector >1:
-		
+
 		tipoTopo = "-".join(list(set([name[0] for name in info])))
 		agregador = "-".join(list(set([name[1] for name in info])))
 		topologia = "-".join(list(set([name[2] for name in info])))
-		
-		topoName1 = "Claro Argentina - Topología "
+
+		topoName1 = "Topología "
 		topoName2 = tipoTopo
 		topoName3 = " - MR LR - "
 		topoName4 = topologia
-		filename = "topo/" + agregador + "/" + topoName1 + topoName2 + topoName3 + topoName4
-		
+		filename = "pix/topo/" + agregador + "/" + topoName1 + topoName2 + topoName3 + topoName4
+
 	now = datetime.datetime.now()
 	#filename=filename + "_" + version_script + "_" +now.strftime("%Y-%m-%d")+".dot"
 	return filename
@@ -168,7 +171,7 @@ def fnc_build_query_objetos(vector):
 	query2=""
 	len_vector = len(vector)
 	i=1
-	
+
 	query1=(
 		"select "
 		"OBJ.name, "
@@ -177,7 +180,7 @@ def fnc_build_query_objetos(vector):
 		"TagStorage as TS join Object as OBJ on (TS.entity_id=OBJ.id) "
 		"where entity_realm ='object' and "
 	)
-	
+
 	for row in vector:
 		obj_id=str(row[0])
 		if i < len_vector:
@@ -189,7 +192,7 @@ def fnc_build_query_objetos(vector):
 	query = query1 + query2
 
 	return query
-	
+
 # Function that builds the SQL query to obatin the topo_ID
 def fnc_build_query_topo_id(vector):
 	query1=""
@@ -212,7 +215,7 @@ def fnc_build_query_topo_id(vector):
 	query = query1 + query2
 
 	return query
-	
+
 # Function that removes ports from a router if such port connects
 # to a router that does not have a requested tag.
 def fnc_remove_routers_wotag(object_vector, connex_vector):
@@ -220,12 +223,12 @@ def fnc_remove_routers_wotag(object_vector, connex_vector):
 	temp_list=[]
 	for o in object_vector:
 		temp_list.append(o[0])
-	
+
 	final_list=[item for item in connex_vector if item[0] in temp_list and item[5] in temp_list]
-			
+
 	return final_list
-	
-	
+
+
 # Function that obtains the attributes values per object ID
 # It also brings the system IP of the router.
 def fnc_build_query_attributes(vector):
@@ -234,7 +237,7 @@ def fnc_build_query_attributes(vector):
 	query3=""
 	query4=""
 	len_vector = len(vector)
-	
+
 	query1=(
 	"select "
 	"ob.name, "
@@ -255,9 +258,9 @@ def fnc_build_query_attributes(vector):
 		if i < len_vector:
 			query2 = query2 + "ob.id = " + obj_id + " or "
 		else:
-			query2 = query2 + "ob.id = " + obj_id 
+			query2 = query2 + "ob.id = " + obj_id
 		i=i+1
-		
+
 	query = query1 + query2 + ")"
 
 	query3=(
@@ -278,7 +281,7 @@ def fnc_build_query_attributes(vector):
 		if i < len_vector:
 			query4 = query4 + "ob.id = " + obj_id + " or "
 		else:
-			query4 = query4 + "ob.id = " + obj_id 
+			query4 = query4 + "ob.id = " + obj_id
 		i=i+1
 
 	query = query + " UNION " + query3 + query4 + ")"
@@ -291,7 +294,7 @@ def fnc_build_query_interfaces(vector):
 	query2=""
 	len_vector = len(vector)
 	i=1
-	
+
 	query1=(
 	"SELECT "
 	"ro1.name AS obj1, "
@@ -314,7 +317,7 @@ def fnc_build_query_interfaces(vector):
 	query = query1 + query2 + ")"
 
 	return query
-	
+
 
 # Function that builds a SQL query to obtain the connections
 # among routers.
@@ -323,7 +326,7 @@ def fnc_build_query_connections(vector):
 	query2=""
 	len_vector = len(vector)
 	i=1
-	
+
 	query1=(
 		"SELECT "
 		"ro1.name AS obj1, "
@@ -359,14 +362,14 @@ def fnc_build_query_connections(vector):
 	query = query1 + query2 + ")"
 
 	return query
-	
 
-# Function that organizes each router's ports
+
+# Funcion que organiza los puertos de cada nodo
 def fnc_port_list(routers):
 	router_list=[]
 	port_list=[]
 	for router in routers:
-		print router[0]
+		#print router[0]
 		router_id = router[0][0]
 		for port in router:
 			port_list.append(port[1])
@@ -374,13 +377,13 @@ def fnc_port_list(routers):
 		port_list=[]
 
 	return router_list
-	
+
 # Function that returns de speed of the port
 def fnc_port_speed(port_string):
-	
+
 	speed=port_string.split('B')
 	speed=speed[0]
-	
+
 	if speed == "100":
 		return "-100Mb"
 	elif speed == "1000":
@@ -403,7 +406,7 @@ def fnc_port_sfp(port_string):
 		return "LAG"
 	elif port_string == "SFP-CES" or port_string == "SFP-ATM" or port_string == "SFP-ASAP":
 		return port_string.split('-')[1]
-	else:	
+	else:
 		sfp_type = port_string.split('-')
 		sfp_type = sfp_type[1]
 		return sfp_type
@@ -411,9 +414,9 @@ def fnc_port_sfp(port_string):
 # Function that creates a dictionary for sync references
 # The asignment is done on a port basis
 def fnc_add_atributes_to_dic_ref(attributes):
-	
+
 	dict_ref={}
-	
+
 	for attrib in attributes:
 		node_id=attrib[1]
 		node_ref=attrib[2]
@@ -421,19 +424,20 @@ def fnc_add_atributes_to_dic_ref(attributes):
 			dict_ref[node_id]=node_ref
 		else:
 			dict_ref[node_id]="N/A"
-			
+
 	return dict_ref
 
 # Function that creates a dictionary with global attributes
 def fnc_add_atributes_to_dic_global(attributes):
 
 	dict_global={}
-	
+
 	for attrib in attributes:
-		
+
 		if "ARSAT" in attrib[0]:
-			print attrib
-		
+			pass
+			#print attrib
+
 		router_name = attrib[0]
 		attrib_name = attrib[2]
 		system_ip = attrib[3]
@@ -456,10 +460,10 @@ def fnc_add_atributes_to_dic_global(attributes):
 		if "system" in attrib_name:
 			dict_key=router_name + "_system"
 			dict_global[dict_key]=system_ip
-			
+
 	return dict_global
-			
-		
+
+
 # Function that creates a list which holds each router and all its ports.
 # Input: object_connections
 # [('Router1', '1/1/1'), ('Router1', '1/1/2')]
@@ -467,11 +471,11 @@ def fnc_add_atributes_to_dic_global(attributes):
 # ('Router1/1/1', {'label': '1/1/1'})
 # The output of this function is used as input to graphviz
 def fnc_node_list(routers,sync_dict, router_mode, graph_hp, graph_lag, graph_cpam):
-	
+
 	temp_list=[]
-	
+
 	for row in routers:
-		
+
 
 		cableID=row[3]
 		if not cableID: cableID=""
@@ -479,7 +483,7 @@ def fnc_node_list(routers,sync_dict, router_mode, graph_hp, graph_lag, graph_cpa
 		if ("LAG" in cableID.upper() and graph_lag=="n") or ("HAIRPIN" in cableID.upper() and graph_hp=="n") or ("CPAM" in cableID.upper() and graph_cpam=="n"):
 			a=1
 		else:
-			
+
 			routerA=row[0]
 			portA=row[2]
 			portAspeed=fnc_port_speed(row[10])
@@ -488,7 +492,7 @@ def fnc_node_list(routers,sync_dict, router_mode, graph_hp, graph_lag, graph_cpa
 			if not ipA:	ipA="N/A"
 			nodeA=routerA + "_" + portA
 			ref1a=sync_dict.get(nodeA,"N/A")
-			
+
 			routerB=row[5]
 			portB=row[4]
 			portBspeed=fnc_port_speed(row[11])
@@ -497,29 +501,29 @@ def fnc_node_list(routers,sync_dict, router_mode, graph_hp, graph_lag, graph_cpa
 			if not ipB: ipB="N/A"
 			nodeB=routerB + "_" + portB
 			ref1b=sync_dict.get(nodeB,"N/A")
-			
+
 			if router_mode==0:
 				labelA="<"+ portA + "<BR />" + portAtype + portAspeed + "<BR />" + ipA + "<BR />" + ref1a +">"
 				labelB="<"+ portB + "<BR />" + portBtype + portBspeed + "<BR />" + ipB + "<BR />" + ref1b +">"
 			elif router_mode==1 or router_mode==2:
-				labelA= portA + "\n" + portAtype + portAspeed + "\n" + ipA + "\n" + ref1a
-				labelB= portB + "\n" + portBtype + portBspeed + "\n" + ipB + "\n" + ref1b
+				labelA= portA + "&#92;n" + portAtype + portAspeed + "&#92;n" + ipA + "&#92;n" + ref1a
+				labelB= portB + "&#92;n" + portBtype + portBspeed + "&#92;n" + ipB + "&#92;n" + ref1b
 			elif router_mode==3:
 				labelA=""
 				labelB=""
 
 			temp_list.append((routerA,nodeA,{'label':labelA}))
 			temp_list.append((routerB,nodeB,{'label':labelB}))
-	
+
 	# List will be ordered and sorted always by the first field
 	# which is the router name
 	lista_sorted=sorted(temp_list, key=itemgetter(0))
 	lista_grouped = groupby(lista_sorted, key=itemgetter(0))
-		
+
 	a = []
 	for i,rou in enumerate(lista_grouped):
 		a.append(list(rou[1]))
-	
+
 	return a
 
 # Function that crosses the connections and interfaces to come out
@@ -530,9 +534,9 @@ def fnc_node_list(routers,sync_dict, router_mode, graph_hp, graph_lag, graph_cpa
 #
 def fnc_cross_conn_inter(connections,interfaces):
 	connection_list=[]
-	
+
 	for conn in connections:
-		
+
 		name1=conn[0]
 		id1=conn[1]
 		p1=conn[3]
@@ -545,10 +549,10 @@ def fnc_cross_conn_inter(connections,interfaces):
 		ip2=""
 		p1t=conn[10]
 		p2t=conn[11]
-		
+
 		int1=conn[2]
 		int2=conn[6]
-		
+
 		for interface in interfaces:
 			int_name=interface[2]
 			ip=interface[3]
@@ -557,7 +561,7 @@ def fnc_cross_conn_inter(connections,interfaces):
 				break
 			else:
 				ip1="N/A"
-				
+
 		for interface in interfaces:
 			int_name=interface[2]
 			ip=interface[3]
@@ -566,13 +570,13 @@ def fnc_cross_conn_inter(connections,interfaces):
 				break
 			else:
 				ip2="N/A"
-				
+
 		connection_list.append((name1,id1,p1,cable,p2,name2,id2,router_type,ip1,ip2,p1t,p2t,int1,int2))
-		
+
 	#fnc_print_list(connection_list)
-		
+
 	return connection_list
-			
+
 
 # Function that builds a list which holds the connections among routers.
 # The output of this function is used as input to graphviz
@@ -586,22 +590,21 @@ def fnc_edge_list(vector, graph_lag, graph_hp, graph_cpam, router_mode):
 		cableID=row[3]
 		nodeA=routerA + "_" + portA
 		nodeB=routerB + "_" + portB
-		
+
 		if not cableID: cableID=""
-		
+
 		#print nodeA, cableID, nodeB
-		
+
 		if ("LAG" in cableID.upper() and graph_lag=="n") or ("HAIRPIN" in cableID.upper() and graph_hp=="n") or ("CPAM" in cableID.upper() and graph_cpam=="n"):
 			a=1
 		else:
 			edge_list.append(((nodeA,nodeB),{'label':cableID}))
-	
+
 	return edge_list
 
 # Verifies that an object exists
 def fnc_check_for_topo(objList):
 	if len(objList) == 0:
-		print "The requested topology does not exist"
 		return 0
 	else:
 		return 1
@@ -610,7 +613,7 @@ def fnc_check_for_topo(objList):
 def fnc_print_list(vector):
 	for vec in vector:
 		print vec
-		
+
 # Function to obtain topology name
 def fnc_build_topo_name(vector):
 	topo_name=""
@@ -622,9 +625,9 @@ def fnc_build_topo_name(vector):
 		else:
 			topo_name=topo_name+tn
 		i=i+1
-		
+
 	return topo_name
-	
+
 # Function that returns the color of the router depending on its
 # situation
 def fnc_router_color(router_function,router_int):
@@ -647,30 +650,30 @@ def fnc_router_color(router_function,router_int):
 
 # Function that returns metadata of the router
 def fnc_router_metadata(global_dict,router_name,what, router_function, router_ckt_id, router_mode):
-	
+
 	router_sync_order=global_dict.get(router_name+"_Ref_Order","N/A")
 	router_ip=global_dict.get(router_name+"_system","N/A")
-	
+
 	if "TX" in router_function:
-		
+
 		if what=="labelHtml":
-		
+
 			router_label=(
 				"<"+
 				"<font point-size=\"10\">"+router_ckt_id+"</font>"+"<BR />"
 				+">"
 				)
 			return router_label
-		
+
 		elif what=="labelText":
-			
+
 			router_label = router_ckt_id
 			return router_label
-	
+
 	else:
-	
+
 		if what=="labelHtml":
-			
+
 			if router_mode==3:
 				router_label=(
 					"<"+
@@ -679,7 +682,7 @@ def fnc_router_metadata(global_dict,router_name,what, router_function, router_ck
 					+">"
 					)
 				return router_label
-				
+
 			else:
 				router_label=(
 					"<"+
@@ -689,49 +692,49 @@ def fnc_router_metadata(global_dict,router_name,what, router_function, router_ck
 					+">"
 					)
 				return router_label
-			
+
 		elif what=="labelText":
-			
+
 			if router_mode==3:
-				router_label = router_name + "\n" + router_ip
+				router_label = router_name + "&#92;n" + router_ip
 				return router_label
 			else:
-				router_label = router_name + "\n" + router_ip + "\n" + router_sync_order
+				router_label = router_name + "&#92;n" + router_ip + "&#92;n" + router_sync_order
 				return router_label
-			
+
 
 
 # Function that returns port_string when router as a node
 def fnc_port_string(router_label, port_string, color, router_mode, router_function):
-	
+
 	port_string=port_string[1:]
 	temp_port = port_string.split("|")
-	
+
 	if "TX" in router_function:
-		
+
 		if router_function == "TX_MIX":
-		
+
 			temp_string=""
-			
+
 			for port in port_string.split("|"):
 				temp_string = temp_string + port.split("\n")[0] + "|"
-				
+
 			port_string = temp_string[:-1]
-			
+
 			temp_string = "{" + port_string + "}"
 			temp_string = " [" + color + ",label=\"" + temp_string + "\"]"
 			return temp_string
-			
+
 		elif router_function == "TX_ARSAT":
-			
-			print router_label
-			
+
+			#print router_label
+
 			temp_string = "{" + router_label + "}"
 			temp_string = " [" + color + ",label=\"" + temp_string + "\"]"
 			return temp_string
-	
+
 	else:
-		
+
 		if router_mode==1:
 			temp_string = "{" + router_label + "|" + port_string + "}"
 		elif router_mode==2:
@@ -741,29 +744,33 @@ def fnc_port_string(router_label, port_string, color, router_mode, router_functi
 
 		temp_string = " [" + color + ",label=\"" + temp_string + "\"]"
 		return temp_string
-		
+
 
 ########################################################################
 # Program
 ########################################################################
 
 db = MySQLdb.connect(host="10.10.61.10", 	# your host, usually localhost
-               	     port=3306,
-                     user="root", 			# your username
-                     passwd="mysqlroot", 	# your password
-                     db="racktables") 		# name of the data base
+					 port=3306,
+					 user="root", 			# your username
+					 passwd="mysqlroot", 	# your password
+					 db="racktables") 		# name of the data base
 
-topo_name = raw_input(
-	"\nInput the tag name.\n"
-	"If you wish to graph more than one topology, separate those with a comma (,) with no space.\n"
-	"Example: topo1,topo2: ")
-if not topo_name:
-	print "None has been input.\n"
-	quit()
-else:
-	topo_name = topo_name.upper()
-	topo_name = topo_name.split(",")
-	
+posProg = 0
+posTopo = 1
+posMode = 2
+posOut	= 3
+
+# Check for inline parameters
+if len(sys.argv)<3:
+	print "Not enough paramteres. Quitting..."
+	sys.exit(-1)
+
+# Getting topo name
+topo_name = sys.argv[posTopo]
+topo_name = topo_name.upper()
+topo_name = topo_name.split(",")
+
 #==================================================================
 #==================================================================
 # query0 obtains the Id of the tag_name.
@@ -773,7 +780,9 @@ query0 = fnc_build_query_topo_id(topo_name)
 cur = db.cursor()
 cur.execute(query0)
 topo_id = list(cur.fetchall())
-if fnc_check_for_topo(topo_id) == 0: quit()
+if fnc_check_for_topo(topo_id) == 0:
+	print "Topology not found. Quitting..."
+	sys.exit(-1)
 
 #==================================================================
 #==================================================================
@@ -790,7 +799,7 @@ object_list = list(cur.fetchall())
 
 #==================================================================
 #==================================================================
-# query15 obtains the attributes of the routers that have tag 
+# query15 obtains the attributes of the routers that have tag
 # 'topo_name'.
 # It also brings de system IP of the router.
 # The result is the following.
@@ -868,31 +877,11 @@ lines_dict = {"0":"line", "1":"true","2":"ortho", "3":"polyline"}
 rankdir_dict = {"0":"LR","1":"TB"}
 port_dict = {}
 
-router_mode = raw_input(
-	"\nPlease select router_mode:"
-	"\n0 - Router as cluster"
-	"\n1 - Router as node, one-line"
-	"\n2 - Router as node, two-line"
-	"\n3 - Router as node, only with name"
-	"\n\nOption:"
-)
-router_mode = int(router_mode)
-
-output_selection = raw_input(
-	"\nPlease choose output action:"
-	"\n0 - Default0 (no-LAG, no-HairPin, no-CPAM, SVG, DOT, Left-to-Right, curved, group-mid-high-ran)"
-	"\n1 - Default1 (no-LAG, no-HairPin, no-CPAM, SVG, DOT, Top-to-Bottom, curved, group-mid-high-ran)"
-	"\n2 - Default2 (no-LAG, no-HairPin, no-CPAM, SVG, FDP, Top-to-Bottom, curved, no-grouping)"
-	"\n3 - Default3 (no-LAG, no-HairPin, no-CPAM, SVG, DOT, Top-to-Bottom, curved, no-grouping)"
-	"\n4 - Default4 (no-LAG, no-HairPin, no-CPAM, SVG, CIRCO, Top-to-Bottom, curved, no-grouping)"
-	"\n5 - Default5 (no-LAG, no-HairPin, no-CPAM, SVG, CIRCO, Left-to-Right, curved, no-grouping)"
-	"\n6 - Default6 (no-LAG, no-HairPin, no-CPAM, SVG, TWOPI, Left-to-Right, curved, no-grouping)"
-	"\nc - Custom"
-	"\nOption:"
-)
+router_mode = int(sys.argv[posMode])
+output_selection = sys.argv[posOut]
 
 if output_selection=="c":
-		
+
 	graph_lag = raw_input("\nDo you want to graph LAGs? [y|n]: ")
 	graph_hp = raw_input("Do you want to graph Hairpin? [y|n]: ")
 	graph_cpam = raw_input("Do you want to graph CPAM? [y|n]: ")
@@ -936,7 +925,7 @@ if output_selection=="c":
 
 elif output_selection=="0":
 	#(no-LAG, no-HairPin, PNG, DOT, Left-to-Right, curved, group-mid-high-ran)
-	
+
 	output_format="1"
 	output_algo="0"
 	output_direction="0"
@@ -945,10 +934,10 @@ elif output_selection=="0":
 	graph_lag="n"
 	graph_hp="n"
 	graph_cpam="n"
-	
+
 elif output_selection=="1":
 	#(no-LAG, no-HairPin, PNG, DOT, Top-to-Bottom, curved, group-mid-high-ran)
-	
+
 	output_format="1"
 	output_algo="0"
 	output_direction="1"
@@ -957,10 +946,10 @@ elif output_selection=="1":
 	graph_lag="n"
 	graph_hp="n"
 	graph_cpam="n"
-	
+
 elif output_selection=="2":
 	#(no-LAG, no-HairPin, PNG, FDP, Top-to-Bottom, curved, no-grouping)
-	
+
 	output_format="1"
 	output_algo="1"
 	output_direction="1"
@@ -969,10 +958,10 @@ elif output_selection=="2":
 	graph_lag="n"
 	graph_hp="n"
 	graph_cpam="n"
-	
+
 elif output_selection=="3":
 	#(no-LAG, no-HairPin, PNG, DOT, Top-to-Bottom, curved, no-grouping)
-	
+
 	output_format="1"
 	output_algo="0"
 	output_direction="1"
@@ -981,10 +970,10 @@ elif output_selection=="3":
 	graph_lag="n"
 	graph_hp="n"
 	graph_cpam="n"
-	
+
 elif output_selection=="4":
 	#(no-LAG, no-HairPin, PNG, CIRCO, Top-to-Bottom, curved, no-grouping)
-	
+
 	output_format="1"
 	output_algo="2"
 	output_direction="1"
@@ -993,10 +982,10 @@ elif output_selection=="4":
 	graph_lag="n"
 	graph_hp="n"
 	graph_cpam="n"
-	
+
 elif output_selection=="5":
 	#(no-LAG, no-HairPin, PNG, CIRCO, Left-to-rigth, curved, no-grouping)
-	
+
 	output_format="1"
 	output_algo="2"
 	output_direction="0"
@@ -1005,10 +994,10 @@ elif output_selection=="5":
 	graph_lag="n"
 	graph_hp="n"
 	graph_cpam="n"
-	
+
 elif output_selection=="6":
 	#(no-LAG, no-HairPin, PNG, TWOPI, Left-to-rigth, curved, no-grouping)
-	
+
 	output_format="1"
 	output_algo="3"
 	output_direction="0"
@@ -1017,6 +1006,22 @@ elif output_selection=="6":
 	graph_lag="n"
 	graph_hp="n"
 	graph_cpam="n"
+
+elif output_selection=="7":
+	#(no-LAG, no-HairPin, PNG, NEATO, Left-to-rigth, curved, no-grouping)
+
+	output_format="1"
+	output_algo="4"
+	output_direction="0"
+	output_line="1"
+	aggregator="n"
+	graph_lag="n"
+	graph_hp="n"
+	graph_cpam="n"
+
+else:
+	print "No viable option. Quitting..."
+	sys.exit(-1)
 
 #==================================================================
 #==================================================================
@@ -1044,7 +1049,7 @@ routers=fnc_node_list(object_connections,sync_dict, router_mode, graph_hp, graph
 
 #===================================================================
 #===================================================================
-# Begin the plot
+# Gegin the plot
 
 g0 = gv.Graph(format=format_dict[output_format], engine=algo_dict[output_algo])
 
@@ -1072,13 +1077,13 @@ if aggregator == "y":
 	g20 = gv.Graph('cluster_mr')
 	g25 = gv.Graph('cluster_tx')
 	g30 = gv.Graph('cluster_lr', engine=algo_dict[output_algo])
-	
+
 	g10.body.append('rankdir=TB')
 	g10.body.append('label=\"HR\"')
-	
+
 	g20.body.append('rankdir=TB')
 	g20.body.append('label=\"MR\"')
-	
+
 	g30.body.append('rankdir=TB')
 	g30.body.append('label=\"LR\"')
 
@@ -1092,28 +1097,28 @@ if router_mode==0:
 		router_ckt_id=global_dict.get(router_name+"_ckt_id","N/A")
 		router_label=fnc_router_metadata(global_dict,router_name,labelType, router_function, router_ckt_id, router_mode)
 		router_color=fnc_router_color(router_function,router_int)
-		
-		print router_name, router_function
-		
+
+		#print router_name, router_function
+
 		# Parametrization
 		cluster_name = "cluster"+str(i)
 		c = gv.Graph(cluster_name)
 		c.body.append('label='+router_label)
 		c.body.append('shape=box')
 		c.body.append('style=filled')
-		
+
 		# Color depending on function in network
 		c.body.append('fillcolor='+router_color)
 		c.node_attr.update(style='filled')
-		
+
 		# Ports workout
 		for port in router:
-			
+
 			node_id=port[1]
 			if ":" in node_id: node_id=node_id.replace(":","#")
 			port_id=port[2]['label']
 			c.node(node_id,label=port_id)
-		
+
 		# Asignación al cluster Low o High Run
 		if aggregator == "y":
 			if router_function == "High-Ran":
@@ -1122,15 +1127,15 @@ if router_mode==0:
 				g20.subgraph(c)
 			else:
 				g30.subgraph(c)
-				
+
 			g0.subgraph(g10)
 			g0.subgraph(g20)
 			g0.subgraph(g30)
-			
+
 		# No grouping
 		else:
 			g0.subgraph(c)
-			
+
 		i=i+1
 
 	for e in edges:
@@ -1141,7 +1146,7 @@ if router_mode==0:
 		edgeLabel=e[1]['label']
 		g0.edge_attr['fontsize']='9'
 		g0.edge(edgeA,edgeB,label=edgeLabel)
-		
+
 elif router_mode==1 or router_mode==2 or router_mode==3:
 	i = 1
 	for router in routers:
@@ -1152,13 +1157,13 @@ elif router_mode==1 or router_mode==2 or router_mode==3:
 		router_ckt_id=global_dict.get(router_name+"_ckt_id","N/A")
 		router_label=fnc_router_metadata(global_dict,router_name,labelType, router_function, router_ckt_id, router_mode)
 		router_color=fnc_router_color(router_function,router_int)
-		
+
 		# Parametrization
 		struct_name = "struct"+str(i)
 
 		# Color depending on function in network
 		color= 'fillcolor='+router_color
-		
+
 		# Ports workout
 		p=1
 		port_string=""
@@ -1167,11 +1172,11 @@ elif router_mode==1 or router_mode==2 or router_mode==3:
 			node_id=port[1]
 			if ":" in node_id: node_id=node_id.replace(":","#")
 			port_id=port[2]['label']
-			
+
 			port_string=port_string+"|<f"+str(p)+">"+port_id
 			dict_key = str(i)+"_"+str(p)
 			port_dict[node_id]=dict_key
-			
+
 			p=p+1
 
 		node_string = fnc_port_string(router_label, port_string, color, router_mode, router_function)
@@ -1190,7 +1195,7 @@ elif router_mode==1 or router_mode==2 or router_mode==3:
 			g0.body.append(struct_name+node_string)
 
 		i=i+1
-	
+
 	for e in edges:
 		tempA=e[0][0]
 		if ":" in tempA: tempA=tempA.replace(":","#")
@@ -1207,11 +1212,12 @@ elif router_mode==1 or router_mode==2 or router_mode==3:
 			edgeB="struct"+tempB[0]
 		else:
 			edgeB="struct"+tempB[0]+":f"+tempB[1]
-		
+
 		edgeLabel=e[1]['label']
 		g0.edge_attr['fontsize']='9'
 		g0.edge(edgeA,edgeB,label=edgeLabel)
 
 filename=fnc_build_filename(topo_name)
-print filename
+print filename + "." + format_dict[output_format]
 g0.render(filename)
+
