@@ -102,7 +102,7 @@
 						echo "<p> Please specify the desired topology.</p>";
 					} else 
 					{	
-						exec("python ../plugins/draw_topo_23_estable.py " . $topo . " " . $router_mode . " " . $out, $scriptOutput, $exitCode); //PHP waits until the called program is done
+						exec("python ../plugins/draw_topology.py " . $topo . " " . $router_mode . " " . $out, $scriptOutput, $exitCode); //PHP waits until the called program is done
 						
 						switch($exitCode)
 						{
