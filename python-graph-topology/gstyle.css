@@ -1,0 +1,55 @@
+.settings {
+	width: 98%;
+	padding-top:10px;
+	margin: auto;
+	overflow: hidden;
+}
+
+.parameters {
+	float:left;
+	clear:both;
+}
+
+.info {
+	float:right;
+	border: 1px dashed;
+	padding: 5px;
+}
+
+.result {
+	width: 98%;
+	margin: auto;
+}
+
+.topo {
+	margin: auto;
+	display: block;
+	max-height: 100%;
+	max-width: 80%;
+	height: auto;
+}
+
+.fields {
+	display: inline-block;
+	padding: 1em;
+}
+
+.gdiv {
+	display: inline-block;
+	padding-right: 1em;
+}
+
+.ginput {
+	display: block;
+}
+
+.not {
+	margin: auto;
+}
+
+#viewer {
+	width: 100%;
+	height: 300px;
+	border: 1px solid #ccc;
+	margin-bottom: 10px;
+}
