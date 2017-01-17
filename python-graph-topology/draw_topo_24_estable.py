@@ -142,7 +142,7 @@ def fnc_build_filename(vector):
 		agregador = info[0][1]
 		topologia = info[0][2]
 
-		topoName1 = "Claro Argentina - Topología "
+		topoName1 = "Topology "
 		topoName2 = tipoTopo
 		topoName3 = " - MR LR - "
 		topoName4 = topologia
@@ -154,7 +154,7 @@ def fnc_build_filename(vector):
 		agregador = "-".join(list(set([name[1] for name in info])))
 		topologia = "-".join(list(set([name[2] for name in info])))
 
-		topoName1 = "Claro Argentina - Topología "
+		topoName1 = "Topology "
 		topoName2 = tipoTopo
 		topoName3 = " - MR LR - "
 		topoName4 = topologia
