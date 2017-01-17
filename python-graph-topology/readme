@@ -1,4 +1,4 @@
-1) Download the file to your PC. A working racktables installation is assumed. No harm can be done since all the operations towards the database are select like.
+1) A working racktables installation is assumed. No harm can be done since all the operations towards the database are select like.
 
 2) Install the following:
   2.0) sudo apt-get install python 
@@ -15,16 +15,18 @@
                          passwd="pass", 	# your password
                          db="racktables") 		# name of the data base
 
-4) Copy both the graph.php and draw_topology.py to the /var/www/racktables/plugins directory;
+4) Copy files ...
 
-5) Copy both logo.png and not.gif to the /var/www/racktables/wwwroot/pix directory;
+4.1) Copy both the graph.php and draw_topology.py to the /var/www/racktables/plugins directory;
+4.2) Copy both logo.png and not.gif to the /var/www/racktables/wwwroot/pix directory;
+4.3) Copy gstyle.css to /var/www/racktables/plugins/css directory;
 
-6) Make sure permissions are convenient (in my setup the racktables folder belongs to www-data:www-data). This is importante because topologies are stored under /wwwroot/pix/topo folder.
+5) Make sure permissions are convenient (in my setup the racktables folder belongs to www-data:www-data). This is important because topologies are stored under /wwwroot/pix/topo folder.
 
-7) In order to build a topology, properly tag all your routers with the same tag. For examples, have a look at:
+6) In order to build a topology, properly tag all your routers with the same tag. For examples, have a look at:
 
 https://notedisabbia.wordpress.com/
 
-8) Go to the 'Topology' icon under the main page of Racktables, and invoke the tag used at step 7.
+7) Go to the 'Topology' icon under the main page of Racktables, and invoke the tag used at step 7.
 
 enjoy!

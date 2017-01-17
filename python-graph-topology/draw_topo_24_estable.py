@@ -1,39 +1,39 @@
 # coding=utf-8
 ##########################################################
 # Name: draw_topo_02.py
-# Version: 0.22.0
+# Version: 0.2
 # Author: Lucas Aimaretto
-# mail: laimaretto@gmail.com
-# Date: 14-jun-2015 
+# Date: 14-jun-2015
 #
-# - 0.1: first draft
-#        This version will graph any topology based on the tags of the routers.
-# - 0.2: Reorder of functions; cleaning of code.
-# - 0.3: Implementing of IP/PORT/Speed information. Change on function 
-#        fnc_build_query_connections SQL's query
-# - 0.4: Included sync-e reference to each port. If not abailable, then N/A is shown.
-#        For this, a sync_dict is created.
-# - 0.5: Including system IP, sync order, color for not integrated routers.
-# - 0.6: If no SFP, no speed can be obtained. Then "No SFP" is shown. If CES, ATM or ASAP, then "No ETH" is shown.
-# - 0.7: fnc_build_query_objetos(.) modify to further filter out objects with tags (and no ipvnet)
-#		 fnc_build_query_interfaces(.) to bring IPs and interfaces
-#        fnc_build_query_connections(.) now only brings connections and no IPs
-#        fnc_cross_conn_inter(.) finds out IP for connections               
-# - 0.8: Asked whether to graph LAGs or not
-#        TBD: consider when link label is something else than "LAG", "Hairpin" or "".
-# - 1.1: Distinction between High, Mid and Low Ran
-# - 1.2: Reducing font size of link's labels
-# - 1.3: Including FO and ARSAT as possible labels for links
-# - 1.7: Different colors for MR and HR
-# - 1.8: Includes transmission with a list
-# - 1.9: Ring topology now available
-# - 2.0: Change Name of file to match Claro's format.
-# - 2.1: Bug regarding getting the system IP of router: fnc_build_query_attributes(.)
-#		 TxType now considered when MIX TX is needed (ie: DWDM+MW)
-# - 2.2: Option to graph nodes with the names, only.
-# - 2.3: Implementing argv to pass parameters in line
-#	 change \n to &#92;n in port an router when mode 1,2,3
-
+# - 0.1:	first draft
+#			This version will graph any topology based on the tags of the routers.
+# - 0.2:	Reorder of functions; cleaning of code.
+# - 0.3:	Implementing of IP/PORT/Speed information. Change on function
+#			fnc_build_query_connections SQL's query
+# - 0.4:	Included sync-e reference to each port. If not abailable, then N/A is shown.
+#			For this, a sync_dict is created.
+# - 0.5:	Including system IP, sync order, color for not integrated routers.
+# - 0.6:	If no SFP, no speed can be obtained. Then "No SFP" is shown. If CES, ATM or ASAP, then "No ETH" is shown.
+# - 0.7:	fnc_build_query_objetos(.) modify to further filter out objects with tags (and no ipvnet)
+#			fnc_build_query_interfaces(.) to bring IPs and interfaces
+#			fnc_build_query_connections(.) now only brings connections and no IPs
+#			fnc_cross_conn_inter(.) finds out IP for connections
+# - 0.8:	Asked whether to graph LAGs or not
+#			TBD: consider when link label is something else than "LAG", "Hairpin" or "".
+# - 1.1:	Distinction between High, Mid and Low Ran
+# - 1.2:	Reducing font size of link's labels
+# - 1.3:	Including FO and ARSAT as possible labels for links
+# - 1.7:	Different colors for MR and HR
+# - 1.8:	Includes transmission with a list
+# - 1.9:	Ring topology now available
+# - 2.0:	Change Name of file to match Claro's format.
+# - 2.1:	Bug regarding getting the system IP of router: fnc_build_query_attributes(.)
+#			TxType now considered when MIX TX is needed (ie: DWDM+MW)
+# - 2.2:	Option to graph nodes with the names, only.
+# - 2.3:	implementing argv to pass parameters in line
+#			change \n to &#92;n in port an router when mode 1,2,3
+# - 2.4:	full custimoization via argv[]
+#			Different color depending con Ref_Order
 
 #!/usr/bin/python
 import MySQLdb
@@ -142,7 +142,7 @@ def fnc_build_filename(vector):
 		agregador = info[0][1]
 		topologia = info[0][2]
 
-		topoName1 = "Topología "
+		topoName1 = "Topology "
 		topoName2 = tipoTopo
 		topoName3 = " - MR LR - "
 		topoName4 = topologia
@@ -154,7 +154,7 @@ def fnc_build_filename(vector):
 		agregador = "-".join(list(set([name[1] for name in info])))
 		topologia = "-".join(list(set([name[2] for name in info])))
 
-		topoName1 = "Topología "
+		topoName1 = "Topology "
 		topoName2 = tipoTopo
 		topoName3 = " - MR LR - "
 		topoName4 = topologia
@@ -502,13 +502,13 @@ def fnc_node_list(routers,sync_dict, router_mode, graph_hp, graph_lag, graph_cpa
 			nodeB=routerB + "_" + portB
 			ref1b=sync_dict.get(nodeB,"N/A")
 
-			if router_mode==0:
+			if router_mode=="0":
 				labelA="<"+ portA + "<BR />" + portAtype + portAspeed + "<BR />" + ipA + "<BR />" + ref1a +">"
 				labelB="<"+ portB + "<BR />" + portBtype + portBspeed + "<BR />" + ipB + "<BR />" + ref1b +">"
-			elif router_mode==1 or router_mode==2:
+			elif router_mode=="1" or router_mode=="2":
 				labelA= portA + "&#92;n" + portAtype + portAspeed + "&#92;n" + ipA + "&#92;n" + ref1a
 				labelB= portB + "&#92;n" + portBtype + portBspeed + "&#92;n" + ipB + "&#92;n" + ref1b
-			elif router_mode==3:
+			elif router_mode=="3":
 				labelA=""
 				labelB=""
 
@@ -630,14 +630,24 @@ def fnc_build_topo_name(vector):
 
 # Function that returns the color of the router depending on its
 # situation
-def fnc_router_color(router_function,router_int):
+def fnc_router_color(router_function,router_int,router_name):
+
+	# Ref_Order
+	router_sync_order=global_dict.get(router_name+"_Ref_Order","N/A")
+
 	# Color depending on function
 	if router_function == "High-Ran":
 		return 'lightblue4'
 	elif router_function == "Mid-Ran":
 		return 'lightpink4'
 	elif "si" in router_int:
-		return 'lightblue'
+		# color depending on Ref_Order
+		if "ref1 ref2" in router_sync_order:
+			return 'lightblue3'
+		elif "ref2 ref1" in router_sync_order:
+			return 'lightblue1'
+		else:
+			return 'grey'
 	elif "TX" in router_function:
 		return 'yellow'
 	# Color depending on integration
@@ -674,7 +684,7 @@ def fnc_router_metadata(global_dict,router_name,what, router_function, router_ck
 
 		if what=="labelHtml":
 
-			if router_mode==3:
+			if router_mode=="3":
 				router_label=(
 					"<"+
 					"<font point-size=\"10\">"+router_name+"</font>"+"<BR />"+
@@ -695,7 +705,7 @@ def fnc_router_metadata(global_dict,router_name,what, router_function, router_ck
 
 		elif what=="labelText":
 
-			if router_mode==3:
+			if router_mode=="3":
 				router_label = router_name + "&#92;n" + router_ip
 				return router_label
 			else:
@@ -735,11 +745,11 @@ def fnc_port_string(router_label, port_string, color, router_mode, router_functi
 
 	else:
 
-		if router_mode==1:
+		if router_mode=="1":
 			temp_string = "{" + router_label + "|" + port_string + "}"
-		elif router_mode==2:
+		elif router_mode=="2":
 			temp_string = "{" + router_label + "|" + "{" + port_string + "}" + "}"
-		elif router_mode==3:
+		elif router_mode=="3":
 			temp_string = router_label
 
 		temp_string = " [" + color + ",label=\"" + temp_string + "\"]"
@@ -756,13 +766,20 @@ db = MySQLdb.connect(host="10.10.61.10", 	# your host, usually localhost
 					 passwd="mysqlroot", 	# your password
 					 db="racktables") 		# name of the data base
 
-posProg = 0
-posTopo = 1
-posMode = 2
-posOut	= 3
+posProg 	= 0
+posTopo 	= 1
+posMode		= 2
+posFormat	= 3
+posAlgo		= 4
+posDirect	= 5
+posLine		= 6
+posAggreg	= 7
+#posLag		= 8
+#posHairPin	= 9
+#posCPAM	= 10
 
 # Check for inline parameters
-if len(sys.argv)<3:
+if len(sys.argv)<8:
 	print "Not enough paramteres. Quitting..."
 	sys.exit(-1)
 
@@ -871,157 +888,30 @@ object_connections=fnc_remove_routers_wotag(object_list,object_connections)
 #==================================================================
 
 # Format Dictionaries
-algo_dict = {"0":"dot", "1":"fdp", "2":"circo", "3":"twopi", "4":"neato"}
-format_dict = {"0":"png", "1":"svg"}
-lines_dict = {"0":"line", "1":"true","2":"ortho", "3":"polyline"}
-rankdir_dict = {"0":"LR","1":"TB"}
-port_dict = {}
+mode_dict 		= {"0":"cluster", 	"1":"one-line",	"2":"two-lines","3":"only-names"}
+format_dict 	= {"0":"png", 		"1":"svg"}
+algo_dict 		= {"0":"dot", 		"1":"fdp",		"2":"circo",	"3":"twopi",	"4":"neato"}
+rankdir_dict 	= {"0":"LR",		"1":"TB"}
+lines_dict 		= {"0":"line",		"1":"true",		"2":"ortho",	"3":"polyline"}
+aggr_dict 		= {"0":"n",			"1":"y"}
+port_dict 		= {}
 
-router_mode = int(sys.argv[posMode])
-output_selection = sys.argv[posOut]
+router_mode 		= sys.argv[posMode]
+output_format 		= sys.argv[posFormat]
+output_algo			= sys.argv[posAlgo]
+output_direction	= sys.argv[posDirect]
+output_line			= sys.argv[posLine]
+aggregator			= sys.argv[posAggreg]
+graph_lag			= "n"
+graph_hp			= "n"
+graph_cpam			= "n"
 
-if output_selection=="c":
-
-	graph_lag = raw_input("\nDo you want to graph LAGs? [y|n]: ")
-	graph_hp = raw_input("Do you want to graph Hairpin? [y|n]: ")
-	graph_cpam = raw_input("Do you want to graph CPAM? [y|n]: ")
-
-	output_format = raw_input(
-		"\nPlease choose output format:"
-		"\n0 - PNG"
-		"\n1 - SVG"
-		"\nOption:"
-	)
-
-	output_algo = raw_input(
-		"\nPlease choose output algorithm:"
-		"\n0 - DOT"
-		"\n1 - FDP"
-		"\n2 - CIRCO"
-		"\n3 - TWOPI"
-		"\n4 - NEATO"
-		"\nOption:"
-	)
-
-	output_direction = raw_input(
-		"\nPlease choose order direction:"
-		"\n0 - Left-to-Rigth"
-		"\n1 - Top-to-Bottom"
-		"\nOption:"
-	)
-
-	output_line = raw_input(
-		"\nPlease choose connector type:"
-		"\n0 - straight"
-		"\n1 - curved"
-		"\n2 - right-angled"
-		"\n3 - polyline"
-		"\nOption:"
-	)
-
-	aggregator = raw_input(
-		"\nDo you want to group routers in [low|mid|high] ran devices [y/n]: "
-	)
-
-elif output_selection=="0":
-	#(no-LAG, no-HairPin, PNG, DOT, Left-to-Right, curved, group-mid-high-ran)
-
-	output_format="1"
-	output_algo="0"
-	output_direction="0"
-	output_line="1"
-	aggregator="y"
-	graph_lag="n"
-	graph_hp="n"
-	graph_cpam="n"
-
-elif output_selection=="1":
-	#(no-LAG, no-HairPin, PNG, DOT, Top-to-Bottom, curved, group-mid-high-ran)
-
-	output_format="1"
-	output_algo="0"
-	output_direction="1"
-	output_line="1"
-	aggregator="y"
-	graph_lag="n"
-	graph_hp="n"
-	graph_cpam="n"
-
-elif output_selection=="2":
-	#(no-LAG, no-HairPin, PNG, FDP, Top-to-Bottom, curved, no-grouping)
-
-	output_format="1"
-	output_algo="1"
-	output_direction="1"
-	output_line="1"
-	aggregator="n"
-	graph_lag="n"
-	graph_hp="n"
-	graph_cpam="n"
-
-elif output_selection=="3":
-	#(no-LAG, no-HairPin, PNG, DOT, Top-to-Bottom, curved, no-grouping)
-
-	output_format="1"
-	output_algo="0"
-	output_direction="1"
-	output_line="1"
-	aggregator="n"
-	graph_lag="n"
-	graph_hp="n"
-	graph_cpam="n"
-
-elif output_selection=="4":
-	#(no-LAG, no-HairPin, PNG, CIRCO, Top-to-Bottom, curved, no-grouping)
-
-	output_format="1"
-	output_algo="2"
-	output_direction="1"
-	output_line="1"
-	aggregator="n"
-	graph_lag="n"
-	graph_hp="n"
-	graph_cpam="n"
-
-elif output_selection=="5":
-	#(no-LAG, no-HairPin, PNG, CIRCO, Left-to-rigth, curved, no-grouping)
-
-	output_format="1"
-	output_algo="2"
-	output_direction="0"
-	output_line="1"
-	aggregator="n"
-	graph_lag="n"
-	graph_hp="n"
-	graph_cpam="n"
-
-elif output_selection=="6":
-	#(no-LAG, no-HairPin, PNG, TWOPI, Left-to-rigth, curved, no-grouping)
-
-	output_format="1"
-	output_algo="3"
-	output_direction="0"
-	output_line="1"
-	aggregator="n"
-	graph_lag="n"
-	graph_hp="n"
-	graph_cpam="n"
-
-elif output_selection=="7":
-	#(no-LAG, no-HairPin, PNG, NEATO, Left-to-rigth, curved, no-grouping)
-
-	output_format="1"
-	output_algo="4"
-	output_direction="0"
-	output_line="1"
-	aggregator="n"
-	graph_lag="n"
-	graph_hp="n"
-	graph_cpam="n"
-
-else:
-	print "No viable option. Quitting..."
-	sys.exit(-1)
+#print "mode", mode_dict[router_mode]
+#print "format", format_dict[output_format]
+#print "algori", algo_dict[output_algo]
+#print "direcc", rankdir_dict[output_direction]
+#print "line", lines_dict[output_line]
+#print "aggr", aggr_dict[aggregator]
 
 #==================================================================
 #==================================================================
@@ -1033,7 +923,6 @@ else:
 #((Router1_port1, Router2_port1), {label: cableID})
 
 edges=fnc_edge_list(object_connections, graph_lag, graph_hp, graph_cpam, router_mode)
-
 
 #===================================================================
 #===================================================================
@@ -1063,16 +952,16 @@ g0.node_attr['style']='filled'
 g0.node_attr['fixedsize']='false'
 g0.node_attr['fontsize']='9'
 
-if router_mode==0:
+if router_mode=="0":
 	g0.node_attr['shape']='box'
 	labelType="labelHtml"
-elif router_mode==1 or router_mode==2 or router_mode==3:
+elif router_mode=="1" or router_mode=="2" or router_mode=="3":
 	g0.body.append('overlap=false')
 	g0.node_attr['shape']='Mrecord'
 	g0.node_attr['overlap']='false'
 	labelType="labelText"
 
-if aggregator == "y":
+if aggregator == "1":
 	g10 = gv.Graph('cluster_hr')
 	g20 = gv.Graph('cluster_mr')
 	g25 = gv.Graph('cluster_tx')
@@ -1087,7 +976,7 @@ if aggregator == "y":
 	g30.body.append('rankdir=TB')
 	g30.body.append('label=\"LR\"')
 
-if router_mode==0:
+if router_mode=="0":
 	i = 1
 	for router in routers:
 		# Variables
@@ -1096,7 +985,7 @@ if router_mode==0:
 		router_int=global_dict.get(router_name+"_Integrado","N/A")
 		router_ckt_id=global_dict.get(router_name+"_ckt_id","N/A")
 		router_label=fnc_router_metadata(global_dict,router_name,labelType, router_function, router_ckt_id, router_mode)
-		router_color=fnc_router_color(router_function,router_int)
+		router_color=fnc_router_color(router_function,router_int,router_name)
 
 		#print router_name, router_function
 
@@ -1120,7 +1009,7 @@ if router_mode==0:
 			c.node(node_id,label=port_id)
 
 		# Asignación al cluster Low o High Run
-		if aggregator == "y":
+		if aggregator == "1":
 			if router_function == "High-Ran":
 				g10.subgraph(c)
 			elif router_function == "Mid-Ran":
@@ -1147,7 +1036,7 @@ if router_mode==0:
 		g0.edge_attr['fontsize']='9'
 		g0.edge(edgeA,edgeB,label=edgeLabel)
 
-elif router_mode==1 or router_mode==2 or router_mode==3:
+elif router_mode=="1" or router_mode=="2" or router_mode=="3":
 	i = 1
 	for router in routers:
 		# Variables
@@ -1156,7 +1045,7 @@ elif router_mode==1 or router_mode==2 or router_mode==3:
 		router_int=global_dict.get(router_name+"_Integrado","N/A")
 		router_ckt_id=global_dict.get(router_name+"_ckt_id","N/A")
 		router_label=fnc_router_metadata(global_dict,router_name,labelType, router_function, router_ckt_id, router_mode)
-		router_color=fnc_router_color(router_function,router_int)
+		router_color=fnc_router_color(router_function,router_int,router_name)
 
 		# Parametrization
 		struct_name = "struct"+str(i)
@@ -1182,7 +1071,7 @@ elif router_mode==1 or router_mode==2 or router_mode==3:
 		node_string = fnc_port_string(router_label, port_string, color, router_mode, router_function)
 
 		# Asignación al cluster Low o High Run
-		if aggregator == "y":
+		if aggregator == "1":
 			if router_function == "High-Ran": g10.body.append(struct_name+node_string)
 			elif router_function == "Mid-Ran": g20.body.append(struct_name+node_string)
 			else: g30.body.append(struct_name+node_string)
@@ -1200,7 +1089,7 @@ elif router_mode==1 or router_mode==2 or router_mode==3:
 		tempA=e[0][0]
 		if ":" in tempA: tempA=tempA.replace(":","#")
 		tempA=port_dict[tempA].split("_")
-		if router_mode==3:
+		if router_mode=="3":
 			edgeA="struct"+tempA[0]
 		else:
 			edgeA="struct"+tempA[0]+":f"+tempA[1]
@@ -1208,7 +1097,7 @@ elif router_mode==1 or router_mode==2 or router_mode==3:
 		tempB=e[0][1]
 		if ":" in tempB: tempB=tempB.replace(":","#")
 		tempB=port_dict[tempB].split("_")
-		if router_mode==3:
+		if router_mode=="3":
 			edgeB="struct"+tempB[0]
 		else:
 			edgeB="struct"+tempB[0]+":f"+tempB[1]
@@ -1220,4 +1109,3 @@ elif router_mode==1 or router_mode==2 or router_mode==3:
 filename=fnc_build_filename(topo_name)
 print filename + "." + format_dict[output_format]
 g0.render(filename)
-
