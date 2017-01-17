@@ -19,7 +19,7 @@
 
 4.1) Copy both the graph.php and draw_topology.py to the /var/www/racktables/plugins directory;
 4.2) Copy both logo.png and not.gif to the /var/www/racktables/wwwroot/pix directory;
-4.3) Copy gstyle.css to plugins/css directory;
+4.3) Copy gstyle.css to /var/www/racktables/plugins/css directory;
 
 5) Make sure permissions are convenient (in my setup the racktables folder belongs to www-data:www-data). This is important because topologies are stored under /wwwroot/pix/topo folder.
 
