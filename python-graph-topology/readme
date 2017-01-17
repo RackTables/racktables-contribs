@@ -1,4 +1,4 @@
-1) Download the file to your PC. A working racktables installation is assumed. No harm can be done since all the operations towards the database are select like.
+1) A working racktables installation is assumed. No harm can be done since all the operations towards the database are select like.
 
 2) Install the following:
   2.0) sudo apt-get install python 
