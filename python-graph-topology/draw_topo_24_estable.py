@@ -3,6 +3,7 @@
 # Name: draw_topo_02.py
 # Version: 0.2
 # Author: Lucas Aimaretto
+# mail: laimaretto@gmail.com
 # Date: 14-jun-2015
 #
 # - 0.1:	first draft
