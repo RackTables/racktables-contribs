@@ -78,8 +78,8 @@
 							<label class="ginput" for="router_mode">Router mode:</label>
 							<select class="ginput" name="router_mode">
 								<option <?php if ($router_mode == "0") {?>selected="true" <?php }; ?>value="0">Router as cluster</option>
-								<option <?php if ($router_mode == "1" || $router_mode == "") {?>selected="true" <?php }; ?>value="1">Router as node, one-line</option>
-								<option <?php if ($router_mode == "2") {?>selected="true" <?php }; ?>value="2">Router as node, two-line</option>
+								<option <?php if ($router_mode == "1" || $router_mode == "") {?>selected="true" <?php }; ?>value="1">Router as node, one-row</option>
+								<option <?php if ($router_mode == "2") {?>selected="true" <?php }; ?>value="2">Router as node, two-row</option>
 								<option <?php if ($router_mode == "3") {?>selected="true" <?php }; ?>value="3">Router as node, only with name</option>
 							</select>
 							</div>
