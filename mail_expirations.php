@@ -5,36 +5,47 @@
  * emails it to the specified address unless the report contains no objects.
  * It is intended to be run from command line as daily or weekly cron job.
  *
- * Tested to work with RackTables 0.20.8.
+ * This script requires RackTables version 0.20.11 or newer to work.
  */
-
-$mail_to = 'Admin <admin@example.com>';
-$mail_from = 'RackTables <racktables@example.com>';
-$mail_subject = 'RackTables expirations report';
-
 
 $script_mode = TRUE;
 require '/usr/local/racktables/wwwroot/inc/init.php';
 
+/*
+ * init.php will include any plugins/*.php files, that would be the right place
+ * to pre-define any of the constants below like:
+ *
+ * define ('MAILEXPR_TO', 'User <user@example.com>');
+ *
+ * This makes it possible to leave this script in its original form and
+ * (hopefully) simplify the future upgrades.
+ */
+
+defineIfNotDefined ('MAILEXPR_TO', 'Admin <admin@example.com>');
+defineIfNotDefined ('MAILEXPR_FROM', 'RackTables <racktables@example.com>');
+defineIfNotDefined ('MAILEXPR_SUBJ', 'RackTables expirations report');
+defineIfNotDefined ('MAILEXPR_DAYS_AHEAD', 30);
+
 $mail_text = getExpirationsText();
 if ($mail_text != '')
-	mail ($mail_to, $mail_subject, $mail_text, "From: ${mail_from}");
+	mail (MAILEXPR_TO, MAILEXPR_SUBJ, $mail_text, 'From: ' . MAILEXPR_FROM);
 exit (0);
 
 function getExpirationsText()
 {
+	global $expirations;
 	$row_format = "%3s|%-30s|%-15s|%-15s|%s\r\n";
 	$ret = '';
 	$breakdown = array();
-	$breakdown[21] = array
-	(
-		array ('from' => -365, 'to' => 0, 'title' => 'has expired within last year'),
-		array ('from' => 0, 'to' => 30, 'title' => 'expires within 30 days'),
-//		array ('from' => 30, 'to' => 60, 'title' => 'expires within 60 days'),
-//		array ('from' => 60, 'to' => 90, 'title' => 'expires within 90 days'),
-	);
-	$breakdown[22] = $breakdown[21];
-	$breakdown[24] = $breakdown[21];
+	foreach ($expirations as $attr_id => $sections)
+	{
+		$tmp = array();
+		foreach ($sections as $section)
+			if ($section['to'] <= MAILEXPR_DAYS_AHEAD)
+				$tmp[] = $section;
+		if (count ($tmp))
+			$breakdown[$attr_id] = $tmp;
+	}
 	$attrmap = getAttrMap();
 	foreach ($breakdown as $attr_id => $sections)
 	{
