@@ -218,8 +218,12 @@ function Update()
 	if($resultarray) {
 		$id=$resultarray[0]['id'];
 		// Update SW type (OS)
+    // Ubuntu LTS - https://wiki.ubuntu.com/LTS
+    // Ubuntu LTS can be detected by an even OS Major and an OS minor of '04'.
+    // Example Ubuntu 'operatingsystemrelease' values: '16.10', '15.04'.
 		$os_release_lts = "";
-		if ($facter['operatingsystem'] == 'Ubuntu' && explode(".", $facter['operatingsystemrelease'])[0] % 2 == 0) {
+    $facter_osrelease = explode(".", $facter['operatingsystemrelease'])
+		if ($facter['operatingsystem'] == 'Ubuntu' && $facter_osrelease[0] % 2 == 0 && $facter_osrelease[1] == '04') {
 			$os_release_lts = " LTS";
 		}
 		$osrelease = $facter['operatingsystem'] . '%GSKIP%' . $facter['operatingsystem'] . ' ' . $facter['operatingsystemrelease'] . $os_release_lts;
