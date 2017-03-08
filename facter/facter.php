@@ -141,7 +141,12 @@ function Update()
 	// Find HW type id
 	// 2011-08-31 <neil.scholten@gamigo.com>
 	// * adjust format to match default Dictionary Sets
-	if ($facter['is_virtual']=="false" && $_GET['update_hw_type'] != 'false')
+  $update_hw_type = true;
+  if (isset($_GET['update_hw_type']) && $_GET['update_hw_type'] == 'false')
+  {
+    $update_hw_type = false
+  }
+	if ($facter['is_virtual']=="false" && $update_hw_type)
 	{
 		$iHWTemp				= preg_match('([a-zA-Z]{1,})', $facter['manufacturer'], $matches);
 		$sManufacturer	= $matches[0];
