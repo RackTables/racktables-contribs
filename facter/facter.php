@@ -141,11 +141,11 @@ function Update()
 	// Find HW type id
 	// 2011-08-31 <neil.scholten@gamigo.com>
 	// * adjust format to match default Dictionary Sets
-  $update_hw_type = true;
-  if (isset($_GET['update_hw_type']) && $_GET['update_hw_type'] == 'false')
-  {
-    $update_hw_type = false
-  }
+	$update_hw_type = true;
+	if (isset($_GET['update_hw_type']) && $_GET['update_hw_type'] == 'false')
+	{
+		$update_hw_type = false
+	}
 	if ($facter['is_virtual']=="false" && $update_hw_type)
 	{
 		$iHWTemp				= preg_match('([a-zA-Z]{1,})', $facter['manufacturer'], $matches);
@@ -218,11 +218,11 @@ function Update()
 	if($resultarray) {
 		$id=$resultarray[0]['id'];
 		// Update SW type (OS)
-    // Ubuntu LTS - https://wiki.ubuntu.com/LTS
-    // Ubuntu LTS can be detected by an even OS Major and an OS minor of '04'.
-    // Example Ubuntu 'operatingsystemrelease' values: '16.10', '15.04'.
+		// Ubuntu LTS - https://wiki.ubuntu.com/LTS
+		// Ubuntu LTS can be detected by an even OS Major and an OS minor of '04'.
+		// Example Ubuntu 'operatingsystemrelease' values: '16.10', '15.04'.
 		$os_release_lts = "";
-    $facter_osrelease = explode(".", $facter['operatingsystemrelease'])
+		$facter_osrelease = explode(".", $facter['operatingsystemrelease'])
 		if ($facter['operatingsystem'] == 'Ubuntu' && $facter_osrelease[0] % 2 == 0 && $facter_osrelease[1] == '04') {
 			$os_release_lts = " LTS";
 		}
