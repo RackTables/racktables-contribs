@@ -1100,6 +1100,7 @@ class lm_linkchain implements Iterator {
 					'op'=>'unlinkPort',
 					'port_id'=>$src_port['id'],
 					'remote_id' => $dst_port['id'],
+					'hl_port_id' => $this->init,
 					'object_id'=> $this->object_id, //$this->ports[$this->init]['object_id'],
 					'tab' => 'linkmgmt',
 					'linktype' => $linktype)).
@@ -4472,6 +4473,20 @@ function linkmgmt_tabhandler($object_id) {
 		echo '<h1>Links for Child: '.$childobj['name'].'</h1>';
 		linkmgmt_renderObjectLinks($child['entity_id']);
 		unset($childobj);
+	}
+
+	if (isset ($_REQUEST['hl_port_id']))
+	{
+		assertUIntArg ('hl_port_id');
+		$hl_port_id = intval ($_REQUEST['hl_port_id']);
+		addJS (<<<ENDJS
+$(document).ready(function() {
+	var anchor = document.getElementById('$hl_port_id');
+	if (anchor)
+		anchor.scrollIntoView(false);
+});
+ENDJS
+	, TRUE);
 	}
 
 	return;
