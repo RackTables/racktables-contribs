@@ -1,0 +1,17 @@
+//This is where you set what options you want auto populated
+// The grainskeyword must exist in grains
+// and the AttributeWord/Chapter must be created in the racktables attributes
+// and assigned to the object type
+//Declare these values like so:
+//grainskeyword AttributeWord ChapterNumber
+//to find grainskeyword use "salt '*' grains.ls"
+//ex1: memorysize,Memory
+
+mem_total,DRAM
+uuid,UUID
+cpu_model,Processor
+biosversion,BIOS Version
+manufacturer,BIOS Vendor
+fqdn,FQDN
+num_cpus,CPU Cores
+
