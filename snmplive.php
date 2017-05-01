@@ -634,6 +634,12 @@ class sl_ifxsnmp extends SNMP
 		$ifoperstatus = $this->walk($oid_ifoperstatus, TRUE); //iftable
 
 		$retval = array();
+
+		// strtolower name of interfaces, useful for cisco switches
+		foreach($ifname as $i => $j) {
+			$ifname[$i] = strtolower($j);
+		}
+
 		foreach($ifindex as $index)
 		{
 			$retval[$ifname[$index]]['ifindex'] = $index;
