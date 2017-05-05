@@ -467,6 +467,8 @@ function sl_getsnmp(&$object, $debug = false)
 	$object_id = $object['id'];
 	$object_name = $object['name'];
 
+	$breed = detectDeviceBreed ($object_id);
+
 	if(isset($object['SNMP']))
 	{
 		if($debug)
@@ -518,7 +520,7 @@ function sl_getsnmp(&$object, $debug = false)
 
 	/* SNMP prerequisites successfull */
 
-	$s = new sl_ifxsnmp($snmpconfig[2], $ipv4, $snmpconfig[3], $snmpconfig);
+	$s = new sl_ifxsnmp($snmpconfig[2], $ipv4, $snmpconfig[3], $snmpconfig, $breed);
 
 	if(!$s->error)
 	{
@@ -554,8 +556,12 @@ class sl_ifxsnmp extends SNMP
 
 	public $error = false;
 
-	function __construct($version, $hostname, $community, $security = null)
+	private $devicebreed = null;
+
+	function __construct($version, $hostname, $community, $security = null, $breed = null)
 	{
+
+		$this->devicebreed = $breed;
 
 		switch($version)
 		{
@@ -636,6 +642,8 @@ class sl_ifxsnmp extends SNMP
 		$retval = array();
 		foreach($ifindex as $index)
 		{
+			$ifname[$index] = shortenIfName ($ifname[$index], $this->devicebreed);
+
 			$retval[$ifname[$index]]['ifindex'] = $index;
 
 			$retval[$ifname[$index]]['status'] = $ifoperstatus[$index];
