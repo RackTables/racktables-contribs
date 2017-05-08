@@ -3,7 +3,7 @@
 //	linkchain all objects graph cytoscape takes ages
 //	highlight port cytoscape maps
 /*
- * Link Management for RT >= 0.20.9
+ * Link Management for RT >= 0.20.11
  *
  *	Features:
  *		- create links between ports
@@ -108,7 +108,7 @@ ALTER TABLE LinkBackend CONVERT to CHARACTER SET utf8 COLLATE utf8_unicode_ci;
  * TESTED on FreeBSD 9.0, nginx/1.0.11, php 5.3.9
  *	GraphViz_Image 1.3.0
  *
- * (c)2012-2016 Maik Ehinger <m.ehinger@ltur.de>
+ * (c)2012-2017 Maik Ehinger <m.ehinger@ltur.de>
  */
 
 /**
