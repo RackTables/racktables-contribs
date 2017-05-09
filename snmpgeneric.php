@@ -82,7 +82,7 @@
 /* RackTables Debug Mode */
 //$debug_mode=1;
 
-require_once('inc/snmp.php');
+require_once(realpath (dirname (__FILE__).'/../wwwroot').'/inc/snmp.php');
 
 $tab['object']['snmpgeneric'] = 'SNMP Generic sync';
 $tabhandler['object']['snmpgeneric'] = 'snmpgeneric_tabhandler';
@@ -2663,7 +2663,7 @@ class mySNMP extends SNMPgeneric implements Iterator {
 
 			$trace = debug_backtrace();
 			trigger_error(
-					'Undefinierte Eigenschaft für __call(): ' . $name .
+					'Undefinierte Eigenschaft fuer __call(): ' . $name .
 					' in ' . $trace[0]['file'] .
 					' Zeile ' . $trace[0]['line'],
 					E_USER_NOTICE);
@@ -3057,7 +3057,7 @@ class ifSNMP implements Iterator {
 		$trace = debug_backtrace();
 
 		trigger_error(
-			'Undefinierte Eigenschaft für __get(): ' . $name .
+			'Undefinierte Eigenschaft fuer __get(): ' . $name .
 			' in ' . $trace[0]['file'] .
 			' Zeile ' . $trace[0]['line'],
 			E_USER_NOTICE);
