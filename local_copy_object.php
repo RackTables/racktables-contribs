@@ -5,6 +5,8 @@
 (c) 2011 Manon Goo <manon@dg-i.net>
 */
 
+defineIfNotDefined ('TABLE_BORDER', 0);
+
 $tab['object']['objectcopier'] = 'Object Copier ';
 $tabhandler['object']['objectcopier'] = 'localfunc_ObjectCopier';
 $ophandler['object']['objectcopier']['copyLotOfObjects'] = 'copyLotOfObjects';
