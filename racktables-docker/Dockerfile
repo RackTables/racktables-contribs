@@ -22,10 +22,10 @@ RUN apk --no-cache add \
     php5-pdo_mysql \
     php5-snmp \
     && chmod +x /entrypoint.sh \
-    && curl -sSLo /racktables.tar.gz 'https://github.com/RackTables/racktables/archive/RackTables-0.20.11.tar.gz' \
+    && curl -sSLo /racktables.tar.gz 'https://github.com/RackTables/racktables/archive/RackTables-0.20.13.tar.gz' \
     && mkdir /opt \
     && tar -xz -C /opt -f /racktables.tar.gz \
-    && mv /opt/racktables-RackTables-0.20.11 /opt/racktables \
+    && mv /opt/racktables-RackTables-0.20.13 /opt/racktables \
     && rm -f /racktables.tar.gz \
     && sed -i \
     -e 's|^listen =.*$|listen = 9000|' \
