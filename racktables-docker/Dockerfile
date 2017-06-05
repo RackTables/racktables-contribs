@@ -1,5 +1,5 @@
 # vim: set ft=dockerfile:
-FROM alpine:latest
+FROM alpine:3.6
 # Author with no obligation to maintain
 MAINTAINER Paul Tötterman <paul.totterman@iki.fi>
 
@@ -35,4 +35,4 @@ RUN apk --no-cache add \
 VOLUME /opt/racktables/wwwroot
 EXPOSE 9000
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["/usr/bin/php-fpm"]
+CMD ["/usr/bin/php-fpm5"]
