@@ -23,8 +23,6 @@ $ophandler['row']['full_row_view']['preparePrint'] ='preparePrint';
 
 // Set variables
 $frvVersion = "0.6";
-// load a customized stylesheet
-addCSS ('css/full_row_view.css');
 
 function preparePrint()
 {
@@ -35,6 +33,8 @@ function preparePrint()
 // display the import page.
 function FullRowView()
 {
+    // load a customized stylesheet
+    addCSS ('css/full_row_view.css');
     if (isset($_REQUEST['row_id']))
       $row_id = $_REQUEST['row_id'];
     else
