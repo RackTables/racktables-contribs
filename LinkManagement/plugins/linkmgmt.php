@@ -195,19 +195,11 @@ class linkchain_cache
 
 			if($object['IPV4OBJ'])
 			{
-				// ip addresses
-				//amplifyCell($object); /* get ports, ipv4, ipv6, nat4 and files */
-				$object['ipv4'] = getObjectIPv4Allocations ($object_id);
 				$object['portip'] = array();
-				foreach($object['ipv4'] as $ipv4)
+				foreach(getObjectIPv4Allocations ($object_id) as $ipv4)
 				{
 					$object['portip'][$ipv4['osif']] = $ipv4['addrinfo']['ip'];
 				}
-			}
-
-			if($object['container_id'])
-			{
-				$container = $this->getobject($object['container_id']);
 			}
 
 			$this->cache['o'.$object_id] = $object;
@@ -3333,10 +3325,8 @@ class linkmgmt_gvmap {
 
 				$object = spotEntity ('object', $object_id);
 
-				// ip addresses
-				amplifyCell($object);
 				$object['portip'] = array();
-				foreach($object['ipv4'] as $ipv4)
+				foreach(getObjectIPv4Allocations ($object_id) as $ipv4)
 				{
 					$object['portip'][$ipv4['osif']] = $ipv4['addrinfo']['ip'];
 				}
