@@ -211,6 +211,3 @@ $gwrxlator['getinterfaces'] = array
 (
         'ios12' => 'ios12ReadInterfaces',
 );
-
-
-?>

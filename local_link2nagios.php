@@ -122,5 +122,3 @@ function formtrigger_NagiosRack ($locItem) {
   }
   return $state;
 }
-
-?>

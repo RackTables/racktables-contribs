@@ -148,5 +148,3 @@ function CableReport()
         echo 'ok-cablereport version 3.2';
         echo '</div>';
 }
-
-?>

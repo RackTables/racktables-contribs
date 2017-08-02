@@ -456,7 +456,3 @@ function importFingData ()
     else
         showFuncMessage (__FUNCTION__, 'ERR', array ($nbad, $ngood));
 }
-
-
-
-?>

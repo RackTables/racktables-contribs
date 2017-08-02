@@ -20,5 +20,3 @@ $graphs_enabled = 'no'; // Default value is 'no'. This is experimental feature.
 $graphs_period = 86400; // Graph period in seconds, default value is 86400 = 1 day.
 
 ### End of Zabbix triggers and graphs parametres ###
-
-?>

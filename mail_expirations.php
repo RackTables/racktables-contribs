@@ -83,5 +83,3 @@ function getExpirationsText()
 	}
 	return $ret;
 }
-
-?>

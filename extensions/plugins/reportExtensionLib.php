@@ -207,5 +207,3 @@ function getObjectChildObjectList ($object_id) {
 
 	return $ret;
 }
-
-?>

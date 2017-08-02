@@ -427,5 +427,3 @@ function renderVLANMembership ($object_id)
 	// End of main table.
 	echo '</td></tr></table>';
 }
-
-?>

@@ -107,4 +107,3 @@ function ripeTab($id) {
 	finishPortlet();
 	echo "</td></tr></table>\n";
 }
-?>

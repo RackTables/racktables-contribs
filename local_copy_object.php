@@ -371,4 +371,3 @@ function oneLiner ($code, $args = array())
         $ret['m'][] = count ($args) ? array ('c' => $code, 'a' => $args) : array ('c' => $code);
         return $ret;
 }
-?>

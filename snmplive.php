@@ -718,4 +718,3 @@ function sl_var_dump_html(&$var, $text = '') {
 	var_dump($var);
 	echo "\n---------------------END Var Dump - $text -----------------------</pre>";
 }
-?>

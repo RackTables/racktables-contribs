@@ -211,5 +211,3 @@ function renderIframeTabForEntity ($title, $link)
 	echo "</div>";
 
 }
-
-?>

@@ -412,4 +412,3 @@ foreach($sites as $site) {
 	CountLinks($site);
 	Draw($site);
 }
-?> 

@@ -493,5 +493,3 @@ function Grains_addTagToObject ($grains, $newmachine) {
         rebuildTagChainForEntity ('object', $newmachine, array (getTagByName($tags[$i])));
     }
 }
-?>
-

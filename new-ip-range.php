@@ -150,5 +150,3 @@ function generatePrefixLengthInput($m)
 	else
 		return $m[1] . '<label>Prefix length:<br><input type="text" name="pref_len" value="' . htmlspecialchars (@$_REQUEST['pref_len'], ENT_QUOTES) .  '"></label><p>';
 }
-
-?>

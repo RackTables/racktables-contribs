@@ -156,5 +156,3 @@ function renderPortletWattConsumption ($info)
 	echo "</tr></table>\n";
 	finishPortlet();
 }
-
-?>

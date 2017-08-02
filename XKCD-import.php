@@ -39,5 +39,3 @@ foreach (array ('png', 'jpg') as $ext)
 		commitAddFile (basename ($longname), $mimetype[$ext], $data, 'XKCD (http://xkcd.com/)'); 
 		echo "OK \n";
 	}
-
-?>

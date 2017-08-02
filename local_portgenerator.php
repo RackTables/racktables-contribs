@@ -517,5 +517,3 @@ function updateconfig_PortGenerator()
     return setMessage ('error', $message="Error in update to auto port configuration");
   }
 }
-
-?>

@@ -41,5 +41,3 @@ function requireMandatoryAttrGeneric ($listsrc, $attr_id, $newval)
 	}
 	return '';
 }
-
-?>

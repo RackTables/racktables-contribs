@@ -135,4 +135,3 @@ function PingTab($id) {
 
 	echo "</td></tr></table>\n";
 }
-?>

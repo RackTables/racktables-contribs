@@ -215,5 +215,3 @@ function ios12ReadInterfaces ($input)
 	}
 	return $result;
 }
-
-?>

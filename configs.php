@@ -153,5 +153,3 @@ function ConfigTabHandler ()
 	echo $display;
 
 }
-
-?>

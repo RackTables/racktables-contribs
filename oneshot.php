@@ -36,5 +36,3 @@ function handleOneShotRequest ()
 		break;
 	}
 }
-
-?>

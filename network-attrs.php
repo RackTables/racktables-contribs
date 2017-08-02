@@ -509,5 +509,3 @@ function fetchNetworksByAttr ($attribute_id, $attribute_value, $use_key = FALSE)
 	}
 	return $ret;
 }
-
-?>

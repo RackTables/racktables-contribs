@@ -50,5 +50,3 @@ function get_foreign_function_calls ($tree)
 
 $tree = parsekit_compile_file ('local.php');
 print_r (get_foreign_function_calls ($tree));
-
-?>

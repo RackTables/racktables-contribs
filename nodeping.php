@@ -454,4 +454,3 @@ function updateNodePingCheck ()
 	);
 	return showFuncMessage (__FUNCTION__, 'OK', array (htmlspecialchars ($np_check['label'])));
 }
-?>

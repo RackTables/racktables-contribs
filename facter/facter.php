@@ -488,4 +488,3 @@ function addTagToObject ($facter, $newmachine) {
 		rebuildTagChainForEntity ('object', $newmachine, array (getTagByName($tags[$i])));
 	}
 }
-?>

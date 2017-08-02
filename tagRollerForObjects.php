@@ -50,5 +50,3 @@ function renderTagRollerForObjects ()
 	echo "<p>";
 	renderDepot();
 }
-
-?>

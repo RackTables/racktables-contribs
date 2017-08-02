@@ -344,5 +344,3 @@ if ($master_object_id)	//if lookup() set $master_object_id, there was a successf
 	update_master_object($master_object_id);
 
 mysql_close();
-
-?>

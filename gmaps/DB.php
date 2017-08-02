@@ -39,4 +39,3 @@ function insert($query){
 function getDB(){
   return "racktables";
 }
-?>

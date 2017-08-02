@@ -146,4 +146,3 @@ function renderReducedRack ($rack_id, $hl_obj_id = 0)
 	}
 	echo "</center>\n";
 }
-?>
