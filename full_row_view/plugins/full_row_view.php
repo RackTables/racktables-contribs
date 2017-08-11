@@ -34,7 +34,36 @@ function preparePrint()
 function FullRowView()
 {
     // load a customized stylesheet
-    addCSS ('css/full_row_view.css');
+addCSS(<<<ENDOFCSS
+.rackphg {
+	font: bold 10px Verdana, sans-serif;
+	border: 1px solid black;
+	border-top: 0px solid black;
+	border-right: 0px solid black;
+	text-align: center;
+}
+
+.rackphg th {
+	border-top: 1px solid black;
+	border-right: 1px solid black;
+}
+
+.rackphg td {
+	border-top: 1px solid black;
+	border-right: 1px solid black;
+}
+
+.rackphg a {
+	font: 10px Verdana, sans-serif;
+	color: #000;
+	text-decoration: none;
+}
+
+.rackphg a:hover {
+	text-decoration: underline;
+}
+ENDOFCSS
+, TRUE);
     if (isset($_REQUEST['row_id']))
       $row_id = $_REQUEST['row_id'];
     else
