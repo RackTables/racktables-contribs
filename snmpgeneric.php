@@ -46,7 +46,7 @@
  * TESTED on FreeBSD 9.0, nginx/1.0.12, php 5.3.10, NET-SNMP 5.7.1
  *	and RackTables <= 0.20.3
  *
- * (c)2015 Maik Ehinger <m.ehinger@ltur.de>
+ * (c)2015 Maik Ehinger <github138@t-online.de>
  */
 
 /****
@@ -3081,7 +3081,7 @@ class ifSNMP implements Iterator {
 			$trace = debug_backtrace();
 
 			trigger_error(
-				'Undefinierte Methode für __call(): ' . $name .
+				'Undefinierte Methode fÃ¼r __call(): ' . $name .
 				' in ' . $trace[0]['file'] .
 				' Zeile ' . $trace[0]['line'],
 				E_USER_NOTICE);
