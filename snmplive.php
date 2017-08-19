@@ -11,7 +11,7 @@
  *	saved SNMP settings ( see snmpgeneric.php extension )
  *	also RT port names and SNMP port names must be the same ( should work fine with snmpgeneric.php created ports )
  *
- * (c)2015 Maik Ehinger <m.ehinger@ltur.de>
+ * (c)2015 Maik Ehinger <github138@t-online.de>
  */
 
 /****
