@@ -4064,7 +4064,7 @@ UNLOCK TABLES;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`racktables_user`@`localhost`*/ /*!50003 TRIGGER `EntityLink-before-insert` BEFORE INSERT ON `EntityLink` FOR EACH ROW
+/*!50003 CREATE TRIGGER `EntityLink-before-insert` BEFORE INSERT ON `EntityLink` FOR EACH ROW
 EntityLinkTrigger:BEGIN
   DECLARE parent_objtype, child_objtype, count INTEGER;
 
@@ -4117,7 +4117,7 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`racktables_user`@`localhost`*/ /*!50003 TRIGGER `EntityLink-before-update` BEFORE UPDATE ON `EntityLink` FOR EACH ROW
+/*!50003 CREATE TRIGGER `EntityLink-before-update` BEFORE UPDATE ON `EntityLink` FOR EACH ROW
 EntityLinkTrigger:BEGIN
   DECLARE parent_objtype, child_objtype, count INTEGER;
 
@@ -4665,7 +4665,7 @@ UNLOCK TABLES;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`racktables_user`@`localhost`*/ /*!50003 TRIGGER `Link-before-insert` BEFORE INSERT ON `Link` FOR EACH ROW LinkTrigger:BEGIN
+/*!50003 CREATE TRIGGER `Link-before-insert` BEFORE INSERT ON `Link` FOR EACH ROW LinkTrigger:BEGIN
   DECLARE tmp, porta_type, portb_type, count INTEGER;
 
   IF NEW.porta = NEW.portb THEN
@@ -4703,7 +4703,7 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`racktables_user`@`localhost`*/ /*!50003 TRIGGER `Link-before-update` BEFORE UPDATE ON `Link` FOR EACH ROW LinkTrigger:BEGIN
+/*!50003 CREATE TRIGGER `Link-before-update` BEFORE UPDATE ON `Link` FOR EACH ROW LinkTrigger:BEGIN
   DECLARE tmp, porta_type, portb_type, count INTEGER;
 
   IF NEW.porta = NEW.portb THEN
@@ -6367,7 +6367,7 @@ CREATE TABLE `Script` (
 
 LOCK TABLES `Script` WRITE;
 /*!40000 ALTER TABLE `Script` DISABLE KEYS */;
-INSERT INTO `Script` VALUES ('RackCode','allow {$userid_1}');
+INSERT INTO `Script` VALUES ('RackCode','# Keep admin password immutable by means of special (and also immutable) RackCode.\ndeny {$op_changeMyPassword} or {$op_updateUser} or {$op_saveRackCode}\nallow {$userid_1}\n');
 /*!40000 ALTER TABLE `Script` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -10978,7 +10978,6 @@ UNLOCK TABLES;
 /*!50001 SET character_set_results     = utf8 */;
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`racktables_user`@`localhost` SQL SECURITY DEFINER */
 /*!50001 VIEW `Location` AS select `O`.`id` AS `id`,`O`.`name` AS `name`,`O`.`has_problems` AS `has_problems`,`O`.`comment` AS `comment`,`P`.`id` AS `parent_id`,`P`.`name` AS `parent_name` from (`Object` `O` left join (`Object` `P` join `EntityLink` `EL` on(((`EL`.`parent_entity_id` = `P`.`id`) and (`P`.`objtype_id` = 1562) and (`EL`.`parent_entity_type` = 'location') and (`EL`.`child_entity_type` = 'location')))) on((`EL`.`child_entity_id` = `O`.`id`))) where (`O`.`objtype_id` = 1562) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
@@ -10996,7 +10995,6 @@ UNLOCK TABLES;
 /*!50001 SET character_set_results     = utf8 */;
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`racktables_user`@`localhost` SQL SECURITY DEFINER */
 /*!50001 VIEW `Rack` AS select `O`.`id` AS `id`,`O`.`name` AS `name`,`O`.`asset_no` AS `asset_no`,`O`.`has_problems` AS `has_problems`,`O`.`comment` AS `comment`,`AV_H`.`uint_value` AS `height`,`AV_S`.`uint_value` AS `sort_order`,`RT`.`thumb_data` AS `thumb_data`,`R`.`id` AS `row_id`,`R`.`name` AS `row_name`,`L`.`id` AS `location_id`,`L`.`name` AS `location_name` from (((((((`Object` `O` left join `AttributeValue` `AV_H` on(((`O`.`id` = `AV_H`.`object_id`) and (`AV_H`.`attr_id` = 27)))) left join `AttributeValue` `AV_S` on(((`O`.`id` = `AV_S`.`object_id`) and (`AV_S`.`attr_id` = 29)))) left join `RackThumbnail` `RT` on((`O`.`id` = `RT`.`rack_id`))) left join `EntityLink` `RL` on(((`O`.`id` = `RL`.`child_entity_id`) and (`RL`.`parent_entity_type` = 'row') and (`RL`.`child_entity_type` = 'rack')))) join `Object` `R` on((`R`.`id` = `RL`.`parent_entity_id`))) left join `EntityLink` `LL` on(((`R`.`id` = `LL`.`child_entity_id`) and (`LL`.`parent_entity_type` = 'location') and (`LL`.`child_entity_type` = 'row')))) left join `Object` `L` on((`L`.`id` = `LL`.`parent_entity_id`))) where (`O`.`objtype_id` = 1560) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
@@ -11014,7 +11012,6 @@ UNLOCK TABLES;
 /*!50001 SET character_set_results     = utf8 */;
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`racktables_user`@`localhost` SQL SECURITY DEFINER */
 /*!50001 VIEW `RackObject` AS select `Object`.`id` AS `id`,`Object`.`name` AS `name`,`Object`.`label` AS `label`,`Object`.`objtype_id` AS `objtype_id`,`Object`.`asset_no` AS `asset_no`,`Object`.`has_problems` AS `has_problems`,`Object`.`comment` AS `comment` from `Object` where (`Object`.`objtype_id` not in (1560,1561,1562)) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
@@ -11032,7 +11029,6 @@ UNLOCK TABLES;
 /*!50001 SET character_set_results     = utf8 */;
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`racktables_user`@`localhost` SQL SECURITY DEFINER */
 /*!50001 VIEW `Row` AS select `O`.`id` AS `id`,`O`.`name` AS `name`,`L`.`id` AS `location_id`,`L`.`name` AS `location_name` from ((`Object` `O` left join `EntityLink` `EL` on(((`O`.`id` = `EL`.`child_entity_id`) and (`EL`.`parent_entity_type` = 'location') and (`EL`.`child_entity_type` = 'row')))) left join `Object` `L` on(((`EL`.`parent_entity_id` = `L`.`id`) and (`L`.`objtype_id` = 1562)))) where (`O`.`objtype_id` = 1561) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
@@ -11047,4 +11043,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-10-05 18:30:15
+-- Dump completed on 2017-10-05 18:19:00
