@@ -12,7 +12,7 @@
 
 usage()
 {
-	echo "Usage: $0 [version [database [yes|no]]]"
+	echo "Usage: $0 <version> <database> <yes|no>"
 	exit 1
 }
 
@@ -37,18 +37,16 @@ do_version_20()
 	rm -f "$SQLFILE"
 }
 
-V=${1:-0.20.12}
-# 0_XX_Y
-Vu=${V//./_}
-# 0.XX.x
-Vx=${V%.[0-9]*}.x
-DB=${2:-demo_$Vu}
-DODEMO=${3:-yes}
+[ $# -eq 3 ] || usage
+
+V=$1
+DB=$2
+DODEMO=$3
 MYNAME=`readlink -f $0`
 MYDIR=`dirname $MYNAME`
 
-case $Vx in
-	0.20.x)
+case $V in
+	0.20.*)
 		do_version_20
 		;;
 	*)
