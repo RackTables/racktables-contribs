@@ -46,11 +46,11 @@ MYNAME=`readlink -f $0`
 MYDIR=`dirname $MYNAME`
 
 case $V in
-	0.20.*)
+	0.2[01].*)
 		do_version_20
 		;;
 	*)
-		echo "This script does not support version $Vx"
+		echo "This script does not support version $V"
 		exit 1
 esac
 
