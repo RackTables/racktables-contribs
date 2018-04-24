@@ -16,13 +16,15 @@
 //         0.4: Display rack row from left to right, no wrapping
 //         0.5: Rearrange files for simpler installation.
 //         0.6: Do not call deprecated functions.
+//         0.6.1: Wrap every X racks
 
 $tab['row']['full_row_view'] = 'Full Row View';
 $tabhandler['row']['full_row_view'] = 'FullRowView';
 $ophandler['row']['full_row_view']['preparePrint'] ='preparePrint';
 
 // Set variables
-$frvVersion = "0.6";
+$frvVersion = "0.6.1";
+$wrapRacks = 5;
 
 function preparePrint()
 {
@@ -70,6 +72,7 @@ ENDOFCSS
       $rack_id=1;
 
     global $frvVersion;
+    global $wrapRacks;
     $rowData = getRowInfo ($row_id);
 
     $cellfilter = getCellFilter();
@@ -78,22 +81,27 @@ ENDOFCSS
     echo "<font size=1em color=gray>version ${frvVersion}&nbsp;</font>";
     // echo "<input type=submit name=got_very_fast_data value='Print view'>";
     // echo "</form>";
-    echo '<table><tr><td nowrap="nowrap" valign="top">';
+    echo '<table><tr valign="bottom">';  // bottom align racks for different height racks
     $count = 1;
     foreach ($rackList as $rack) 
     {
+        if($count > $wrapRacks) {
+            // Wrap every $wrapRacks racks
+            echo '</tr></table>';
+            echo '<table><tr valign="bottom">';
+            $count = 1;  // reset rack count to 1
+        }
 	// echo "<br>Schrank: ${rack['name']} ${rack['id']}";
 	// $rackData = spotEntity ('rack', ${rack['id']});
-	echo '<div class="phgrack" style="float: top; width: 240px">';
+        echo '<td nowrap="nowrap"><div class="phgrack" style="float: top; width: 240px">';
 	renderReducedRack("${rack['id']}");
-	echo '</div>';
-        echo '</td><td nowrap="nowrap" valign="top">';
-
+	echo '</div></td>';
+        $count++;
     }
-    echo '</td></tr></table>';
+    echo '</tr></table>';
 }
 
-// This is form interface.php: renderRack
+// This is from interface.php: renderRack
 // This function renders rack as HTML table.
 function renderReducedRack ($rack_id, $hl_obj_id = 0)
 {
