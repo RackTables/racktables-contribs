@@ -34,7 +34,7 @@ exit (0);
 function getExpirationsText()
 {
 	global $expirations;
-	$row_format = "%3s|%-30s|%-15s|%-15s|%s\r\n";
+	$row_format = "%3s|%-30s|%-15s|%-15s|%s\n";
 	$ret = '';
 	$breakdown = array();
 	foreach ($expirations as $attr_id => $sections)
@@ -49,8 +49,8 @@ function getExpirationsText()
 	$attrmap = getAttrMap();
 	foreach ($breakdown as $attr_id => $sections)
 	{
-		$ret .= $attrmap[$attr_id]['name'] . "\r\n";
-		$ret .= "===========================================\r\n";
+		$ret .= $attrmap[$attr_id]['name'] . "\n";
+		$ret .= "===========================================\n";
 		foreach ($sections as $section)
 		{
 			$count = 1;
@@ -58,10 +58,10 @@ function getExpirationsText()
 			if (! count ($result))
 				continue;
 
-			$ret .= $section['title'] . "\r\n";
-			$ret .= "-----------------------------------------------------------------------------------\r\n";
+			$ret .= $section['title'] . "\n";
+			$ret .= "-----------------------------------------------------------------------------------\n";
 			$ret .= sprintf ($row_format, '#', 'Name', 'Asset Tag', 'OEM S/N 1', 'Date Warranty Expires');
-			$ret .= "-----------------------------------------------------------------------------------\r\n";
+			$ret .= "-----------------------------------------------------------------------------------\n";
 			foreach ($result as $row)
 			{
 				$object = spotEntity ('object', $row['object_id']);
@@ -77,9 +77,9 @@ function getExpirationsText()
 				);
 				$count++;
 			}
-			$ret .= "-----------------------------------------------------------------------------------\r\n";
+			$ret .= "-----------------------------------------------------------------------------------\n";
 		}
-		$ret .= "\r\n";
+		$ret .= "\n";
 	}
 	return $ret;
 }
