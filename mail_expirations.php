@@ -24,6 +24,7 @@ require '/usr/local/racktables/wwwroot/inc/init.php';
 defineIfNotDefined ('MAILEXPR_TO', 'Admin <admin@example.com>');
 defineIfNotDefined ('MAILEXPR_FROM', 'RackTables <racktables@example.com>');
 defineIfNotDefined ('MAILEXPR_SUBJ', 'RackTables expirations report');
+defineIfNotDefined ('MAILEXPR_DAYS_BEHIND', -365);
 defineIfNotDefined ('MAILEXPR_DAYS_AHEAD', 30);
 
 $mail_text = getExpirationsText();
@@ -41,7 +42,7 @@ function getExpirationsText()
 	{
 		$tmp = array();
 		foreach ($sections as $section)
-			if ($section['to'] <= MAILEXPR_DAYS_AHEAD)
+			if ($section['to'] <= MAILEXPR_DAYS_AHEAD && $section['from'] >= MAILEXPR_DAYS_BEHIND)
 				$tmp[] = $section;
 		if (count ($tmp))
 			$breakdown[$attr_id] = $tmp;
