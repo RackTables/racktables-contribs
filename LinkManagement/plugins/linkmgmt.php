@@ -245,7 +245,7 @@ function plugin_linkmgmt_renderObjectPortRow ($port, $is_highlighted)
 				else
 				{
 					// Front-linked only
-					echo '<td>&nbsp;</td><td></td><td></td>';   // End of the row
+					echo '<td>&nbsp;</td><td>&nbsp;</td>';   // End of the row
 				}
 		}
 		else
@@ -260,7 +260,7 @@ function plugin_linkmgmt_renderObjectPortRow ($port, $is_highlighted)
 			}
 			else
 			{
-				echo '<td>&nbsp;</td><td></td><td></td>';   // End of the row
+				echo '<td>&nbsp;</td><td>&nbsp;</td>';   // End of the row
 			}
 		}
 	}
@@ -275,7 +275,7 @@ function plugin_linkmgmt_renderObjectPortRow ($port, $is_highlighted)
 		if ($lc->first != $port['id'])
 		{
 			// Back-linked port without a front-link
-			echo '<td></td>'.
+			echo '<td>&nbsp;</td>'.
 				'<td>'.
 				formatPortLink($lc->ports[$lc->first]['object_id'], $lc->ports[$lc->first]['object_name'],  $lc->ports[$lc->first]['id'], NULL).
 				'</td>' .
@@ -284,7 +284,7 @@ function plugin_linkmgmt_renderObjectPortRow ($port, $is_highlighted)
 		else
 		{
 			// Port without a front or back link
-			echo '<td>&nbsp;</td><td></td><td></td>';   // End of the row
+			echo '<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>';   // End of the row
 		}
 	}
 
