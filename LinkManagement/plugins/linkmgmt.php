@@ -153,6 +153,13 @@ $ophandler['object']['linkmgmt']['cytoscapemap'] = 'linkmgmt_cytoscapemap';
 
 defineIfNotDefined('LM_MULTILINK',TRUE);
 defineIfNotDefined('LM_SHOW_CONTAINERS',TRUE);
+defineIfNotDefined('LM_EXTEND_PORT_LIST',FALSE);
+
+if (LM_EXTEND_PORT_LIST)
+{
+	registerHook('renderObjectPortHeaderRow','plugin_linkmgmt_renderObjectPortHeaderRow','before'); // no-op before RT 0.21.2
+	registerHook('renderObjectPortRow','plugin_linkmgmt_renderObjectPortRow','before');
+}
 
 /* -------------------------------------------------- */
 
@@ -176,6 +183,115 @@ $lm_cache = array(
 //function linkmgmt_tabtrigger() {
 //	return 'std';
 //} /* linkmgmt_tabtrigger */
+
+function plugin_linkmgmt_renderObjectPortHeaderRow()
+{
+	// Overloads the renderObjectPortHeaderRow() in order to add the extra volumn header
+	// for the last item in the link.
+
+	// Renders the headers for the ports table on the default page
+
+	echo '<tr><th class=tdleft>Local name</th><th class=tdleft>Visible label</th>';
+	echo '<th class=tdleft>Interface</th><th class=tdleft>L2 address</th>';
+	echo '<th class=tdcenter colspan=2>Remote object and port</th>';
+	echo '<th class=tdleft>Cable ID</th>';
+	echo '<th class=tdcenter colspan=2>Last Port in the Link</th></tr>';
+
+	stopHookPropagation();
+}
+
+function plugin_linkmgmt_renderObjectPortRow ($port, $is_highlighted)
+{
+	// highlight port name with yellow if its name is not canonical
+	$canon_pn = shortenPortName ($port['name'], $port['object_id']);
+	$name_class = $canon_pn == $port['name'] ? '' : 'trwarning';
+
+	echo '<tr';
+	if ($is_highlighted)
+		echo ' class=highlight';
+	$a_class = isEthernetPort ($port) ? 'port-menu' : '';
+	echo "><td class='tdleft $name_class' NOWRAP><a name='port-${port['id']}' class='interactive-portname nolink $a_class'>${port['name']}</a></td>";
+	echo "<td class=tdleft>${port['label']}</td>";
+	echo "<td class=tdleft>" . formatPortIIFOIF ($port) . "</td><td class='tdleft l2address'>${port['l2address']}</td>";
+
+	// Build the linkchain to check the last port in the link
+	$lc = new lm_linkchain($port['id']);
+
+	if ($port['remote_object_id'])
+	{
+		// There is a front linked port
+		$dname = formatObjectDisplayedName ($port['remote_object_name'], $port['remote_object_tid']);
+		echo "<td class=tdleft>" .
+			formatPortLink ($port['remote_object_id'], $dname, $port['remote_id'], NULL) .
+			"</td>";
+		echo "<td class=tdleft>" . formatLoggedSpan ($port['last_log'], $port['remote_name'], 'underline') . "</td>";
+		$editable = permitted ('object', 'ports', 'editPort')
+			? 'editable'
+			: '';
+		echo "<td class=tdleft><span class='rsvtext $editable id-${port['id']} op-upd-reservation-cable'>${port['cableid']}</span></td>";
+
+		// Display the last linked port,
+
+		if ($lc->first == $port['id'])
+		{
+				if ($lc->last != $port['remote_id'])
+				{
+					// Front and Back linked with a link on the same object
+					echo '<td>'.
+					formatPortLink($lc->ports[$lc->last]['object_id'], $lc->ports[$lc->last]['object_name'],  $lc->ports[$lc->last]['id'], NULL).
+					'</td>'.
+					'<td>'.$lc->ports[$lc->last]['name'].'</td>';
+				}
+				else
+				{
+					// Front-linked only
+					echo '<td>&nbsp;</td><td></td><td></td>';   // End of the row
+				}
+		}
+		else
+		{
+			if ($lc->first != $port['remote_id'])
+			{
+				// Port with front and back link
+				echo '<td>'.
+					formatPortLink($lc->ports[$lc->first]['object_id'], $lc->ports[$lc->first]['object_name'],  $lc->ports[$lc->first]['id'], NULL).
+					'</td>'.
+					'<td>'.$lc->ports[$lc->first]['name'] . '</td>';
+			}
+			else
+			{
+				echo '<td>&nbsp;</td><td></td><td></td>';   // End of the row
+			}
+		}
+	}
+	else
+	{
+		// There's no front linked port
+
+		// First show the port reservation
+		echo implode ('', formatPortReservation ($port));
+
+		// Now check if last port in the link is not the same as the current port and display it.
+		if ($lc->first != $port['id'])
+		{
+			// Back-linked port without a front-link
+			echo '<td></td>'.
+				'<td>'.
+				formatPortLink($lc->ports[$lc->first]['object_id'], $lc->ports[$lc->first]['object_name'],  $lc->ports[$lc->first]['id'], NULL).
+				'</td>' .
+				'<td>'.$lc->ports[$lc->first]['name'] . '</td>';
+		}
+		else
+		{
+			// Port without a front or back link
+			echo '<td>&nbsp;</td><td></td><td></td>';   // End of the row
+		}
+	}
+
+	echo "</tr>";
+
+	stopHookPropagation();
+}
 
 /* -------------------linkchain stuff------------------------------- */
 class linkchain_cache
