@@ -152,6 +152,7 @@ $ophandler['object']['linkmgmt']['cytoscapemap'] = 'linkmgmt_cytoscapemap';
 /* ------------------------------------------------- */
 
 define('LM_MULTILINK',TRUE);
+defineIfNotDefined('LM_SHOW_CONTAINERS',TRUE);
 
 /* -------------------------------------------------- */
 
@@ -906,7 +907,7 @@ class lm_linkchain implements Iterator {
 
 		$rackinfo = $this->_getprintrack($object_id, $rack, $style);
 
-		if($object['container_id'])
+		if($object['container_id'] && LM_SHOW_CONTAINERS == TRUE)
 		{
 			$container_rack = null;
 			$container = $lc_cache->getobject($object['container_id'], $container_rack);
