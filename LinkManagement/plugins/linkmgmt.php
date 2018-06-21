@@ -151,7 +151,7 @@ $ophandler['object']['linkmgmt']['cytoscapemap'] = 'linkmgmt_cytoscapemap';
 
 /* ------------------------------------------------- */
 
-define('LM_MULTILINK',TRUE);
+defineIfNotDefined('LM_MULTILINK',TRUE);
 defineIfNotDefined('LM_SHOW_CONTAINERS',TRUE);
 
 /* -------------------------------------------------- */
