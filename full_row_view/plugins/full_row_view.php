@@ -17,14 +17,19 @@
 //         0.5: Rearrange files for simpler installation.
 //         0.6: Do not call deprecated functions.
 //         0.6.1: Wrap every X racks
+//         0.6.2: Enable tag coloring and base on new renderRacks.
+//                Split Name, Rack & Zero-U into separate rows to improve alignment.
 
 $tab['row']['full_row_view'] = 'Full Row View';
 $tabhandler['row']['full_row_view'] = 'FullRowView';
 $ophandler['row']['full_row_view']['preparePrint'] ='preparePrint';
 
 // Set variables
-$frvVersion = "0.6.1";
+$frvVersion = "0.6.2";
 $wrapRacks = 5;
+$frv_topRow = "";
+$frv_middleRow = "";
+$frv_bottomRow = "";
 
 function preparePrint()
 {
@@ -73,6 +78,9 @@ ENDOFCSS
 
     global $frvVersion;
     global $wrapRacks;
+    global $frv_topRow;
+    global $frv_middleRow;
+    global $frv_bottomRow;
     $rowData = getRowInfo ($row_id);
 
     $cellfilter = getCellFilter();
@@ -81,105 +89,175 @@ ENDOFCSS
     echo "<font size=1em color=gray>version ${frvVersion}&nbsp;</font>";
     // echo "<input type=submit name=got_very_fast_data value='Print view'>";
     // echo "</form>";
-    echo '<table><tr valign="bottom">';  // bottom align racks for different height racks
+    echo '<table>';  // Start of the main table
     $count = 1;
     foreach ($rackList as $rack) 
     {
         if($count > $wrapRacks) {
             // Wrap every $wrapRacks racks
-            echo '</tr></table>';
-            echo '<table><tr valign="bottom">';
+            echo '<tr>';	// Start of Top Row - Rack Names
+            echo $frv_topRow;
+            echo '</tr>';
+            echo '<tr>';	// Start of Middle Row - Racks
+            echo $frv_middleRow;
+            echo '</tr>';
+            echo '<tr>';	// Start of the Bottom Row - Zero U Spce
+            echo $frv_bottomRow;
+            echo '</tr>';
             $count = 1;  // reset rack count to 1
+            $frv_topRow = "";
+            $frv_middleRow = "";
+            $frv_bottomRow = "";
         }
 	// echo "<br>Schrank: ${rack['name']} ${rack['id']}";
 	// $rackData = spotEntity ('rack', ${rack['id']});
-        echo '<td nowrap="nowrap"><div class="phgrack" style="float: top; width: 240px">';
-	renderReducedRack("${rack['id']}");
-	echo '</div></td>';
+
+        $frv_topRow .= '<td nowrap="nowrap" valign="bottom">' .
+                    '<div class="phgrack" style="float: top; width: 240px">';
+        $frv_middleRow .= '<td nowrap="nowrap" valign="bottom">' .
+                    '<div class="phgrack" style="float: top; width: 240px">';
+        $frv_bottomRow .= '<td nowrap="nowrap" valign="top">' .
+                    '<div class="phgrack" style="float: top; width: 240px">';
+
+        renderReducedRack("${rack['id']}");
+
+        $frv_topRow .=  '</div></td>';
+        $frv_middleRow .= '</div></td>';
+        $frv_bottomRow .= '</div></td>';
+
         $count++;
     }
+    // Final print of rows
+    echo '<tr>';	// Start of Top Row - Rack Names
+    echo $frv_topRow;
+    echo '</tr>';
+    echo '<tr>';	// Start of Middle Row - Racks
+    echo $frv_middleRow;
+    echo '</tr>';
+    echo '<tr>';	// Start of the Bottom Row - Zero U Spce
+    echo $frv_bottomRow;
+    echo '</tr>';
+    $count = 1;  // reset rack count to 1
+    $frv_topRow = "";
+    $frv_middleRow = "";
+    $frv_bottomRow = "";
     echo '</tr></table>';
 }
+
 
 // This is from interface.php: renderRack
 // This function renders rack as HTML table.
 function renderReducedRack ($rack_id, $hl_obj_id = 0)
 {
+	global $frv_topRow;
+	global $frv_middleRow;
+	global $frv_bottomRow;
+
 	$rackData = spotEntity ('rack', $rack_id);
 	amplifyCell ($rackData);
 	markAllSpans ($rackData);
+	setEntityColors ($rackData);
 	if ($hl_obj_id > 0)
 		highlightObject ($rackData, $hl_obj_id);
-	// markupObjectProblems ($rackData); // Function removed in 0.20.5
-	echo "<center><table border=0><tr valign=middle>";
-	echo '<td><h2>' . mkA ($rackData['name'], 'rack', $rackData['id']) . '</h2></td>';
-	echo "</h2></td></tr></table>\n";
-	echo "<table class=rackphg border=0 cellspacing=0 cellpadding=1>\n";
-	echo "<tr><th width='10%'>&nbsp;</th><th width='20%'>Front</th>";
-	echo "<th width='50%'>Interior</th><th width='20%'>Back</th></tr>\n";
+
+	$frv_topRow .= '<center>' .
+				'<table border=0>' .
+				'<tr>' .
+					'<td valign=middle>' .
+						'<h2>' . mkA ($rackData['name'], 'rack', $rackData['id']) .
+						'</h2>' .
+					'</td>' .
+				'</tr>' .
+				'</table>' .
+				"</center>\n";
+
+	$frv_middleRow .= '<center>' .
+						"<table class=rackphg border=0 cellspacing=0 cellpadding=1>\n" .
+						'<tr>' .
+							'<th width="10%">&nbsp;</th>' .
+							'<th width="20%">Front</th>' .
+							'<th width="50%">Interior</th>' .
+							'<th width="20%">Back</th>' .
+						"</tr>\n";
+
 	for ($i = $rackData['height']; $i > 0; $i--)
 	{
-		echo "<tr><td>" . inverseRackUnit ($i, $rackData) . "</td>";
+		$frv_middleRow .= "<th>" . inverseRackUnit ($i, $rackData) . "</th>";
 		for ($locidx = 0; $locidx < 3; $locidx++)
 		{
 			if (isset ($rackData[$i][$locidx]['skipped']))
 				continue;
 			$state = $rackData[$i][$locidx]['state'];
-			echo "<td class='atom state_${state}";
-			if (isset ($rackData[$i][$locidx]['hl']))
-				echo $rackData[$i][$locidx]['hl'];
-			echo "'";
-			if (isset ($rackData[$i][$locidx]['colspan']))
-				echo ' colspan=' . $rackData[$i][$locidx]['colspan'];
-			if (isset ($rackData[$i][$locidx]['rowspan']))
-				echo ' rowspan=' . $rackData[$i][$locidx]['rowspan'];
-			echo ">";
 
+			$class = "atom state_${state}";
+
+			if (isset ($rackData[$i][$locidx]['hl']))
+				$class .= $rackData[$i][$locidx]['hl'];
+
+			if($state == 'T')
+			{
+				$objectData = spotEntity ('object', $rackData[$i][$locidx]['object_id']);
+				setEntityColors ($objectData);
+				$class .= getObjectClass ($objectData, (isset ($rackData[$i][$locidx]['hl']) && $rackData[$i][$locidx]['hl'] != "" ? "border:3px solid #80ffff !important;" : "")."background:white;");
+			}
+
+			$frv_middleRow .= "<td class='${class}'";
+
+			if (isset ($rackData[$i][$locidx]['colspan']))
+				$frv_middleRow .= ' colspan=' . $rackData[$i][$locidx]['colspan'];
+			if (isset ($rackData[$i][$locidx]['rowspan']))
+				$frv_middleRow .= ' rowspan=' . $rackData[$i][$locidx]['rowspan'];
+			$frv_middleRow .= ">";
 			switch ($state)
 			{
 				case 'T':
-					printObjectDetailsForRenderRack($rackData[$i][$locidx]['object_id']);
-			                // TODO set background color based on the tag
-			                $o = spotEntity ('object',$rackData[$i][$locidx]['object_id']);
-			                while ( list ($key,$val) = each( $o['etags'] )) {
-					    echo "<div style='font: 8px Verdana,sans-serif; text-decoration:none; color=black'>";
-					    echo $val['tag'];
-					    echo "</div>";
-					    break;
-					}
+					$frv_middleRow .= getOutputOf('printObjectDetailsForRenderRack', $rackData[$i][$locidx]['object_id'], $hl_obj_id);
 					break;
 				case 'A':
-					echo '<div title="This rackspace does not exist">&nbsp;</div>';
+					$frv_middleRow .= '<div title="This rackspace does not exist">&nbsp;</div>';
 					break;
 				case 'F':
-					echo '<div title="Free rackspace">&nbsp;</div>';
+					$frv_middleRow .= '<div title="Free rackspace">&nbsp;</div>';
 					break;
 				case 'U':
-					echo '<div title="Problematic rackspace, you CAN\'T mount here">&nbsp;</div>';
+					$frv_middleRow .= '<div title="Problematic rackspace, you CAN\'T mount here">&nbsp;</div>';
 					break;
 				default:
-					echo '<div title="No data">&nbsp;</div>';
+					$frv_middleRow .= '<div title="No data">&nbsp;</div>';
 					break;
 			}
-			echo '</td>';
+			$frv_middleRow .= '</td>';
 		}
-		echo "</tr>\n";
+		$frv_middleRow .= "</tr>\n";
 	}
-	echo "</table>\n";
+	$frv_middleRow .= "</table></center>\n";
+
 	// Get a list of all of objects Zero-U mounted to this rack
-	$zeroUObjects = getEntityRelatives('children', 'rack', $rack_id);
+	$zeroUObjects = getChildren ($rackData, 'object');
+	uasort ($zeroUObjects, 'compare_name');
 	if (count ($zeroUObjects) > 0)
 	{
-		echo "<br><table width='75%' class=rack border=0 cellspacing=0 cellpadding=1>\n";
-		echo "<tr><th>Zero-U:</th></tr>\n";
+		$frv_bottomRow .= '<br>' .
+							'<center>' .
+								'<table width="75%" class=rack border=0 cellspacing=0 cellpadding=1>' . "\n" .
+									'<tr>' .
+										'<th>Zero-U:</th>' .
+									"</tr>\n";
+
 		foreach ($zeroUObjects as $zeroUObject)
 		{
-			$state = ($zeroUObject['entity_id'] == $hl_obj_id) ? 'Th' : 'T';
-			echo "<tr><td class='atom state_${state}'>";
-			printObjectDetailsForRenderRack($zeroUObject['entity_id']);
-			echo "</td></tr>\n";
+			$state = ($zeroUObject['id'] == $hl_obj_id) ? 'Th' : 'T';
+			if ($zeroUObject['has_problems'] == 'yes')
+				$state .= 'w';
+
+			$class = "atom state_${state}";
+			setEntityColors ($zeroUObject);
+			$class .= getObjectClass ($zeroUObject, 'background:white;');
+
+			$frv_bottomRow .= "<tr><td class='${class}'>";
+			$frv_bottomRow .= getOutputOf('printObjectDetailsForRenderRack', $zeroUObject['id']);
+			$frv_bottomRow .= "</td></tr>\n";
 		}
-		echo "</table>\n";
+		$frv_bottomRow .= "</table></center>\n";
 	}
-	echo "</center>\n";
 }
