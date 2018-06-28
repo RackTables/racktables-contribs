@@ -412,4 +412,3 @@ function test_debug()
 global $portLinkerObjectTypes;
 print $portLinkerObjectTypes;
 }
-?>

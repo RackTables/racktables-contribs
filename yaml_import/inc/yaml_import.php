@@ -325,5 +325,3 @@ function getdict ($hw,$chapter)
     echo $e->getMessage();
   }
 }
-?>
-
