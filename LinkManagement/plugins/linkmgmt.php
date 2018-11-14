@@ -1622,7 +1622,7 @@ function lm_renderObjectCell ($cell)
 	echo "<table class='slbcell vscell'><tr><td rowspan=2 width='5%'>";
 	printImageHREF ('OBJECT');
 	echo '</td><td>';
-	echo mkA ('<strong>' . niftyString ($cell['dname']) . '</strong>', 'object', $cell['id']);
+	echo mkA ('<strong>' . stringForLabel ($cell['dname']) . '</strong>', 'object', $cell['id']);
 	echo '</td></tr><tr><td>';
 	echo count ($cell['etags']) ? ("<small>" . serializeTags ($cell['etags']) . "</small>") : '&nbsp;';
 	echo "</td></tr></table>";

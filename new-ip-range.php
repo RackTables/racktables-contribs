@@ -127,8 +127,8 @@ function renderNetCellForAlloc ($cell, $needed_mask = NULL)
 	echo '</td></tr>';
 
 	echo "<tr><td>";
-	if (strlen ($cell['name']))
-		echo "<strong>" . niftyString ($cell['name']) . "</strong>";
+	if ($cell['name'] != '')
+		echo "<strong>" . stringForTD ($cell['name']) . "</strong>";
 	else
 		echo "<span class=sparenetwork>no name</span>";
 	// render VLAN
