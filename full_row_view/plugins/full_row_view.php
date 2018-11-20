@@ -180,9 +180,10 @@ function renderReducedRack ($rack_id, $hl_obj_id = 0)
 							'<th width="20%">Back</th>' .
 						"</tr>\n";
 
+	$reverse = considerConfiguredConstraint ($rackData, 'REVERSED_RACKS_LISTSRC');
 	for ($i = $rackData['height']; $i > 0; $i--)
 	{
-		$frv_middleRow .= "<th>" . inverseRackUnit ($i, $rackData) . "</th>";
+		$frv_middleRow .= "<th>" . inverseRackUnit ($rackData['height'], $i, $reverse) . "</th>";
 		for ($locidx = 0; $locidx < 3; $locidx++)
 		{
 			if (isset ($rackData[$i][$locidx]['skipped']))
