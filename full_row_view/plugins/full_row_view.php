@@ -147,7 +147,7 @@ ENDOFCSS
 
 // This is from interface.php: renderRack
 // This function renders rack as HTML table.
-function renderReducedRack ($rack_id, $hl_obj_id = 0)
+function renderReducedRack ($rack_id)
 {
 	global $frv_topRow;
 	global $frv_middleRow;
@@ -157,8 +157,6 @@ function renderReducedRack ($rack_id, $hl_obj_id = 0)
 	amplifyCell ($rackData);
 	markAllSpans ($rackData);
 	setEntityColors ($rackData);
-	if ($hl_obj_id > 0)
-		highlightObject ($rackData, $hl_obj_id);
 
 	$frv_topRow .= '<center>' .
 				'<table border=0>' .
@@ -212,7 +210,7 @@ function renderReducedRack ($rack_id, $hl_obj_id = 0)
 			switch ($state)
 			{
 				case 'T':
-					$frv_middleRow .= getOutputOf('printObjectDetailsForRenderRack', $rackData[$i][$locidx]['object_id'], $hl_obj_id);
+					$frv_middleRow .= getOutputOf('printObjectDetailsForRenderRack', $rackData[$i][$locidx]['object_id']);
 					break;
 				case 'A':
 					$frv_middleRow .= '<div title="This rackspace does not exist">&nbsp;</div>';
@@ -247,7 +245,7 @@ function renderReducedRack ($rack_id, $hl_obj_id = 0)
 
 		foreach ($zeroUObjects as $zeroUObject)
 		{
-			$state = ($zeroUObject['id'] == $hl_obj_id) ? 'Th' : 'T';
+			$state = 'T';
 			if ($zeroUObject['has_problems'] == 'yes')
 				$state .= 'w';
 
