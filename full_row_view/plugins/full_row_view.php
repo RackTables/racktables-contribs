@@ -197,7 +197,7 @@ function renderReducedRack ($rack_id)
 			{
 				$objectData = spotEntity ('object', $rackData[$i][$locidx]['object_id']);
 				setEntityColors ($objectData);
-				$class .= getObjectClass ($objectData, 'atom_plain');
+				$class .= getCellClass ($objectData, 'atom_plain');
 			}
 
 			$frv_middleRow .= "<td class='${class}'";
@@ -251,7 +251,7 @@ function renderReducedRack ($rack_id)
 
 			$class = "atom state_${state}";
 			setEntityColors ($zeroUObject);
-			$class .= getObjectClass ($zeroUObject, 'atom_plain');
+			$class .= getCellClass ($zeroUObject, 'atom_plain');
 
 			$frv_bottomRow .= "<tr><td class='${class}'>";
 			$frv_bottomRow .= getOutputOf('printObjectDetailsForRenderRack', $zeroUObject['id']);
