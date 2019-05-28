@@ -1,16 +1,20 @@
 Racktables Extensions v0.3.3
 =====
 
+# Author:
+The original author for this extention is Mogilowski Sebastian <sebastian@mogilowski.net>
+
+# History
 | Date | Author | Description
 |--- |--- |---
-| 2019-05-28 | Michael Tiernan<br>Michael.Tiernan+RTe@gMail.com |	Took a presumptuous leap and renamed the dir to make it clearer to others what's in the (previously 'extentions') directory.
+| 2019-05-28 | Michael Tiernan<br>Michael.Tiernan+RTe@gMail.com | Took a presumptuous leap and renamed the dir to make it clearer to others what's in the (previously 'extentions') directory.
 | 2019-05-23 | Michael Tiernan<br>Michael.Tiernan+RTe@gMail.com | Created markdown version of doc.|
 | 2016-02-04 | Mogilowski Sebastian<br>sebastian@mogilowski.net | Creation |
 
 # Website and HowTo
 http://www.mogilowski.net/projects/racktables
 
-## Installation
+# Installation
 
 To enable all additional reports, just move (as root) all the contents of the "plugins" folder into the racktables "plugins" folder, for example:
 
@@ -33,7 +37,7 @@ on Red Hat systems with `selinux` enabled, you'll also need to do this:
 chcon -R -t httpd_sys_content_t /${UrRTPath}/plugins/ 
 ~~~
 
-## Usage
+# Usage
 
 Login into racktables and go to "Reports".
 
@@ -50,6 +54,6 @@ To disable individual reports from this "Reports" page it is enough to remove on
 
 [Question outstanding for MCT, where are the custom reports stored? I have not investigated but it should be documented.]
 
-### Usage - Feature
+## Usage Feature/Note
 
 Sort multiple columns simultaneously by holding down the shift key and clicking a second, third or even fourth column header! 
