@@ -1,7 +1,7 @@
 # vim: set ft=dockerfile:
 FROM alpine:3.10
 # Author with no obligation to maintain
-MAINTAINER Paul Tötterman <paul.totterman@iki.fi>
+LABEL author="Paul Tötterman <paul.totterman@iki.fi>"
 
 ENV DBHOST="mariadb" \
     DBNAME="racktables" \
