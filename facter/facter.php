@@ -144,13 +144,13 @@ function Update()
 	$update_hw_type = true;
 	if (isset($_GET['update_hw_type']) && $_GET['update_hw_type'] == 'false')
 	{
-		$update_hw_type = false
+		$update_hw_type = false;
 	}
 	if ($facter['is_virtual']=="false" && $update_hw_type)
 	{
 		$iHWTemp				= preg_match('([a-zA-Z]{1,})', $facter['manufacturer'], $matches);
 		$sManufacturer	= $matches[0];
-		$sHW						= preg_replace('(\ )', '\1%GPASS%', $facter['productname']);
+		$sHW						= preg_replace('/^([^\ ]+)\ /', '\1%GPASS%', $facter['productname']);
 		$sHWType				= $sManufacturer.' '.$sHW;
 		$query					= "select id from Attribute where name='HW type' LIMIT 1";
 		unset($result);
@@ -222,7 +222,7 @@ function Update()
 		// Ubuntu LTS can be detected by an even OS Major and an OS minor of '04'.
 		// Example Ubuntu 'operatingsystemrelease' values: '16.10', '15.04'.
 		$os_release_lts = "";
-		$facter_osrelease = explode(".", $facter['operatingsystemrelease'])
+		$facter_osrelease = explode(".", $facter['operatingsystemrelease']);
 		if ($facter['operatingsystem'] == 'Ubuntu' && $facter_osrelease[0] % 2 == 0 && $facter_osrelease[1] == '04') {
 			$os_release_lts = " LTS";
 		}
@@ -363,7 +363,7 @@ function Update()
 			}
 			if (count($ipcheck) == 1 ) {
 				if( $ip ) {
-					updateAddress(ip_parse($ip) , $newmachine, $nics[$i],'regular');
+					updateAddress(ip_parse($ip));
 				}
 			}
 			else
