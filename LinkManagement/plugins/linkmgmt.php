@@ -55,7 +55,7 @@
  *	create plugins/linkmgmt directory and place the following 7 files in it
  *
  *	Cytoscape.js (http://js.cytoscape.org/)
- *		https://cytoscape.github.io/cytoscape.js/api/cytoscape.js-latest/cytoscape.min.js
+ *		https://raw.githubusercontent.com/cytoscape/cytoscape.js/master/dist/cytoscape.min.js
  *	dagre.js
  *		https://raw.githubusercontent.com/cpettitt/dagre/master/dist/dagre.min.js
  *		https://raw.githubusercontent.com/cytoscape/cytoscape.js-dagre/master/cytoscape-dagre.js
