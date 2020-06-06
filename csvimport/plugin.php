@@ -10,7 +10,7 @@
 /*
 -----------------------------------------
 
-csv_import.php
+csvimport/plugin.php
 
 Description:
 
@@ -22,6 +22,18 @@ The script currently supports importing of Objects, Racks, VLANs and IP space.
 It also supports linking ports, and assigning rackspace to objects.
 
 The newest version of this plugin can be found at: https://github.com/RackTables/racktables-contribs
+-----------------------------------------
+# Plugin updated June 2020 by matt32106@github for compatibility with Racktables version 0.21 new plugin format
+# Functions added
+#   plugin_csvimport_info	
+#   plugin_csvimport_init
+#   plugin_csvimport_install	
+#   plugin_csvimport_uninstall
+#   plugin_csvimport_upgrade
+# Uninstall previous version first (the code does not handle it) before using this one !!!
+# TODO: use the install/upgrade function to remove previous version
+# TODO: check if the add functions are still consistent with 0.21 functions
+# TODO: handle the "Message 'OK' is lost in importData" message properly
 
 Usage:
 
@@ -188,20 +200,55 @@ Usage:
   UPDATEIP;192.168.1.2;Test Address;no;Testing only
   Updates IP 192.168.1.2 with Name Test, Reserved no and Comment "Testing only"
 
------------------------------------------
+
 */
 
+function plugin_csvimport_info()
+{
+	return array
+	(
+		'name' => 'csvimport',
+		'longname' => 'CSV Import tool',
+		'version' => '2.0',
+		'home_url' => 'http://www.racktables.org/'
+	);
+}
 
-// Build Navigation
-$page['import']['title'] = 'Import csv data';
-$page['import']['parent'] = 'config';
-$tab['import']['default'] = 'Import csv data';
-$tabhandler['import']['default'] = 'import_csv_data';
-// Work in progress
-//$tab['import']['delete'] = 'Delete csv data';
-//$tabhandler['import']['delete'] = 'delete_csv_data'; 
-$ophandler['import']['default']['importData'] = 'importData';
-$ophandler['import']['delete']['importData'] = 'deleteData';
+function plugin_csvimport_init()	
+{
+	global $page, $tab;	
+
+	// Build Navigation
+	$page['import']['title'] = 'Import csv data';
+	$page['import']['parent'] = 'config';
+	$tab['import']['default'] = 'Import csv data';
+	// $tabhandler['import']['default'] = 'import_csv_data';  code v1.0
+	registerTabHandler ('import', 'default', 'import_csv_data');
+
+	// Work in progress
+	//$tab['import']['delete'] = 'Delete csv data';
+	//$tabhandler['import']['delete'] = 'delete_csv_data'; 
+
+	// $ophandler['import']['default']['importData'] = 'importData'; code v1.0
+	registerOpHandler ('import', 'default', 'importData', 'importData');
+	// $ophandler['import']['delete']['importData'] = 'deleteData'; code v1.0
+	registerOpHandler ('import', 'delete', 'importData', 'deleteData');
+}
+
+function plugin_csvimport_install()
+{
+	return TRUE;
+}
+
+function plugin_csvimport_uninstall()
+{
+	return TRUE;
+}
+
+function plugin_csvimport_upgrade ()
+{
+	return TRUE;
+}
 
 // tabhandler
 function import_csv_data ()
