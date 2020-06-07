@@ -321,7 +321,6 @@ function deleteData()
 			fclose($handle);
 		}
 	}
-
 	else
 	{
 		$data = explode("\n",$_REQUEST['csv_text']);
@@ -332,7 +331,6 @@ function deleteData()
 			addServerObject($csvdata,$row);
 			$row++;
 		}
-
 	}
 
 	return showFuncMessage (__FUNCTION__, 'OK', array (htmlspecialchars ("Deleting finished.")));
@@ -375,7 +373,6 @@ function importData()
 			return showFuncMessage (__FUNCTION__, 'ERR1', array ($_FILES['file']['error']));
 		}
 	}
-
 	else
 	{
 		$data = explode("\n",$_REQUEST['csv_text']);
@@ -400,7 +397,6 @@ function importData()
 	}
 	return showFuncMessage (__FUNCTION__, 'OK', array (htmlspecialchars ("Import finished.")));
 }
-
 
 // This function adds a object to racktables and report appropriate results in the GUI
 function addObject($csvdata,$row_number)
@@ -495,8 +491,6 @@ function addObject($csvdata,$row_number)
 	showSuccess("line $row_number: Import ". $object_type_name. " Object ".$object_name. " successful; object_id=".$object_id);
 }
 
-
-
 function addRackImport($csvdata,$row_number)
 {
 	$location = 		trim($csvdata[1]);
@@ -530,7 +524,6 @@ function addRackImport($csvdata,$row_number)
 			$location_id = commitAddObject ($location, "", 1562, "", array());
 			showSuccess ("Line $row_number: Location ".$location. " imported; object_id=".$location_id);
 		}
-
 	}
 
 	//Handle Child location entry
@@ -580,7 +573,6 @@ function addRackImport($csvdata,$row_number)
 				showError("Line $row_number: Row " . $rackrow . " mismatch with parent location_id, Import FAILED.". $db_rackrow['parent_entity_id']. " , " . $location_id . " , " . $location_child_id);
 				return FALSE;
 			}
-
 		}
 		// Row does not exist, create new object and link to parent location
 		else
@@ -625,7 +617,6 @@ function addRackImport($csvdata,$row_number)
 
 			showSuccess ("Line $row_number: Rack ".$rack. " imported; object_id=".$rack_id);
 		}
-
 	}
 }
 
@@ -640,7 +631,6 @@ function addRackAssignment($csvdata,$row_number)
 
 	if (strlen($object ) > 0)
 	{
-
 		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id FROM Object WHERE Object.name='".$object."';");
 		$db_object = $result->fetch (PDO::FETCH_ASSOC);
 
@@ -653,7 +643,6 @@ function addRackAssignment($csvdata,$row_number)
 			{
 				try
 				{
-
 					if($rackUnits[$i] == 0)
 					{
 						// Zero-U
@@ -724,7 +713,6 @@ function addCableLink($csvdata,$row_number)
 		return FALSE;
 	}
 
-
 	// Create Link
 	try
 	{
@@ -744,7 +732,6 @@ function addCableLink($csvdata,$row_number)
 	}
 	showSuccess ("Line $row_number: Import CableLink ".$cable_id. " imported.");
 }
-
 
 function addVLAN($csvdata,$row_number)
 {
@@ -813,13 +800,11 @@ function addVLAN($csvdata,$row_number)
 			showError ("Line $row_number: VLAN ".$vlan_name. " unable to attach to range ".$ip_range);
 		}
 	}
-
 }
 
 
 function addIP($csvdata,$row_number)
 {
-
 	$prefix = 		trim ($csvdata[1]);
 	$ip_name= 		trim ($csvdata[2]);
 	$is_connected = trim ($csvdata[3]);
@@ -936,7 +921,6 @@ function addContainerLink($csvdata,$row_number)
 
 	if ((strlen($parentObjectName) > 0) & (strlen($childObjectName) > 0))
 	{
-
 		// Check if parent object exists and return object_id
 		$parentResult = usePreparedSelectBlade ("SELECT Object.id FROM Object WHERE Object.name='".$parentObjectName."';");
        	$parentDB_object = $parentResult->fetch (PDO::FETCH_ASSOC);
@@ -987,9 +971,7 @@ function addObjectTag($csvdata,$row_number)
 		{
 			showError("Line $row_number: Unable to add tag ".$tagName. " to object ".$objectName.". Either the object of the tag does not exist.");
 		}
-
 	}
-
 }
 
 function updateIP($csvdata,$row_number)
@@ -1003,7 +985,6 @@ function updateIP($csvdata,$row_number)
 		$user = trim ($csvdata[5]);
 	else
 		$user = false;
-
 
 	$ip_bin = ip_parse($ipaddress);
 
