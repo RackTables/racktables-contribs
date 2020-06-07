@@ -456,8 +456,8 @@ function addObject($csvdata,$row_number)
 
 				$prefix = "";
 				$suffix = "";
-	    		$pattern = "!(?<=[[])[^]]+(?=[]])!";
-	    		preg_match($pattern,$ifName[$i],$match);
+				$pattern = "!(?<=[[])[^]]+(?=[]])!";
+				preg_match($pattern,$ifName[$i],$match);
 
 				if ((count($match) > 0) & (strpos($match[0],'-') !== FALSE))
 				{
@@ -876,8 +876,8 @@ function addObjectIP($csvdata,$row_number)
 		}
 		catch (Exception $e)
 		{
-		showError("line $row_number: IP interface ". $ifName. " import FAILED" . "Reason: ". $e);
-		return FALSE;
+			showError("line $row_number: IP interface ". $ifName. " import FAILED" . "Reason: ". $e);
+			return FALSE;
 		}
 		showSuccess ("Line $row_number: IP interface ".$ifName. " imported.");
 	}
@@ -911,7 +911,7 @@ function setObjectAttributes($csvdata,$row_number)
 			if (preg_match('/NAME|LABEL|HASPROBLEMS|ASSETTAG|COMMENT/',$attr_id))
 			{
 				commitUpdateObject ($db_object['id'],$db_object['name'],$db_object['label'],$db_object['has_problems'],$db_object['asset_no'],$db_object['comment']);
-                        }
+			}
 			else
 			{
 				commitUpdateAttrValue ($db_object['id'], $attr_id, $attr_value);
@@ -935,7 +935,7 @@ function addContainerLink($csvdata,$row_number)
 		$query = 'SELECT id FROM Object WHERE name = ?';
 		// Check if parent object exists and return object_id
 		$parentResult = usePreparedSelectBlade ($query, array ($parentObjectName));
-       	$parentDB_object = $parentResult->fetch (PDO::FETCH_ASSOC);
+		$parentDB_object = $parentResult->fetch (PDO::FETCH_ASSOC);
 
 		// Check if child object exists and return object_id
 		$childResult = usePreparedSelectBlade ($query, array ($childObjectName));
@@ -947,7 +947,7 @@ function addContainerLink($csvdata,$row_number)
 			$object_parent_id = $parentDB_object['id'];
 			$object_child_id = $childDB_object['id'];
 			commitLinkEntities ('object', $object_parent_id , 'object', $object_child_id );
-       		showSuccess ("Line $row_number: Added ".$childObjectName. " to parent container ".$parentObjectName.".");
+			showSuccess ("Line $row_number: Added ".$childObjectName. " to parent container ".$parentObjectName.".");
 		}
 		else
 		{
