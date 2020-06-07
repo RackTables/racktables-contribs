@@ -25,9 +25,9 @@ The newest version of this plugin can be found at: https://github.com/RackTables
 -----------------------------------------
 # Plugin updated June 2020 by matt32106@github for compatibility with Racktables version 0.21 new plugin format
 # Functions added
-#   plugin_csvimport_info	
+#   plugin_csvimport_info
 #   plugin_csvimport_init
-#   plugin_csvimport_install	
+#   plugin_csvimport_install
 #   plugin_csvimport_uninstall
 #   plugin_csvimport_upgrade
 # Uninstall previous version first (the code does not handle it) before using this one !!!
@@ -42,16 +42,16 @@ Usage:
  Syntax: OBJECT; Objecttype ; Common name ; Visible label ; Asset tag; portname,portname,etc ; porttype,porttype,etc
 
  Value 1, OBJECT
- Value 2, Objectype: Can be one of the predefined types (SERVER, PATCHPANEL, SWITCH, VM), or a numeric value indicating the object type from Racktables 
+ Value 2, Objectype: Can be one of the predefined types (SERVER, PATCHPANEL, SWITCH, VM), or a numeric value indicating the object type from Racktables
  Value 3, Common name: Common name string
  Value 4, Visible label: Visible label string
  Value 5, Asset tag: Asset tag string
  Value 6, Port array: This is an optional field where you can create ports for the objects, separated by a comma. When you use this , you also need to add the Port type array
  An individual port field can be a range of ports. Eg. 'eth[0-9]' creates ten ports ranging from eth0 to eth9.
  Value 7, Port type array: This is an array which maps to the previous port array. This allows you to specify the interface type of the ports. It takes the form 'a-b'. Where a is the inner interface type, and b the outer interface type. Both a and b are numeric values.
- New inner / outer interface pair types can be linked using the configuration -> Enabled port types page. When the 'a-' value is ommited, the inner port type defaults to 'hardwire'. 
- Examples: 
- 
+ New inner / outer interface pair types can be linked using the configuration -> Enabled port types page. When the 'a-' value is ommited, the inner port type defaults to 'hardwire'.
+ Examples:
+
  OBJECT;SERVER;myServer;www.server.com;SRV001;IPMI,eth[0-2];1-24,3-24
  Creates a Server object named myServer having 4x 1000-Base-T interfaces, named IPMI (hardwired inner iface, 1gbps), eth0, eth1 and eth2 (gbic inner iface, 1gbps)
 
@@ -68,7 +68,7 @@ Usage:
  Value 4, Row: Specifies the row where the rack is to be placed. This can be the name of an existing row. If the row does not  exist, it will be created
  Value 5, Rack: Name of the rack that is to be created.
  Value 6, Height: Sets the Height of the rack in rackunits. When omitted, the default value is 46 units.
- 
+
  Examples:
 
  RACK;Datacenter AMS01; Room 0.08; R01; AA-1
@@ -97,7 +97,7 @@ Usage:
  Value 2, Objectname A: Specifies the name of the object on the A-side of the link
  Value 3, Portname A: Specifies the name of the port on the A-side of the link
  Value 4, Objectname B: Specifies the name of the object on the B-side of the link
- Value 5, Portname B: Specifies the name of the port on the B-side of the link 
+ Value 5, Portname B: Specifies the name of the port on the B-side of the link
  Value 6, Cable ID: Specifies the Cable ID. It can be numeric or string.
 
  Examples:
@@ -152,7 +152,7 @@ Usage:
  Creates an IP interface name eth0, with address 10.1.3.1 and type 'regular', which is added to the myRouter object.
 
 * Setting Object Attributes:
- 
+
   Syntax: OBJECTATTRIBUTE
   Value 1, OBJECTATTRIBUTE
   Value 2, Objectname: Specifies the name of the object
@@ -214,9 +214,9 @@ function plugin_csvimport_info()
 	);
 }
 
-function plugin_csvimport_init()	
+function plugin_csvimport_init()
 {
-	global $page, $tab;	
+	global $page, $tab;
 
 	// Build Navigation
 	$page['import']['title'] = 'Import csv data';
@@ -227,7 +227,7 @@ function plugin_csvimport_init()
 
 	// Work in progress
 	//$tab['import']['delete'] = 'Delete csv data';
-	//$tabhandler['import']['delete'] = 'delete_csv_data'; 
+	//$tabhandler['import']['delete'] = 'delete_csv_data';
 
 	// $ophandler['import']['default']['importData'] = 'importData'; code v1.0
 	registerOpHandler ('import', 'default', 'importData', 'importData');
@@ -281,7 +281,7 @@ function delete_csv_data ()
 	echo '<tr><td>Manual input field</td></tr>';
 	echo '<tr><td valign=top colspan=2><textarea tabindex=101 name=csv_text rows=10 cols=80></textarea></td>';
 	echo '<td rowspan=2>';
-	echo '</td></tr>';	
+	echo '</td></tr>';
 	echo "</table></form><br>";
 	finishPortlet();
 }
@@ -294,24 +294,24 @@ function deleteData()
 	$row = 1;
 
 	// if the manual input is empty, load the selected file
-	if (strlen(($_REQUEST['csv_text'])) == 0) 
-	{  
+	if (strlen(($_REQUEST['csv_text'])) == 0)
+	{
 		if ($_FILES['file']['error'])
 			return showFuncMessage (__FUNCTION__, 'ERR1', array ($_FILES['file']['error']));
-		
+
 		// manage files from different OSes
 		ini_set("auto_detect_line_endings", true);
-			
-		if (($handle = fopen($_FILES['file']['tmp_name'], "r")) !== FALSE) 
+
+		if (($handle = fopen($_FILES['file']['tmp_name'], "r")) !== FALSE)
 		{
 			showNotice ("Deleting from ".$_FILES['file']['name']);
-			while (($csvdata = fgetcsv($handle, 1000, ";")) !== FALSE) 
+			while (($csvdata = fgetcsv($handle, 1000, ";")) !== FALSE)
 			{
 				$result = usePreparedSelectBlade ("SELECT  Object.id FROM Object WHERE Object.name='".$csvdata[0]."';");
 				$object = $result->fetch (PDO::FETCH_ASSOC);
-				if (!$object) 
+				if (!$object)
 					showError ("Line ".$row.": Object ".$csvdata[0]. " not found");
-				else 
+				else
 				{
 					commitDeleteObject ($object['id']);
 					showSuccess ("Line $row: Object ".$csvdata[0]. " deleted");
@@ -322,17 +322,17 @@ function deleteData()
 		}
 	}
 
-	else 
+	else
 	{
 		$data = explode("\n",$_REQUEST['csv_text']);
 		showNotice ("Deleting from manual input field");
-		foreach ($data as $dataitem) 
+		foreach ($data as $dataitem)
 		{
 			$csvdata = str_getcsv($dataitem,";");
 			addServerObject($csvdata,$row);
 			$row++;
 		}
-		
+
 	}
 
 	return showFuncMessage (__FUNCTION__, 'OK', array (htmlspecialchars ("Deleting finished.")));
@@ -345,14 +345,14 @@ function importData()
 	assertStringArg ('csv_text', TRUE);
 	$row_number = 1;
 	// if the manual input is empty, load the selected file
-	if (strlen(($_REQUEST['csv_text'])) == 0) 
-	{   
+	if (strlen(($_REQUEST['csv_text'])) == 0)
+	{
 		ini_set("auto_detect_line_endings", true);
-			
-		if (($handle = fopen($_FILES['file']['tmp_name'], "r")) !== FALSE) 
+
+		if (($handle = fopen($_FILES['file']['tmp_name'], "r")) !== FALSE)
 		{
 			showNotice ("Importing ".$_FILES['file']['name']);
-			while (($csvdata = fgetcsv($handle, 1000, ";")) !== FALSE) 
+			while (($csvdata = fgetcsv($handle, 1000, ";")) !== FALSE)
 			{
 				$csvdata[0] = trim($csvdata[0]);
 				if ($csvdata[0] == "OBJECT") 			addObject($csvdata,$row_number);
@@ -370,17 +370,17 @@ function importData()
 			}
 			fclose($handle);
 		}
-		else 
+		else
 		{
 			return showFuncMessage (__FUNCTION__, 'ERR1', array ($_FILES['file']['error']));
 		}
 	}
 
-	else 
+	else
 	{
 		$data = explode("\n",$_REQUEST['csv_text']);
 		showNotice ("Importing from manual input field");
-		foreach ($data as $dataitem) 
+		foreach ($data as $dataitem)
 		{
 			$csvdata = str_getcsv($dataitem,";");
 			$csvdata[0] = trim($csvdata[0]);
@@ -396,14 +396,14 @@ function importData()
 			if ($csvdata[0] == "OBJECTTAG")			addObjectTag($csvdata,$row_number);
 			if ($csvdata[0] == "UPDATEIP")			updateIP($csvdata,$row_number);
 			$row_number++;
-		}		
+		}
 	}
 	return showFuncMessage (__FUNCTION__, 'OK', array (htmlspecialchars ("Import finished.")));
 }
 
 
 // This function adds a object to racktables and report appropriate results in the GUI
-function addObject($csvdata,$row_number) 
+function addObject($csvdata,$row_number)
 {
 	$object_type = 		trim ($csvdata[1]);
 	$object_name = 		trim ($csvdata[2]);
@@ -411,17 +411,17 @@ function addObject($csvdata,$row_number)
 	$object_assettag = 	trim ($csvdata[4]);
 	$ifName = 			explode(',',$csvdata[5]);
 	$ifType = 			explode(',',$csvdata[6]);
-	
+
 	// Check Objecttype
 	if ($object_type == "SERVER") 		$object_type = 4;
 	if ($object_type == "PATCHPANEL")  	$object_type = 9;
 	if ($object_type == "SWITCH") 		$object_type = 8;
 	if ($object_type == "VM")			$object_type = 1504;
-	if (is_numeric($object_type)) 
+	if (is_numeric($object_type))
 	{
 		$result = usePreparedSelectBlade ("SELECT  Dictionary.dict_value FROM Dictionary WHERE Dictionary.dict_key=".$object_type.";");
 		$db_object_type = $result->fetch (PDO::FETCH_ASSOC);
-		if ($db_object_type) 
+		if ($db_object_type)
 			$object_type_name = $db_object_type['dict_value'];
 		else
 		{
@@ -435,14 +435,14 @@ function addObject($csvdata,$row_number)
 		return FALSE;
 	}
 
-	if (strlen($object_name) > 0) 
+	if (strlen($object_name) > 0)
 	{
-		try 
+		try
 		{
 			$object_id = commitAddObject ( $object_name, $object_label, $object_type, $object_assettag, array());
 		}
-		catch (Exception $e) 
-		{ 
+		catch (Exception $e)
+		{
 			showError("line $row_number: Import ". $object_type_name. " Object ".$object_name. " FAILED; object already exists");
 			return FALSE;
 		}
@@ -450,17 +450,17 @@ function addObject($csvdata,$row_number)
 
 	// When available, import the port information
 
-	if ((count($ifName) > 0) & (count($ifType > 0)) & (count($ifName) == count($ifType)) ) 
+	if ((count($ifName) > 0) & (count($ifType > 0)) & (count($ifName) == count($ifType)) )
 	{
 		// temporary disable autocreation of ports
 		$tempAUTOPORTS_CONFIG =  getConfigVar ('AUTOPORTS_CONFIG');
 		setConfigVar ('AUTOPORTS_CONFIG',"");
 
-		for ($i=0 ; $i < count($ifName); $i++ ) 
+		for ($i=0 ; $i < count($ifName); $i++ )
 		{
 			if (strlen($ifName[$i]) > 0)
 			{
-				/*to do 
+				/*to do
 				 Add Check for port compatibility, specified itType should be linked it iif_type 1 ('hardwired')
 				 Else an foreign key error is thrown
 				*/
@@ -470,25 +470,25 @@ function addObject($csvdata,$row_number)
 	    		$pattern = "!(?<=[[])[^]]+(?=[]])!";
 	    		preg_match($pattern,$ifName[$i],$match);
 
-				if ((count($match) > 0) & (strpos($match[0],'-') !== false))	
-				{	
+				if ((count($match) > 0) & (strpos($match[0],'-') !== false))
+				{
 					$prefix = substr($ifName[$i],0, strpos($ifName[$i],'['));
 					$suffix = substr($ifName[$i],strpos($ifName[$i],']')+1, strlen($ifName[$i])-1);
 					$portlist = explode('-',$match[0]);
 					if ((is_numeric($portlist[0])) & (is_numeric($portlist[1])) & ($portlist[0] < $portlist[1]))
 					{
-						for ($p = $portlist[0]; $p <= $portlist[1]; $p++) 
+						for ($p = $portlist[0]; $p <= $portlist[1]; $p++)
 							$new_port_id = commitAddPort ( $object_id, $prefix.$p.$suffix, trim ($ifType[$i]), "", "" );
 					}
 				}
-				else 
+				else
 					$new_port_id = commitAddPort ( $object_id, trim ($ifName[$i]), trim ($ifType[$i]), "", "" );
 			}
 		}
 
 		setConfigVar ('AUTOPORTS_CONFIG',$tempAUTOPORTS_CONFIG);
 	}
-	else 
+	else
 	{
 		showNotice("No valid Port information found, skipping port import.");
 	}
@@ -497,44 +497,44 @@ function addObject($csvdata,$row_number)
 
 
 
-function addRackImport($csvdata,$row_number) 
+function addRackImport($csvdata,$row_number)
 {
 	$location = 		trim($csvdata[1]);
 	$location_child = 	trim($csvdata[2]);
 	$rackrow = 			trim($csvdata[3]);
 	$rack = 			trim($csvdata[4]);
-	if (!isset($csvdata[5])) 
+	if (!isset($csvdata[5]))
 		$rack_height = 46;
 	else
 		$rack_height = $csvdata[5];
 
 	// Handle Location entry
-	if (strlen($location ) > 0) 
+	if (strlen($location ) > 0)
 	{
 		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id FROM Object WHERE Object.name='".$location."';");
 		$db_location = $result->fetch (PDO::FETCH_ASSOC);
 		// Object already exists
-		if ($db_location) 
-		{   
+		if ($db_location)
+		{
 			$location_id = $db_location['id'];
 			// Object already exists but is not a Location (objecttype 1562) cannot continue
-			if ($db_location['objtype_id'] != 1562) 
-			{ 
+			if ($db_location['objtype_id'] != 1562)
+			{
 				showError("Line $row_number: Location " . $location . " already exists as another Objecttype, Import FAILED.");
 				return FALSE;
 			}
 		}
 		// Object does not exist, create new location
-		else 
-		{		
+		else
+		{
 			$location_id = commitAddObject ($location, "", 1562, "", array());
 			showSuccess ("Line $row_number: Location ".$location. " imported; object_id=".$location_id);
 		}
-		
+
 	}
 
 	//Handle Child location entry
-	if (strlen($location_child) > 0) 
+	if (strlen($location_child) > 0)
 	{
 		$location_child_id = 0;
 		$result = usePreparedSelectBlade ("SELECT o.id, o.objtype_id, o.name, e.parent_entity_id FROM Object o LEFT JOIN EntityLink e ON e.child_entity_id=o.id WHERE name ='".$location_child."';");
@@ -555,66 +555,66 @@ function addRackImport($csvdata,$row_number)
 		else { // Location child does not exist, create new object and link to parent location
 			$location_child_id = commitAddObject ($location_child, "", 1562, "", array());
 			commitLinkEntities ('location', $location_id , 'location', $location_child_id );
-			showSuccess ("Line $row_number: Child Location ".$location_child. " imported; object_id=".$location_child_id);	
-		}		
+			showSuccess ("Line $row_number: Child Location ".$location_child. " imported; object_id=".$location_child_id);
+		}
 	}
 
 	//Handle Row entry
-	if (strlen($rackrow) > 0) 
+	if (strlen($rackrow) > 0)
 	{
 		$result = usePreparedSelectBlade ("SELECT o.id, o.objtype_id, o.name, e.parent_entity_id FROM Object o LEFT JOIN EntityLink e ON e.child_entity_id=o.id WHERE name ='".$rackrow."';");
 		$db_rackrow = $result->fetch (PDO::FETCH_ASSOC);
 		// Object already exists
-		if ($db_rackrow) 
-		{   
+		if ($db_rackrow)
+		{
 			$rackrow_id = $db_rackrow['id'];
 			// Object already exists but is not a Row (objecttype 1561) cannot continue
-			if ($db_rackrow['objtype_id'] != 1561) 
-			{ 
+			if ($db_rackrow['objtype_id'] != 1561)
+			{
 				showError("Line $row_number: Row " . $rackrow. $db_rackrow['objtype_id'] . " already exists as another Objecttype, Import FAILED.");
 				return FALSE;
 			}
 			// The Row doesnt not match with the parent or child location ID
-			if (($db_rackrow['parent_entity_id'] != $location_id) & ($db_rackrow['parent_entity_id'] != $location_child_id))   
-			{ 
+			if (($db_rackrow['parent_entity_id'] != $location_id) & ($db_rackrow['parent_entity_id'] != $location_child_id))
+			{
 				showError("Line $row_number: Row " . $rackrow . " mismatch with parent location_id, Import FAILED.". $db_rackrow['parent_entity_id']. " , " . $location_id . " , " . $location_child_id);
 				return FALSE;
 			}
 
 		}
 		// Row does not exist, create new object and link to parent location
-		else 
-		{ 
+		else
+		{
 			$rackrow_id = commitAddObject ($rackrow, "", 1561, "", array());
-			if ( $location_child_id == 0) 
+			if ( $location_child_id == 0)
 				commitLinkEntities ('location', $location_id , 'row', $rackrow_id );
-			else 
+			else
 				commitLinkEntities ('location', $location_child_id  , 'row', $rackrow_id );
 			showSuccess ("Line $row_number: Row ".$rackrow. " imported; object_id=".$rackrow_id);
-		}			
+		}
 	}
 
 	//Handle Rack entry
-	if (strlen($rack) > 0) 
+	if (strlen($rack) > 0)
 	{
 		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id FROM Object WHERE Object.name='".$rack."';");
 		$db_rack = $result->fetch (PDO::FETCH_ASSOC);
 
 		// Rack Object already exists
-		if ($db_rack) 
-		{   
+		if ($db_rack)
+		{
 			$rack_id = $db_rack['id'];
 			// Object already exists but is not a Location (objecttype 1562) cannot continue
-			if ($db_rack['objtype_id'] != 1560) 
-			{ 
+			if ($db_rack['objtype_id'] != 1560)
+			{
 				showError("Line $row_number: Rack " . $rack . " already exists as another Objecttype, Import FAILED.");
 				return FALSE;
 			}
 		}
 		//  Rack Object does not exist, create new rack
-		else 
-		{		
-			$rack_id = commitAddObject ($rack, "", 1560, "", array());	// Object type 1560 = rack		
+		else
+		{
+			$rack_id = commitAddObject ($rack, "", 1560, "", array());	// Object type 1560 = rack
 			commitLinkEntities ('row', $rackrow_id  , 'rack', $rack_id );
 			commitUpdateAttrValue ($rack_id, 27, $rack_height);		// attribute type 27 = height
 
@@ -625,12 +625,12 @@ function addRackImport($csvdata,$row_number)
 
 			showSuccess ("Line $row_number: Rack ".$rack. " imported; object_id=".$rack_id);
 		}
-			
+
 	}
-} 
+}
 
 // This function adds Rack assignment info for an object
-function addRackAssignment($csvdata,$row_number) 
+function addRackAssignment($csvdata,$row_number)
 {
 
 	$object = 		trim ($csvdata[1]);
@@ -638,18 +638,18 @@ function addRackAssignment($csvdata,$row_number)
 	$rackUnits = 	explode(',',$csvdata[3]);
 	$fib = 			explode(',',$csvdata[4]);
 
-	if (strlen($object ) > 0) 
+	if (strlen($object ) > 0)
 	{
 
 		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id FROM Object WHERE Object.name='".$object."';");
 		$db_object = $result->fetch (PDO::FETCH_ASSOC);
-		
+
 		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id FROM Object WHERE Object.name='".$rack."';");
 		$db_rack = $result->fetch (PDO::FETCH_ASSOC);
 		// Go ahead when Rack and object exists
-		if (($db_object) & ($db_rack)) 
+		if (($db_object) & ($db_rack))
 		{
-			for ($i=0 ; $i < count($rackUnits); $i++ ) 
+			for ($i=0 ; $i < count($rackUnits); $i++ )
 			{
 				try
 				{
@@ -668,7 +668,7 @@ function addRackAssignment($csvdata,$row_number)
 						if (strpos($fib[$i],'b') !== false)
 							usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'rear', 'state' => 'T', 'object_id' => $db_object['id']));
 					}
-				
+
 					usePreparedDeleteBlade ('RackThumbnail', array ('rack_id' => $db_rack['id']));  //Updates the thumbnail of the rack
 				}
 				catch(Exception $e)
@@ -687,7 +687,7 @@ function addRackAssignment($csvdata,$row_number)
 	}
 }
 
-function addCableLink($csvdata,$row_number) 
+function addCableLink($csvdata,$row_number)
 {
 	$object_a = 	trim ($csvdata[1]);
 	$port_a = 		trim ($csvdata[2]);
@@ -726,7 +726,7 @@ function addCableLink($csvdata,$row_number)
 
 
 	// Create Link
-	try 
+	try
 	{
 		$linkresult = linkPorts ($db_result_a['id'], $db_result_b['id'], $cable_id);
 
@@ -737,16 +737,16 @@ function addCableLink($csvdata,$row_number)
 			return FALSE;
 		}
 	}
-	catch (Exception $e) 
-	{ 
+	catch (Exception $e)
+	{
 		showError("line $row_number: Import CableLink ". $cable_id." FAILED. Possible porttype mismatch. Complete Expeption data: ".$e);
 		return FALSE;
 	}
-	showSuccess ("Line $row_number: Import CableLink ".$cable_id. " imported.");					
+	showSuccess ("Line $row_number: Import CableLink ".$cable_id. " imported.");
 }
 
 
-function addVLAN($csvdata,$row_number) 
+function addVLAN($csvdata,$row_number)
 {
 	$vlan_domain = 		trim ($csvdata[1]);
 	$vlan_name = 		trim ($csvdata[2]);
@@ -765,34 +765,34 @@ function addVLAN($csvdata,$row_number)
 		usePreparedInsertBlade ('VLANDomain', array ('description' => $vlan_domain));
 		$result = usePreparedSelectBlade ("SELECT id FROM VLANDomain WHERE description ='". $vlan_domain . "';");
 		$db_result = $result->fetch (PDO::FETCH_ASSOC);
-		showSuccess ("Line $row_number: VLAN Domain ".$vlan_domain. " imported; object_id=".$db_result['id']);	
+		showSuccess ("Line $row_number: VLAN Domain ".$vlan_domain. " imported; object_id=".$db_result['id']);
 	}
 	$domain_id = $db_result['id'];
 
 	$catched = false;
 	// Create VLAN
-	try 
+	try
 	{
 		usePreparedInsertBlade ("VLANDescription", array('domain_id' => $domain_id , 'vlan_id' => $vlan_id, 'vlan_type' => $vlan_propagation, 'vlan_descr' => $vlan_name));
 	}
-	catch (Exception $e) 
-	{ 
+	catch (Exception $e)
+	{
 		showError("line $row_number: Import ". $vlan_name. " vlan_id ".$vlan_id. " FAILED; VLAN already exists");
 		$catched = true;
 	}
 
 	if(!$catched)
 		showSuccess ("Line $row_number: VLAN ".$vlan_name. " imported; vlan_id=".$vlan_id);
-	
+
 	// Try to attach VLANs to IP ranges
 	foreach ($ip_ranges as $ip_range)
 	{
 		try
 		{
-			$net = spotNetworkByIP (ip_parse($ip_range));	
+			$net = spotNetworkByIP (ip_parse($ip_range));
 		}
-		catch (Exception $e) 
-		{ 
+		catch (Exception $e)
+		{
 			showError("line $row_number: Unable to find/parse IP network address ". $ip_range);
 		}
 		if (isset($net['id']))
@@ -808,16 +808,16 @@ function addVLAN($csvdata,$row_number)
 				showWarning ("Line $row_number: VLAN ".$vlan_name. " unable to attach to range $ip_range. $e");
 			}
 		}
-		else 
+		else
 		{
 			showError ("Line $row_number: VLAN ".$vlan_name. " unable to attach to range ".$ip_range);
 		}
 	}
-	
+
 }
 
 
-function addIP($csvdata,$row_number) 
+function addIP($csvdata,$row_number)
 {
 
 	$prefix = 		trim ($csvdata[1]);
@@ -844,27 +844,27 @@ function addIP($csvdata,$row_number)
 	}
 
 	// Create IP range
-	try 
+	try
 	{
-		if (strpos($prefix,".")) createIPv4Prefix($prefix, $ip_name, $is_connected, array(), $vlan_ck); 
-		if (strpos($prefix,":")) createIPv6Prefix($prefix, $ip_name, $is_connected, array(), $vlan_ck); 
+		if (strpos($prefix,".")) createIPv4Prefix($prefix, $ip_name, $is_connected, array(), $vlan_ck);
+		if (strpos($prefix,":")) createIPv6Prefix($prefix, $ip_name, $is_connected, array(), $vlan_ck);
 	}
-	catch (Exception $e) 
-	{		
+	catch (Exception $e)
+	{
 		showError("line $row_number: Import IP ". $prefix." FAILED. Complete Expeption data: ".$e);
 		return FALSE;
 	}
-	showSuccess ("Line $row_number: Import IP ".$prefix. " imported. ".$vlan_ck);					
+	showSuccess ("Line $row_number: Import IP ".$prefix. " imported. ".$vlan_ck);
 }
 
-function addObjectIP($csvdata,$row_number) 
+function addObjectIP($csvdata,$row_number)
 {
 	$objectName = 		trim ($csvdata[1]);
 	$ifName = 			trim ($csvdata[2]);
 	$ipAddress = 		trim ($csvdata[3]);
-	if (!isset($csvdata[4])) 
+	if (!isset($csvdata[4]))
 		$type = "router";
-	else 
+	else
 		$type = trim (strtolower($csvdata[4]));
 
 	//Check if object exists, and return object_id
@@ -874,37 +874,37 @@ function addObjectIP($csvdata,$row_number)
 	//if object exists, create IP interface
 	if ($db_object)
 	{
-		try 
+		try
 		{
 			bindIPToObject (ip_parse($ipAddress), $db_object['id'], $ifName, $type);
 		}
-		catch (Exception $e) 
-		{ 
+		catch (Exception $e)
+		{
 		showError("line $row_number: IP interface ". $ifName. " import FAILED" . "Reason: ". $e);
 		return FALSE;
 		}
-		showSuccess ("Line $row_number: IP interface ".$ifName. " imported.");		
+		showSuccess ("Line $row_number: IP interface ".$ifName. " imported.");
 	}
-	else 
+	else
 	{
 		showError("Line $row_number: IP interface, Object " .$objectName. " does not exist. Import FAILED.");
 	}
-}	
+}
 
 // This function sets attributes for an object
-function setObjectAttributes($csvdata,$row_number) 
+function setObjectAttributes($csvdata,$row_number)
 {
 	$object = 	trim ($csvdata[1]);
 	$attr_id = 	trim ($csvdata[2]);
 	$attr_value = 	trim ($csvdata[3]);
-	
-	if (strlen($object ) > 0) 
+
+	if (strlen($object ) > 0)
 	{
 		$result = usePreparedSelectBlade ("SELECT  Object.* FROM Object WHERE Object.name='".$object."';");
 		$db_object = $result->fetch (PDO::FETCH_ASSOC);
-		
+
 		// Go ahead when object exists
-		if ($db_object) 
+		if ($db_object)
 		{
 			if ($attr_id == "NAME") $db_object['name'] = $attr_value;
 			if ($attr_id == "LABEL") $db_object['label'] = $attr_value;
@@ -912,11 +912,11 @@ function setObjectAttributes($csvdata,$row_number)
 			if ($attr_id == "ASSETTAG") $db_object['asset_no'] = $attr_value;
 			if ($attr_id == "COMMENT") $db_object['comment'] = $attr_value;
 
-			if (preg_match('/NAME|LABEL|HASPROBLEMS|ASSETTAG|COMMENT/',$attr_id)) 
+			if (preg_match('/NAME|LABEL|HASPROBLEMS|ASSETTAG|COMMENT/',$attr_id))
 			{
 				commitUpdateObject ($db_object['id'],$db_object['name'],$db_object['label'],$db_object['has_problems'],$db_object['asset_no'],$db_object['comment']);
                         }
-			else 
+			else
 			{
 				commitUpdateAttrValue ($db_object['id'], $attr_id, $attr_value);
 			}
@@ -933,14 +933,14 @@ function addContainerLink($csvdata,$row_number)
 {
 	$parentObjectName = trim ($csvdata[1]);
 	$childObjectName = trim ($csvdata[2]);
-	
+
 	if ((strlen($parentObjectName) > 0) & (strlen($childObjectName) > 0))
 	{
-	
+
 		// Check if parent object exists and return object_id
 		$parentResult = usePreparedSelectBlade ("SELECT Object.id FROM Object WHERE Object.name='".$parentObjectName."';");
        	$parentDB_object = $parentResult->fetch (PDO::FETCH_ASSOC);
-	
+
 		// Check if child object exists and return object_id
 		$childResult = usePreparedSelectBlade ("SELECT Object.id FROM Object WHERE Object.name='".$childObjectName."';");
 		$childDB_object = $childResult->fetch (PDO::FETCH_ASSOC);
@@ -964,17 +964,17 @@ function addObjectTag($csvdata,$row_number)
 {
 	$objectName = trim ($csvdata[1]);
 	$tagName = trim ($csvdata[2]);
-	
+
 	if ((strlen($objectName) > 0) & (strlen($tagName) > 0))
 	{
 		// Check if object exists and return object_id
 		$objectResult = usePreparedSelectBlade ("SELECT Object.id FROM Object WHERE Object.name='".$objectName."';");
 		$db_Object = $objectResult->fetch (PDO::FETCH_ASSOC);
-		
+
 		// Check if tag exists and return tag_id
 		$tagResult = usePreparedSelectBlade ("SELECT TagTree.id FROM TagTree WHERE TagTree.tag='".$tagName."';");
 		$db_Tag = $tagResult->fetch (PDO::FETCH_ASSOC);
-		
+
 		// if both the object and the tag exist, create an entry in the TagStorage table
 		if (($db_Object) & ($db_Tag))
 		{
@@ -986,10 +986,10 @@ function addObjectTag($csvdata,$row_number)
 		else
 		{
 			showError("Line $row_number: Unable to add tag ".$tagName. " to object ".$objectName.". Either the object of the tag does not exist.");
-		}	
-		
-	}	
-	
+		}
+
+	}
+
 }
 
 function updateIP($csvdata,$row_number)
