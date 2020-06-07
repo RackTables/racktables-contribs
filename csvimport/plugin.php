@@ -33,7 +33,6 @@ The newest version of this plugin can be found at: https://github.com/RackTables
 # Uninstall previous version first (the code does not handle it) before using this one !!!
 # TODO: use the install/upgrade function to remove previous version
 # TODO: check if the add functions are still consistent with 0.21 functions
-# TODO: handle the "Message 'OK' is lost in importData" message properly
 
 Usage:
 
@@ -282,10 +281,9 @@ function delete_csv_data ()
 	finishPortlet();
 }
 
-$msgcode['deleteData']['OK'] = 0;
-$msgcode['deleteData']['ERR1'] = 207;
 function deleteData()
 {
+	setFuncMessages (__FUNCTION__, array ('OK' => 0, 'ERR1' => 207));
 	assertStringArg ('csv_text', TRUE);
 	$row = 1;
 
@@ -332,10 +330,9 @@ function deleteData()
 	return showFuncMessage (__FUNCTION__, 'OK', array (htmlspecialchars ("Deleting finished.")));
 }
 
-$msgcode['importData']['OK'] = 0;
-$msgcode['importData']['ERR1'] = 207;
 function importData()
 {
+	setFuncMessages (__FUNCTION__, array ('OK' => 0, 'ERR1' => 207));
 	assertStringArg ('csv_text', TRUE);
 	$row_number = 1;
 	// if the manual input is empty, load the selected file
