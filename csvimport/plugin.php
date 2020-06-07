@@ -301,7 +301,7 @@ function deleteData()
 			showNotice ("Deleting from ".$_FILES['file']['name']);
 			while (($csvdata = fgetcsv($handle, 1000, ";")) !== FALSE)
 			{
-				$result = usePreparedSelectBlade ("SELECT  Object.id FROM Object WHERE Object.name='".$csvdata[0]."';");
+				$result = usePreparedSelectBlade ('SELECT id FROM Object WHERE name = ?', array ($csvdata[0]));
 				$object = $result->fetch (PDO::FETCH_ASSOC);
 				if (!$object)
 					showError ("Line ".$row.": Object ".$csvdata[0]. " not found");
@@ -408,7 +408,7 @@ function addObject($csvdata,$row_number)
 	if ($object_type == "VM")			$object_type = 1504;
 	if (is_numeric($object_type))
 	{
-		$result = usePreparedSelectBlade ("SELECT  Dictionary.dict_value FROM Dictionary WHERE Dictionary.dict_key=".$object_type.";");
+		$result = usePreparedSelectBlade ('SELECT dict_value FROM Dictionary WHERE dict_key = ?', array ($object_type));
 		$db_object_type = $result->fetch (PDO::FETCH_ASSOC);
 		if ($db_object_type)
 			$object_type_name = $db_object_type['dict_value'];
@@ -498,7 +498,7 @@ function addRackImport($csvdata,$row_number)
 	// Handle Location entry
 	if (strlen($location ) > 0)
 	{
-		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id FROM Object WHERE Object.name='".$location."';");
+		$result = usePreparedSelectBlade ('SELECT id, objtype_id FROM Object WHERE name = ?', array ($location));
 		$db_location = $result->fetch (PDO::FETCH_ASSOC);
 		// Object already exists
 		if ($db_location)
@@ -523,7 +523,12 @@ function addRackImport($csvdata,$row_number)
 	if (strlen($location_child) > 0)
 	{
 		$location_child_id = 0;
-		$result = usePreparedSelectBlade ("SELECT o.id, o.objtype_id, o.name, e.parent_entity_id FROM Object o LEFT JOIN EntityLink e ON e.child_entity_id=o.id WHERE name ='".$location_child."';");
+		$result = usePreparedSelectBlade
+		(
+			'SELECT o.id, o.objtype_id, o.name, e.parent_entity_id ' .
+			'FROM Object o LEFT JOIN EntityLink e ON e.child_entity_id = o.id WHERE name = ?',
+			array ($location_child)
+		);
 		$db_location_child = $result->fetch (PDO::FETCH_ASSOC);
 
 		if ($db_location_child) {   // Object already exists
@@ -548,7 +553,12 @@ function addRackImport($csvdata,$row_number)
 	//Handle Row entry
 	if (strlen($rackrow) > 0)
 	{
-		$result = usePreparedSelectBlade ("SELECT o.id, o.objtype_id, o.name, e.parent_entity_id FROM Object o LEFT JOIN EntityLink e ON e.child_entity_id=o.id WHERE name ='".$rackrow."';");
+		$result = usePreparedSelectBlade
+		(
+			'SELECT o.id, o.objtype_id, o.name, e.parent_entity_id ' .
+			'FROM Object o LEFT JOIN EntityLink e ON e.child_entity_id = o.id WHERE name = ?',
+			array ($rackrow)
+		);
 		$db_rackrow = $result->fetch (PDO::FETCH_ASSOC);
 		// Object already exists
 		if ($db_rackrow)
@@ -582,7 +592,7 @@ function addRackImport($csvdata,$row_number)
 	//Handle Rack entry
 	if (strlen($rack) > 0)
 	{
-		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id FROM Object WHERE Object.name='".$rack."';");
+		$result = usePreparedSelectBlade ('SELECT id, objtype_id FROM Object WHERE name = ?', array ($rack));
 		$db_rack = $result->fetch (PDO::FETCH_ASSOC);
 
 		// Rack Object already exists
@@ -624,10 +634,11 @@ function addRackAssignment($csvdata,$row_number)
 
 	if (strlen($object ) > 0)
 	{
-		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id FROM Object WHERE Object.name='".$object."';");
+		$query = 'SELECT id, objtype_id FROM Object WHERE name = ?';
+		$result = usePreparedSelectBlade ($query, array ($object));
 		$db_object = $result->fetch (PDO::FETCH_ASSOC);
 
-		$result = usePreparedSelectBlade ("SELECT  Object.id, Object.objtype_id FROM Object WHERE Object.name='".$rack."';");
+		$result = usePreparedSelectBlade ($query, array ($rack));
 		$db_rack = $result->fetch (PDO::FETCH_ASSOC);
 		// Go ahead when Rack and object exists
 		if (($db_object) & ($db_rack))
@@ -676,9 +687,10 @@ function addCableLink($csvdata,$row_number)
 	$object_b = 	trim ($csvdata[3]);
 	$port_b = 		trim ($csvdata[4]);
 	$cable_id = 	trim ($csvdata[5]);
+	$query = 'SELECT Port.id, Object.name FROM Port, Object WHERE Port.object_id = Object.id AND Port.name = ? AND Object.name = ?';
 
 	// Check if object_a and port_a exist, if not; stop and return false
-	$result = usePreparedSelectBlade ("SELECT Port.id, Object.name FROM Port, Object WHERE Port.object_id = Object.id AND Port.name='".$port_a."' AND Object.name='".$object_a."';");
+	$result = usePreparedSelectBlade ($query, array ($port_a, $object_a));
 	$db_result_a = $result->fetch (PDO::FETCH_ASSOC);
 	if (!$db_result_a)
 	{
@@ -687,7 +699,7 @@ function addCableLink($csvdata,$row_number)
 	}
 
 	// Check if object_a and port_a exist, if not; stop and return false
-	$result = usePreparedSelectBlade ("SELECT Port.id, Object.name FROM Port, Object WHERE Port.object_id = Object.id AND Port.name='".$port_b."' AND Object.name='".$object_b."';");
+	$result = usePreparedSelectBlade ($query, array ($port_b, $object_b));
 	$db_result_b = $result->fetch (PDO::FETCH_ASSOC);
 	if (!$db_result_b)
 	{
@@ -734,16 +746,17 @@ function addVLAN($csvdata,$row_number)
 	$vlan_propagation = trim ($csvdata[4]);
 	if ($vlan_propagation != 'ondemand') $vlan_propagation = "compulsory";
 	$ip_ranges = 		explode(',',$csvdata[5]);
+	$query = 'SELECT id FROM VLANDomain WHERE description = ?';
 
 	// Check if VLAN domain exists
-	$result = usePreparedSelectBlade ("SELECT id FROM VLANDomain WHERE description='". $vlan_domain . "';");
+	$result = usePreparedSelectBlade ($query, array ($vlan_domain));
 	$db_result = $result->fetch (PDO::FETCH_ASSOC);
 
 	// If VLAN domain does not exists, create domain
 	if (!$db_result)
 	{
 		usePreparedInsertBlade ('VLANDomain', array ('description' => $vlan_domain));
-		$result = usePreparedSelectBlade ("SELECT id FROM VLANDomain WHERE description ='". $vlan_domain . "';");
+		$result = usePreparedSelectBlade ($query, array ($vlan_domain));
 		$db_result = $result->fetch (PDO::FETCH_ASSOC);
 		showSuccess ("Line $row_number: VLAN Domain ".$vlan_domain. " imported; object_id=".$db_result['id']);
 	}
@@ -808,7 +821,12 @@ function addIP($csvdata,$row_number)
 	// Check if vlan domain - vlan combination exists
 	if ((strlen($vlan_domain) > 0) & (strlen($vlan_id) > 0))
 	{
-		$result = usePreparedSelectBlade ("SELECT VLANDescription.domain_id, VLANDomain.description FROM VLANDescription, VLANDomain WHERE VLANDomain.id = VLANDescription.domain_id AND VLANDescription.vlan_id=".$vlan_id." AND VLANDomain.description ='".$vlan_domain."';");
+		$result = usePreparedSelectBlade
+		(
+			'SELECT VLANDescription.domain_id, VLANDomain.description FROM VLANDescription, VLANDomain ' .
+			'WHERE VLANDomain.id = VLANDescription.domain_id AND VLANDescription.vlan_id = ? AND VLANDomain.description = ?',
+			array ($vlan_id, $vlan_domain)
+		);
 		$vlan_result = $result->fetch (PDO::FETCH_ASSOC);
 		if (!$vlan_result)
 		{
@@ -846,7 +864,7 @@ function addObjectIP($csvdata,$row_number)
 		$type = trim (strtolower($csvdata[4]));
 
 	//Check if object exists, and return object_id
-	$result = usePreparedSelectBlade ("SELECT  Object.id FROM Object WHERE Object.name='".$objectName."';");
+	$result = usePreparedSelectBlade ('SELECT id FROM Object WHERE name = ?', array ($objectName));
 	$db_object = $result->fetch (PDO::FETCH_ASSOC);
 
 	//if object exists, create IP interface
@@ -878,7 +896,7 @@ function setObjectAttributes($csvdata,$row_number)
 
 	if (strlen($object ) > 0)
 	{
-		$result = usePreparedSelectBlade ("SELECT id, name, label, asset_no, has_problems, comment FROM Object WHERE Object.name='".$object."';");
+		$result = usePreparedSelectBlade ('SELECT id, name, label, asset_no, has_problems, comment FROM Object WHERE name = ?', array ($object));
 		$db_object = $result->fetch (PDO::FETCH_ASSOC);
 
 		// Go ahead when object exists
@@ -914,12 +932,13 @@ function addContainerLink($csvdata,$row_number)
 
 	if ((strlen($parentObjectName) > 0) & (strlen($childObjectName) > 0))
 	{
+		$query = 'SELECT id FROM Object WHERE name = ?';
 		// Check if parent object exists and return object_id
-		$parentResult = usePreparedSelectBlade ("SELECT Object.id FROM Object WHERE Object.name='".$parentObjectName."';");
+		$parentResult = usePreparedSelectBlade ($query, array ($parentObjectName));
        	$parentDB_object = $parentResult->fetch (PDO::FETCH_ASSOC);
 
 		// Check if child object exists and return object_id
-		$childResult = usePreparedSelectBlade ("SELECT Object.id FROM Object WHERE Object.name='".$childObjectName."';");
+		$childResult = usePreparedSelectBlade ($query, array ($childObjectName));
 		$childDB_object = $childResult->fetch (PDO::FETCH_ASSOC);
 
 		// if both objects exist, create an EntityLink between them
@@ -945,11 +964,11 @@ function addObjectTag($csvdata,$row_number)
 	if ((strlen($objectName) > 0) & (strlen($tagName) > 0))
 	{
 		// Check if object exists and return object_id
-		$objectResult = usePreparedSelectBlade ("SELECT Object.id FROM Object WHERE Object.name='".$objectName."';");
+		$objectResult = usePreparedSelectBlade ('SELECT id FROM Object WHERE name = ?', array ($objectName));
 		$db_Object = $objectResult->fetch (PDO::FETCH_ASSOC);
 
 		// Check if tag exists and return tag_id
-		$tagResult = usePreparedSelectBlade ("SELECT TagTree.id FROM TagTree WHERE TagTree.tag='".$tagName."';");
+		$tagResult = usePreparedSelectBlade ('SELECT id FROM TagTree WHERE tag = ?', array ($tagName));
 		$db_Tag = $tagResult->fetch (PDO::FETCH_ASSOC);
 
 		// if both the object and the tag exist, create an entry in the TagStorage table
