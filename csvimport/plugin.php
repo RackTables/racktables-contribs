@@ -210,7 +210,7 @@ function plugin_csvimport_info()
 		'name' => 'csvimport',
 		'longname' => 'CSV Import tool',
 		'version' => '2.0',
-		'home_url' => 'http://www.racktables.org/'
+		'home_url' => 'https://github.com/RackTables/racktables-contribs'
 	);
 }
 
@@ -219,20 +219,16 @@ function plugin_csvimport_init()
 	global $page, $tab;
 
 	// Build Navigation
-	$page['import']['title'] = 'Import csv data';
+	$page['import']['title'] = 'Import CSV data';
 	$page['import']['parent'] = 'config';
-	$tab['import']['default'] = 'Import csv data';
-	// $tabhandler['import']['default'] = 'import_csv_data';  code v1.0
+	$tab['import']['default'] = 'Import';
 	registerTabHandler ('import', 'default', 'import_csv_data');
+	registerOpHandler ('import', 'default', 'importData', 'importData');
 
 	// Work in progress
-	//$tab['import']['delete'] = 'Delete csv data';
-	//$tabhandler['import']['delete'] = 'delete_csv_data';
-
-	// $ophandler['import']['default']['importData'] = 'importData'; code v1.0
-	registerOpHandler ('import', 'default', 'importData', 'importData');
-	// $ophandler['import']['delete']['importData'] = 'deleteData'; code v1.0
-	registerOpHandler ('import', 'delete', 'importData', 'deleteData');
+	//$tab['import']['delete'] = 'Delete';
+	//registerTabHandler ('import', 'delete', 'delete_csv_data');
+	//registerOpHandler ('import', 'delete', 'importData', 'deleteData');
 }
 
 function plugin_csvimport_install()
@@ -300,7 +296,7 @@ function deleteData()
 			return showFuncMessage (__FUNCTION__, 'ERR1', array ($_FILES['file']['error']));
 
 		// manage files from different OSes
-		ini_set("auto_detect_line_endings", true);
+		ini_set("auto_detect_line_endings", TRUE);
 
 		if (($handle = fopen($_FILES['file']['tmp_name'], "r")) !== FALSE)
 		{
@@ -345,7 +341,7 @@ function importData()
 	// if the manual input is empty, load the selected file
 	if (strlen(($_REQUEST['csv_text'])) == 0)
 	{
-		ini_set("auto_detect_line_endings", true);
+		ini_set("auto_detect_line_endings", TRUE);
 
 		if (($handle = fopen($_FILES['file']['tmp_name'], "r")) !== FALSE)
 		{
@@ -466,7 +462,7 @@ function addObject($csvdata,$row_number)
 	    		$pattern = "!(?<=[[])[^]]+(?=[]])!";
 	    		preg_match($pattern,$ifName[$i],$match);
 
-				if ((count($match) > 0) & (strpos($match[0],'-') !== false))
+				if ((count($match) > 0) & (strpos($match[0],'-') !== FALSE))
 				{
 					$prefix = substr($ifName[$i],0, strpos($ifName[$i],'['));
 					$suffix = substr($ifName[$i],strpos($ifName[$i],']')+1, strlen($ifName[$i])-1);
@@ -650,11 +646,11 @@ function addRackAssignment($csvdata,$row_number)
 					}
 					else
 					{
-						if (strpos($fib[$i],'f') !== false)
+						if (strpos($fib[$i],'f') !== FALSE)
 							usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'front', 'state' => 'T', 'object_id' => $db_object['id']));
-						if (strpos($fib[$i],'i') !== false)
+						if (strpos($fib[$i],'i') !== FALSE)
 							usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'interior', 'state' => 'T', 'object_id' => $db_object['id']));
-						if (strpos($fib[$i],'b') !== false)
+						if (strpos($fib[$i],'b') !== FALSE)
 							usePreparedInsertBlade ('RackSpace', array ('rack_id' => $db_rack['id'], 'unit_no' => $rackUnits[$i], 'atom' => 'rear', 'state' => 'T', 'object_id' => $db_object['id']));
 					}
 
@@ -727,7 +723,7 @@ function addCableLink($csvdata,$row_number)
 	}
 	catch (Exception $e)
 	{
-		showError("line $row_number: Import CableLink ". $cable_id." FAILED. Possible porttype mismatch. Complete Expeption data: ".$e);
+		showError("line $row_number: Import CableLink ". $cable_id." FAILED. Possible porttype mismatch. Complete Exception data: ".$e);
 		return FALSE;
 	}
 	showSuccess ("Line $row_number: Import CableLink ".$cable_id. " imported.");
@@ -756,7 +752,7 @@ function addVLAN($csvdata,$row_number)
 	}
 	$domain_id = $db_result['id'];
 
-	$catched = false;
+	$catched = FALSE;
 	// Create VLAN
 	try
 	{
@@ -765,7 +761,7 @@ function addVLAN($csvdata,$row_number)
 	catch (Exception $e)
 	{
 		showError("line $row_number: Import ". $vlan_name. " vlan_id ".$vlan_id. " FAILED; VLAN already exists");
-		$catched = true;
+		$catched = TRUE;
 	}
 
 	if(!$catched)
@@ -836,7 +832,7 @@ function addIP($csvdata,$row_number)
 	}
 	catch (Exception $e)
 	{
-		showError("line $row_number: Import IP ". $prefix." FAILED. Complete Expeption data: ".$e);
+		showError("line $row_number: Import IP ". $prefix." FAILED. Complete Exception data: ".$e);
 		return FALSE;
 	}
 	showSuccess ("Line $row_number: Import IP ".$prefix. " imported. ".$vlan_ck);
@@ -984,7 +980,7 @@ function updateIP($csvdata,$row_number)
 	if(isset($csvdata[5]))
 		$user = trim ($csvdata[5]);
 	else
-		$user = false;
+		$user = FALSE;
 
 	$ip_bin = ip_parse($ipaddress);
 
@@ -992,14 +988,14 @@ function updateIP($csvdata,$row_number)
 	if(empty($netaddress))
 	{
 		showError("line $row_number: FAILED. update IP $ipaddress does not exist!");
-		return False;
+		return FALSE;
 	}
 
 	$address = getIPAddress($ip_bin);
 	if($address['reserved'] == 'yes')
 	{
 		showError("line $row_number: FAILED. update IP $ipaddress already reserved!");
-		return False;
+		return FALSE;
 	}
 
 	try
@@ -1040,6 +1036,3 @@ function addIPLogEntry_User($ip_bin, $message, $username)
 		default: throw new InvalidArgException ('ip_bin', $ip_bin, "Invalid binary IP");
 	}
 }
-
-
-?>
