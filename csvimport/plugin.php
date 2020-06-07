@@ -678,7 +678,7 @@ function addCableLink($csvdata,$row_number)
 	$cable_id = 	trim ($csvdata[5]);
 
 	// Check if object_a and port_a exist, if not; stop and return false
-	$result = usePreparedSelectBlade ("SELECT Port.*, Object.name FROM Port, Object WHERE Port.object_id = Object.id AND Port.name='".$port_a."' AND Object.name='".$object_a."';");
+	$result = usePreparedSelectBlade ("SELECT Port.id, Object.name FROM Port, Object WHERE Port.object_id = Object.id AND Port.name='".$port_a."' AND Object.name='".$object_a."';");
 	$db_result_a = $result->fetch (PDO::FETCH_ASSOC);
 	if (!$db_result_a)
 	{
@@ -687,7 +687,7 @@ function addCableLink($csvdata,$row_number)
 	}
 
 	// Check if object_a and port_a exist, if not; stop and return false
-	$result = usePreparedSelectBlade ("SELECT Port.*, Object.name FROM Port, Object WHERE Port.object_id = Object.id AND Port.name='".$port_b."' AND Object.name='".$object_b."';");
+	$result = usePreparedSelectBlade ("SELECT Port.id, Object.name FROM Port, Object WHERE Port.object_id = Object.id AND Port.name='".$port_b."' AND Object.name='".$object_b."';");
 	$db_result_b = $result->fetch (PDO::FETCH_ASSOC);
 	if (!$db_result_b)
 	{
@@ -808,7 +808,7 @@ function addIP($csvdata,$row_number)
 	// Check if vlan domain - vlan combination exists
 	if ((strlen($vlan_domain) > 0) & (strlen($vlan_id) > 0))
 	{
-		$result = usePreparedSelectBlade ("SELECT VLANDescription.*, VLANDomain.description FROM VLANDescription, VLANDomain WHERE VLANDomain.id = VLANDescription.domain_id AND VLANDescription.vlan_id=".$vlan_id." AND VLANDomain.description ='".$vlan_domain."';");
+		$result = usePreparedSelectBlade ("SELECT VLANDescription.domain_id, VLANDomain.description FROM VLANDescription, VLANDomain WHERE VLANDomain.id = VLANDescription.domain_id AND VLANDescription.vlan_id=".$vlan_id." AND VLANDomain.description ='".$vlan_domain."';");
 		$vlan_result = $result->fetch (PDO::FETCH_ASSOC);
 		if (!$vlan_result)
 		{
@@ -878,7 +878,7 @@ function setObjectAttributes($csvdata,$row_number)
 
 	if (strlen($object ) > 0)
 	{
-		$result = usePreparedSelectBlade ("SELECT  Object.* FROM Object WHERE Object.name='".$object."';");
+		$result = usePreparedSelectBlade ("SELECT id, name, label, asset_no, has_problems, comment FROM Object WHERE Object.name='".$object."';");
 		$db_object = $result->fetch (PDO::FETCH_ASSOC);
 
 		// Go ahead when object exists
