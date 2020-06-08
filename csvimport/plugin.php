@@ -817,8 +817,7 @@ function addIP($csvdata,$row_number)
 	$is_connected = trim ($csvdata[3]);
 	$vlan_domain = 	trim ($csvdata[4]);
 	$vlan_id =  	trim ($csvdata[5]);
-//MG tagIP
-	$tags= trim ($csvdata[6]);
+	$tagID = 		trim ($csvdata[6]);
 	$vlan_ck = 		NULL;
 
 	// Check if vlan domain - vlan combination exists
@@ -845,12 +844,8 @@ function addIP($csvdata,$row_number)
 	// Create IP range
 	try
 	{
-
-//		if (strpos($prefix,".")) createIPv4Prefix($prefix, $ip_name, $is_connected, array(), $vlan_ck);
-//		if (strpos($prefix,":")) createIPv6Prefix($prefix, $ip_name, $is_connected, array(), $vlan_ck);
-//MG tagIP
-		if (strpos($prefix,".")) createIPv4Prefix($prefix, $ip_name, $is_connected,array($tags), $vlan_ck);
-		if (strpos($prefix,":")) createIPv6Prefix($prefix, $ip_name, $is_connected,array( $tags), $vlan_ck);
+		if (strpos($prefix,".")) createIPv4Prefix($prefix, $ip_name, $is_connected, array($tagID), $vlan_ck);
+		if (strpos($prefix,":")) createIPv6Prefix($prefix, $ip_name, $is_connected, array($tagID), $vlan_ck);
 	}
 	catch (Exception $e)
 	{
