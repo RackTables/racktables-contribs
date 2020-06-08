@@ -122,19 +122,19 @@ Usage:
 
 * Importing IP space
 
- Syntax: IP; Prefix; Name; is_connected; VLAN domain; VLAN ID;TagID
+ Syntax: IP; Prefix; Name; is_connected; VLAN domain; VLAN ID; TagID
  Value 1, IP
  Value 2, Prefix: Specifies the IPv4 / IPv6 prefix of the network, including netmask.
  Value 3, Name: Specifies the name of the network which is to be added.
  Value 4, is_connected: Specifies if broadcast and network address in the subnet need to be reserved. Can be TRUE or FALSE. When omitted, the default is FALSE
  Value 5, VLAN domain: This is an optional value which can be used to set the VLAN domain of the network. You have to specifiy the name of the VLAN domain.
  Value 6, VLAN ID: This is an optional numeric value setting the VLAN ID of the network. It is to be used in conjunction with the previous VLAN domain value.
- Value 7, TAGID: the ID of a tag
+ Value 7, TagID: the ID of an existing tag
 
  Examples:
 
- IP;10.1.3.0/24;Netops network;TRUE;SURFsara;1020
- Creates the IP network 10.1.3.0/24 called 'Netops network' and attaches it to VLAN 1020 in the SURFsara VLAN domain.
+ IP;10.1.3.0/24;Netops network;TRUE;SURFsara;1020;36
+ Creates the IP network 10.1.3.0/24 called 'Netops network' and attaches it to VLAN 1020 in the SURFsara VLAN domain and add the tag that has a TagID of 36.
 
 
 * Importing Object IP interfaces
