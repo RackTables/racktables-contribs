@@ -124,19 +124,18 @@ Usage:
 
 * Importing IP space
 
- Syntax: IP; Prefix; Name; is_connected; VLAN domain; VLAN ID; TagID
+ Syntax: IP; Prefix; Name; is_connected; VLAN domain; VLAN ID
  Value 1, IP
  Value 2, Prefix: Specifies the IPv4 / IPv6 prefix of the network, including netmask.
  Value 3, Name: Specifies the name of the network which is to be added.
  Value 4, is_connected: Specifies if broadcast and network address in the subnet need to be reserved. Can be TRUE or FALSE. When omitted, the default is FALSE
  Value 5, VLAN domain: This is an optional value which can be used to set the VLAN domain of the network. You have to specifiy the name of the VLAN domain.
  Value 6, VLAN ID: This is an optional numeric value setting the VLAN ID of the network. It is to be used in conjunction with the previous VLAN domain value.
- Value 7, TagID: the ID of an existing tag
 
  Examples:
 
- IP;10.1.3.0/24;Netops network;TRUE;SURFsara;1020;36
- Creates the IP network 10.1.3.0/24 called 'Netops network' and attaches it to VLAN 1020 in the SURFsara VLAN domain and add the tag that has a TagID of 36.
+ IP;10.1.3.0/24;Netops network;TRUE;SURFsara;1020
+ Creates the IP network 10.1.3.0/24 called 'Netops network' and attaches it to VLAN 1020 in the SURFsara VLAN domain.
 
 
 * Importing Object IP interfaces
@@ -155,7 +154,7 @@ Usage:
 
 * Setting Object Attributes:
 
-  Syntax: OBJECTATTRIBUTE
+  Syntax: OBJECTATTRIBUTE;Objectname;attribute id;attribute value
   Value 1, OBJECTATTRIBUTE
   Value 2, Objectname: Specifies the name of the object
   Value 3, attribute id: Specifies the numeric ID of the attribute (can be looked up in Attribute table), also some general attributes are supported, in this case use: NAME / LABEL / ASSETTAG / HASPROBLEMS (yes|no) / COMMENT
@@ -170,7 +169,7 @@ Usage:
 
 * Creating Container Link:
 
-  Syntax: CONTAINERLINK
+  Syntax: CONTAINERLINK;Parent Object Name;Child Object Name
   Value 1, CONTAINERLINK
   Value 2, Parent Object Name : Specify the name of the Parent Object (eg. Hypervisor Server)
   Value 3, Child Object Name : Specify the name of the Child Object (eg. VM)
@@ -179,21 +178,12 @@ Usage:
   CONTAINERLINK;ESX_Host1;VM_1
   Adds VM_1 as a member of the Container ESX_Host1
 
-* Tags:
+* Adding Tags to objects, networks, racks
 
-  Old Syntax: OBJECTTAG  (new TAG syntax below is prefered but this one still works)
-  Value 1, OBJECTTAG
-  Value 2, Object Name : Specify the name of the Object to add the tag to(eg. Server)
-  Value 3, Tag Name : Specify the name of the Tag (eg. VM)
-
-  Examples:
-  OBJECTTAG;Server1;Tag1
-  Adds the tag called Tag1 to server object called Server1
-
-  New Syntax: TAG
+  Syntax: TAG;Realm;Name;Tag Names
   Value 1, TAG
-  Value 2, Realm: object, rack or ipv4net (all lower case!)
-  Value 3, Name : Specify the name of the Object to add the tag to(eg. Server1 )
+  Value 2, Realm: object or rack or ipv4net (**all lower case!**)
+  Value 3, Name : Specify the name of the object/rack/network to add the tag to(eg. Server1 )
   Value 4, Tag Names : Specify the name of the Tags (eg. VM) separated by commas
 
   Examples:
@@ -201,6 +191,17 @@ Usage:
   Adds the tag called Tag1 and Tag2 to server object called Server1
   TAG;ipv4net;192.168.1.0;Tag1,Tag2
   Adds the tag called Tag1 and Tag2 to ipv4net object called 192.168.1.0
+  TAG;ipv4net;10.10.10.0/26;Tag1,Tag2
+  Adds the tag called Tag1 and Tag2 to ipv4net network 10.10.10.0/26
+
+  Old Syntax: OBJECTTAG; Object Name;Tag Name  (new TAG syntax above is prefered but this one still works)
+  Value 1, OBJECTTAG
+  Value 2, Object Name : Specify the name of the Object to add the tag to(eg. Server)
+  Value 3, Tag Name : Specify the name of the Tag (eg. VM)
+
+  Examples:
+  OBJECTTAG;Server1;Tag1
+  Adds the tag called Tag1 to server object called Server1
 
 * UPDATEIP
   Syntax: UPDATEIP
@@ -832,7 +833,6 @@ function addIP($csvdata,$row_number)
 	$is_connected = trim ($csvdata[3]);
 	$vlan_domain = 	trim ($csvdata[4]);
 	$vlan_id =  	trim ($csvdata[5]);
-	$tagID = 		trim ($csvdata[6]);
 	$vlan_ck = 		NULL;
 
 	// Check if vlan domain - vlan combination exists
@@ -859,8 +859,8 @@ function addIP($csvdata,$row_number)
 	// Create IP range
 	try
 	{
-		if (strpos($prefix,".")) createIPv4Prefix($prefix, $ip_name, $is_connected, array($tagID), $vlan_ck);
-		if (strpos($prefix,":")) createIPv6Prefix($prefix, $ip_name, $is_connected, array($tagID), $vlan_ck);
+		if (strpos($prefix,".")) createIPv4Prefix($prefix, $ip_name, $is_connected, array(), $vlan_ck);
+		if (strpos($prefix,":")) createIPv6Prefix($prefix, $ip_name, $is_connected, array(), $vlan_ck);
 	}
 	catch (Exception $e)
 	{
