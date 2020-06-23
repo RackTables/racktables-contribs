@@ -16,7 +16,7 @@ All rights reserved.<br/>
 <br/>
 Updated in June 2020 by matt32106@github <br/>
 - compatibility with Racktables version 0.21 new plugin format<br/>
-- integratation of the TAG import by (c)2012-2014 Maik Ehinger <github138@t-online.de><br/>
+- integration of the TAG import by (c)2012-2014 Maik Ehinger <github138@t-online.de><br/>
 <br/>
 ## HOW TO USE
 Go to the Configuration / ImportCSV menu. <br/>
