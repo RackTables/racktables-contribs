@@ -1,8 +1,11 @@
 <?php
 
+# CREDITS:
 # Copyright (c) 2014, Erik Ruiter, SURFsara BV, Amsterdam, The Netherlands
 # All rights reserved.
-#
+# Plugin updated June 2020 by matt32106@github for compatibility with Racktables version 0.21 new plugin format
+# and integrate the TAG import by (c)2012-2014 Maik Ehinger <github138@t-online.de>
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; version 2 of the License.
@@ -23,7 +26,6 @@ It also supports linking ports, and assigning rackspace to objects.
 
 The newest version of this plugin can be found at: https://github.com/RackTables/racktables-contribs
 -----------------------------------------
-# Plugin updated June 2020 by matt32106@github for compatibility with Racktables version 0.21 new plugin format
 # Functions added
 #   plugin_csvimport_info
 #   plugin_csvimport_init
@@ -177,9 +179,9 @@ Usage:
   CONTAINERLINK;ESX_Host1;VM_1
   Adds VM_1 as a member of the Container ESX_Host1
 
-* Object Tags:
+* Tags:
 
-  Syntax: OBJECTTAG
+  Old Syntax: OBJECTTAG  (new TAG syntax below is prefered but this one still works)
   Value 1, OBJECTTAG
   Value 2, Object Name : Specify the name of the Object to add the tag to(eg. Server)
   Value 3, Tag Name : Specify the name of the Tag (eg. VM)
@@ -187,6 +189,18 @@ Usage:
   Examples:
   OBJECTTAG;Server1;Tag1
   Adds the tag called Tag1 to server object called Server1
+
+  New Syntax: TAG
+  Value 1, TAG
+  Value 2, Realm: object, rack or ipv4net (all lower case!)
+  Value 3, Name : Specify the name of the Object to add the tag to(eg. Server1 )
+  Value 4, Tag Names : Specify the name of the Tags (eg. VM) separated by commas
+
+  Examples:
+  TAG;object;Server1;Tag1,Tag2
+  Adds the tag called Tag1 and Tag2 to server object called Server1
+  TAG;ipv4net;192.168.1.0;Tag1,Tag2
+  Adds the tag called Tag1 and Tag2 to ipv4net object called 192.168.1.0
 
 * UPDATEIP
   Syntax: UPDATEIP
@@ -199,7 +213,6 @@ Usage:
   Examples:
   UPDATEIP;192.168.1.2;Test Address;no;Testing only
   Updates IP 192.168.1.2 with Name Test, Reserved no and Comment "Testing only"
-
 
 */
 
@@ -356,7 +369,8 @@ function importData()
 				if ($csvdata[0] == "OBJECTIP") 			addObjectIP($csvdata,$row_number);
 				if ($csvdata[0] == "OBJECTATTRIBUTE") 	setObjectAttributes($csvdata,$row_number);
 				if ($csvdata[0] == "CONTAINERLINK")		addContainerLink($csvdata,$row_number);
-				if ($csvdata[0] == "OBJECTTAG")			addObjectTag($csvdata,$row_number);
+				if ($csvdata[0] == "OBJECTTAG")			addTag($csvdata,$row_number);
+				if ($csvdata[0] == "TAG")			addTag($csvdata,$row_number);
 				if ($csvdata[0] == "UPDATEIP")			updateIP($csvdata,$row_number);
 				$row_number++;
 			}
@@ -384,7 +398,8 @@ function importData()
 			if ($csvdata[0] == "OBJECTIP") 			addObjectIP($csvdata,$row_number);
 			if ($csvdata[0] == "OBJECTATTRIBUTE") 	setObjectAttributes($csvdata,$row_number);
 			if ($csvdata[0] == "CONTAINERLINK")		addContainerLink($csvdata,$row_number);
-			if ($csvdata[0] == "OBJECTTAG")			addObjectTag($csvdata,$row_number);
+			if ($csvdata[0] == "OBJECTTAG")			addTag($csvdata,$row_number);
+			if ($csvdata[0] == "TAG")			addTag($csvdata,$row_number);
 			if ($csvdata[0] == "UPDATEIP")			updateIP($csvdata,$row_number);
 			$row_number++;
 		}
@@ -958,34 +973,102 @@ function addContainerLink($csvdata,$row_number)
 	}
 }
 
-function addObjectTag($csvdata,$row_number)
+function addTag($csvdata,$row_number)
 {
-	$objectName = trim ($csvdata[1]);
-	$tagName = trim ($csvdata[2]);
-
-	if ((strlen($objectName) > 0) & (strlen($tagName) > 0))
+	$cmd = trim($csvdata[0]);
+	if($cmd == "OBJECTTAG")
 	{
-		// Check if object exists and return object_id
-		$objectResult = usePreparedSelectBlade ('SELECT id FROM Object WHERE name = ?', array ($objectName));
-		$db_Object = $objectResult->fetch (PDO::FETCH_ASSOC);
+	 	$newdata[0] = "TAG";
+		$newdata[1] = "object";
+		$newdata[2] = $csvdata[1];
+		$newdata[3] = $csvdata[2];
 
-		// Check if tag exists and return tag_id
-		$tagResult = usePreparedSelectBlade ('SELECT id FROM TagTree WHERE tag = ?', array ($tagName));
-		$db_Tag = $tagResult->fetch (PDO::FETCH_ASSOC);
-
-		// if both the object and the tag exist, create an entry in the TagStorage table
-		if (($db_Object) & ($db_Tag))
-		{
-			$object_id = $db_Object['id'];
-			$tag_id = $db_Tag['id'];
-			addTagForEntity ('object', $object_id, $tag_id );
-			showSuccess ("Line $row_number: Added tag ".$tagName. " to object ".$objectName.".");
-		}
-		else
-		{
-			showError("Line $row_number: Unable to add tag ".$tagName. " to object ".$objectName.". Either the object of the tag does not exist.");
-		}
+		$csvdata = $newdata;
 	}
+
+	$realm = trim($csvdata[1]);
+	$Name = trim ($csvdata[2]);
+	$tagNames = explode(',', $csvdata[3]);
+
+	if ((!empty($realm)) && (strlen($Name) > 0) && (!empty($tagNames)))
+	{
+		switch($realm)	{
+		case 'object':
+				// Check if object exists and return object_id
+				$result = usePreparedSelectBlade ("SELECT Object.id FROM Object WHERE Object.name='$Name';");
+				$entity = $result->fetch (PDO::FETCH_ASSOC);
+				break;
+			case 'rack':
+				// Check if rack exists and return object_id
+				$result = usePreparedSelectBlade ("SELECT Rack.id FROM Rack WHERE Rack.name='$Name';");
+				$entity = $result->fetch (PDO::FETCH_ASSOC);
+				break;
+			case 'ipv4net':
+				$a = explode('/',$Name,2);
+				$ipaddress = $a[0];
+				$ip_bin = ip_parse($ipaddress);
+				if(isset($a[1]))
+					$masklen = strval($a[1]);
+				else
+					$masklen = 32;
+
+				/* from database.php fetchIPv4AddressNetworkRow() */
+
+				$query = 'SELECT IPv4Network.id FROM IPv4Network WHERE ' .
+				"? & (4294967295 >> (32 - mask)) << (32 - mask) = ip " .
+				"AND mask = ? " .
+				'ORDER BY mask DESC LIMIT 1';
+				$result = usePreparedSelectBlade ($query, array (ip4_bin2db ($ip_bin), $masklen));
+				$entity = $result->fetch (PDO::FETCH_ASSOC);
+
+				if($entity)
+					$Name = "$ipaddress/".$entity['mask'];
+
+				break;
+			default:
+				showError("Line $row_number: Realm $realm not implemented yet!.");
+				return False;
+				break;
+			}
+		}
+
+		if(!$entity)
+		{
+			showError("Line $row_number: Unable to add tags to $realm ".$Name.". The $realm does not exist.");
+			return False;
+		}
+
+		$entity_id = $entity['id'];
+
+		foreach($tagNames as $tagName)
+		{
+			$tagName = trim($tagName);
+
+			// Check if tag exists and return tag_id
+			$tagResult = usePreparedSelectBlade ("SELECT TagTree.id FROM TagTree WHERE TagTree.tag='".$tagName."';");
+			$db_Tag = $tagResult->fetch (PDO::FETCH_ASSOC);
+
+			// if both the object and the tag exist, create an entry in the TagStorage table
+			if (($db_Tag))
+			{
+				$tag_id = $db_Tag['id'];
+				try
+				{
+					addTagForEntity ($realm, $entity_id, $tag_id );
+				}
+				catch(Exception $e)
+				{
+					showWarning ("Line $row_number: Added tag ".$tagName. " to object ".$Name.". Entry already exists. ".$e);
+					continue;
+				}
+
+				showSuccess ("Line $row_number: Added tag ".$tagName. " to object ".$Name.".");
+			}
+			else
+			{
+				showError("Line $row_number: Unable to add tag ".$tagName. " to object ".$Name.". The tag does not exist.");
+			}
+		}
 }
 
 function updateIP($csvdata,$row_number)
