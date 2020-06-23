@@ -8,7 +8,6 @@ The script currently supports importing of Objects, Racks, VLANs and IP space.<b
 It also supports linking ports, and assigning rackspace to objects.<br/>
 <br/>
 The newest version of this plugin can be found at: https://github.com/RackTables/racktables-contribs<br/>
-<br/>
 ## CREDITS
 First version by <br/>
 Copyright (c) 2014, Erik Ruiter, SURFsara BV, Amsterdam, The Netherlands<br/>
@@ -17,7 +16,6 @@ All rights reserved.<br/>
 Updated in June 2020 by matt32106@github <br/>
 - compatibility with Racktables version 0.21 new plugin format<br/>
 - integration of the TAG import by (c)2012-2014 Maik Ehinger <github138@t-online.de><br/>
-<br/>
 ## HOW TO USE
 Go to the Configuration / ImportCSV menu. <br/>
 You can either copy / paste line formatted as below or use a properly formatted csv file.<br/>
@@ -25,7 +23,6 @@ Best practice: test a few records at first <br/>
 1/ to make sure the format is ok (the list separator format depends on the regional settings of the OS)<br/>
 2/ to make sure it updates the values you want before committing to hundreds of changes (there is NO UNDO feature yet)<br/>
 3/ if you make big changes, make sure to backup first <br/>
-<br/>
 ### Importing Objects:
  Syntax: OBJECT; Objecttype ; Common name ; Visible label ; Asset tag; portname,portname,etc ; porttype,porttype,etc<br/>
 <br/>
@@ -45,8 +42,6 @@ Best practice: test a few records at first <br/>
 <br/>
  OBJECT;SWITCH;myAccessSwitch1;testswitch;SW0001;ge-0/0/[0-11],fe-0/1/[0-11];24,19<br/>
  Creates a Switch object named myAccessSwitch1 having 12x 1000-Base-T interfaces named ge-0/0/0 to ge-0/0/11. And also 12x 100-Base-TX interfaces named fe-0/1/0 to fe-0/1/11.<br/>
-<br/>
-<br/>
 ### Importing Racks
  Syntax: RACK; Location ; Location child ; Row ; Rack; Height<br/>
  Value 1, RACK<br/>
@@ -60,7 +55,6 @@ Best practice: test a few records at first <br/>
 <br/>
  RACK;Datacenter AMS01; Room 0.08; R01; AA-1<br/>
  Creates a rack named AA-1 in Room 0.08 of location Datacenter AMS01, with a height of 46 units.<br/>
-<br/>
 ### Assigning Rackspace
  Syntax: RACKASSIGNMENT; Object name ;Rack; units ; fib<br/>
  Value 1, RACKASSIGNMENT<br/>
@@ -73,7 +67,6 @@ Best practice: test a few records at first <br/>
 <br/>
  RACKASSIGNMENT;myServer;AA-1;32,33,34,35;fi,fi,fi,fi<br/>
  Mounts the myServer object in Rack AA-1 on rackunits 32-35, using front and interior part of the rack units.<br/>
-<br/>
 ### Linking ports
  Syntax:CABLELINK; Objectname A; Portname A; Objectname B; Portname B; Cable ID<br/>
  Value 1, CABLELINK<br/>
@@ -86,7 +79,6 @@ Best practice: test a few records at first <br/>
  Examples:<br/>
  CABLELINK;myServer;eth1;myAccessSwitch1;ge-0/0/1;0080123<br/>
  Connects the eth1 port of myServer to the ge-0/0/1 port of myAccessSwitch1, using cable ID 0080123<br/>
-<br/>
 ### Importing VLANs
  Syntax: VLAN; VLAN domain; VLAN name; VLAN ID ; Propagation; Attached IP<br/>
  Value 1, VLAN<br/>
@@ -98,7 +90,6 @@ Best practice: test a few records at first <br/>
  Examples:<br/>
  VLAN;Private;Netops;1020;compulsory;10.1.3.0,2001:610:1020::0<br/>
  Creates VLAN 1020, named Netops having the IPv4 range 10.1.3.0 and the IPv6 range 2001:610:1020::0 attached.<br/>
-<br/>
 ### Importing IP space
  Syntax: IP; Prefix; Name; is_connected; VLAN domain; VLAN ID<br/>
  Value 1, IP<br/>
@@ -111,7 +102,6 @@ Best practice: test a few records at first <br/>
  Examples:<br/>
  IP;10.1.3.0/24;Netops network;TRUE;SURFsara;1020<br/>
  Creates the IP network 10.1.3.0/24 called 'Netops network' and attaches it to VLAN 1020 in the SURFsara VLAN domain.<br/>
-<br/>
 ### Importing Object IP interfaces
  Syntax: OBJECTIP; Objectname; OS Interface name; IP address; Type<br/>
  Value 1, OBJECTIP<br/>
@@ -124,7 +114,6 @@ Best practice: test a few records at first <br/>
 <br/>
  OBJECTIP;myRouter;eth0;10.1.3.1;regular<br/>
  Creates an IP interface name eth0, with address 10.1.3.1 and type 'regular', which is added to the myRouter object.<br/>
-<br/>
 ### Setting Object Attributes:
   Syntax: OBJECTATTRIBUTE;Objectname;attribute id;attribute value<br/>
   Value 1, OBJECTATTRIBUTE<br/>
@@ -138,7 +127,6 @@ Best practice: test a few records at first <br/>
 <br/>
   OBJECTATTRIBUTE;myRouter;COMMENT;This is a comment<br/>
   Sets the comment field for the myRouter object.<br/>
-<br/>
 ### Creating Container Link:
   Syntax: CONTAINERLINK;Parent Object Name;Child Object Name<br/>
   Value 1, CONTAINERLINK<br/>
@@ -148,7 +136,6 @@ Best practice: test a few records at first <br/>
   Examples:<br/>
   CONTAINERLINK;ESX_Host1;VM_1<br/>
   Adds VM_1 as a member of the Container ESX_Host1<br/>
-<br/>
 ### Adding Tags to objects, networks, racks
   Syntax: TAG;Realm;Name;Tag Names<br/>
   Value 1, TAG<br/>
@@ -172,7 +159,6 @@ Best practice: test a few records at first <br/>
   Examples:<br/>
   OBJECTTAG;Server1;Tag1<br/>
   Adds the tag called Tag1 to server object called Server1<br/>
-<br/>
 ### Update an IP network
   Syntax: UPDATEIP;IP Address; Name; Reserved;Comment<br/>
   Value 1: UPDATEIP<br/>
