@@ -1,0 +1,81 @@
+.help {
+	position: fixed;
+	right: 0;
+	z-index: 1000;
+}
+
+#help-button {
+	display: inline-block;
+	float:left;
+	margin-top: 10em;
+	padding-left:0.5em;
+	padding-right: 0.5em;
+	background-color: rgba(60, 120, 181, 0.5);
+	color: white;
+	cursor: pointer;
+}
+
+#help-pane {
+	display: inline-block;
+	overflow: auto;
+	background-color: rgba(60, 120, 181, 0.5);
+}
+
+#help-img {
+	display: block;
+	height: 80vh;
+}
+
+#help-msg {
+	margin: 0.25em 0;
+}
+
+.settings {
+	width: 98%;
+	padding-top:10px;
+	margin: auto;
+	overflow: hidden;
+}
+
+.parameters {
+	float:left;
+	clear:both;
+}
+
+.info {
+	float:right;
+	border: 1px dashed;
+	padding: 5px;
+}
+
+.result {
+	/*border: 1px solid;*/
+	width: 98%;
+	height: 98%;
+	margin: auto;
+}
+
+.topo {
+	/*border: 1px solid;*/
+	max-width: 100%;
+	margin: auto;
+	display: block;
+}
+
+.fields {
+	display: inline-block;
+	padding: 1em;
+}
+
+.gdiv {
+	display: inline-block;
+	padding-right: 1em;
+}
+
+.ginput {
+	display: block;
+}
+
+.not {
+	margin: auto;
+}
