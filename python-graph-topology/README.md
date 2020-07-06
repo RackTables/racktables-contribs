@@ -8,21 +8,24 @@ Follow these steps:
 
 ```bash
 sudo apt install graphviz 
-sudo apt install python-mysqldb
+sudo apt install python3-mysqldb
+sudo apt install libgraphviz-dev 
 
-sudo pip install pandas
-sudo pip install graphviz
-sudo pip install networkx
-sudo pip install pydot
-sudo pip install pyyed
-sudo pip install matplotlib
-sudo pip install nuitka
+sudo pip3 install pandas
+sudo pip3 install graphviz
+sudo pip3 install networkx
+sudo pip3 install pydot
+sudo pip3 install pyyed
+sudo pip3 install pygraphviz
+sudo pip3 install matplotlib
+sudo pip3 install nuitka
+sudo pip3 install mysqldb
 ```
 
 #### Compile the python code
 
 ```python
-python -m nuitka draw_topo_26_estable.py --nofollow-import-to=MySQLdb --nofollow-import-to=graphviz --nofollow-import-to=pydot --nofollow-import-to=time --nofollow-import-to=sys --nofollow-import-to=functools --nofollow-import-to=datetime --nofollow-import-to=pandas --nofollow-import-to=networkx --nofollow-import-to=operator --nofollow-import-to=itertools --nofollow-import-to=re --nofollow-import-to=matplotlib --follow-imports
+python3 -m nuitka topoGen.py --nofollow-import-to=MySQLdb --nofollow-import-to=graphviz --nofollow-import-to=pydot --nofollow-import-to=time --nofollow-import-to=sys --nofollow-import-to=functools --nofollow-import-to=datetime --nofollow-import-to=pandas --nofollow-import-to=networkx --nofollow-import-to=operator --nofollow-import-to=itertools --nofollow-import-to=re --nofollow-import-to=matplotlib --follow-imports
 ```
 
 #### Copy Files
@@ -30,7 +33,7 @@ This includes the binary generated in the second step
 
 ```bash
 sudo cp graph.php /var/www/racktables/plugins/
-sudo cp draw_topo_26_estable.bin /var/www/racktables/plugins/
+sudo cp topoGen.bin /var/www/racktables/plugins/
 
 sudo cp logo.png /var/www/racktables/wwwroot/pix/
 sudo cp not.gif /var/www/racktables/wwwroot/pix/
@@ -55,6 +58,6 @@ grant select,lock tables,show view on racktables.* to 'viewRT'@'%';
 
 ## TODO
 
-1. Migrate the python-core to Python3.x
-2. Implement the new RackTables plugin-architecture in the file `graph.php`.
-3. Get rid of `graphviz` and try to manage all the topologies natively through `networkx`. This will make the code a lot cleaner.
+1. Implement the new RackTables plugin-architecture in the file `graph.php`.
+2. Get rid of `graphviz` and try to manage all the topologies natively through `networkx`. This will make the code a lot cleaner.
+3. Use OpenStreetMap

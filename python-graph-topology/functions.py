@@ -7,8 +7,11 @@ from itertools import groupby
 import re
 import datetime
 import networkx as nx
+import graphviz as gv
 import pandas as pd 
 import pyyed
+import sys
+from pathlib import Path
 
 # This function converts M,G,T capacity into Kbps
 # If no unit, return -1
@@ -85,7 +88,6 @@ def fnc_chains_ring(vector):
 
 	return tempList
 
-
 # Function that builds the filename
 def fnc_build_filename(vector):
 	info = fnc_chains_ring(vector)
@@ -99,9 +101,9 @@ def fnc_build_filename(vector):
 		agregador = info[0][1]
 		topologia = info[0][2]
 
-		topoName1 = "Topologia "
+		topoName1 = "Topologia"
 		topoName2 = tipoTopo
-		topoName3 = " - MR LR - "
+		topoName3 = "-MRLR-"
 		topoName4 = topologia
 		filename  = "pix/topo/" + agregador + "/" + topoName1 + topoName2 + topoName3 + topoName4
 
@@ -111,15 +113,18 @@ def fnc_build_filename(vector):
 		agregador = "-".join(list(set([name[1] for name in info])))
 		topologia = "-".join(list(set([name[2] for name in info])))
 
-		topoName1 = "Topologia "
+		topoName1 = "Topologia"
 		topoName2 = tipoTopo
-		topoName3 = " - MR LR - "
+		topoName3 = "-MRLR-"
 		topoName4 = topologia
 		filename  = "pix/topo/" + agregador + "/" + topoName1 + topoName2 + topoName3 + topoName4
 
 	#filename=filename + "_" + version_script + "_" +now.strftime("%Y-%m-%d")+".dot"
-	return filename + ".dot"
+	#return filename + ".dot"
 
+	Path("pix/topo/" + agregador).mkdir(parents=True, exist_ok=True)
+
+	return filename
 
 # Function that returns whether we have a input_string or router_name
 def fnc_input_string_type(vector):
@@ -134,8 +139,6 @@ def fnc_input_string_type(vector):
 			listTopo.append(name)
 
 	return(listTopo,listRouter)
-
-
 
 # Funcion que organiza los puertos de cada nodo
 def fnc_port_list(routers):
@@ -175,7 +178,7 @@ def fnc_port_speed(port_string):
 # Function to compare speeds for egressRate in vPorts
 def fnc_speed_compare(strSpeed):
 
-	print strSpeed
+	#print strSpeed
 
 	speed = strSpeed.split(":")[0]
 	unit  = speed[-1:]
@@ -625,6 +628,148 @@ def fnc_port_string(router_label, port_string, color, router_mode, router_functi
 		return temp_string
 
 
+def fnc_build_graphviz(routers,edges,global_dict,router_mode,filename,input_string,format,engine,rankdir,lines_dict):
+
+	port_dict = {}
+
+	g0 = gv.Graph(format=format, engine=engine)
+
+	topo = '\"'+fnc_build_topo_name(input_string)+'\"'
+
+	g0.body.append('label='  +topo)
+	g0.body.append('rankdir='+rankdir)
+	g0.body.append('splines='+lines_dict)
+
+	g0.node_attr['style']     = 'filled'
+	g0.node_attr['fixedsize'] = 'false'
+	g0.node_attr['fontsize']  = '9'
+
+	if router_mode == '0':
+
+		g0.node_attr['shape'] = 'box'
+		labelType="labelHtml"
+
+	elif router_mode in ['1','2','3']:
+
+		g0.body.append('overlap=false')
+		#g0.body.append('nodesep='+nodesep)
+		#g0.body.append('ranksep='+ranksep)
+
+		g0.node_attr['shape']   = 'Mrecord'
+		g0.node_attr['overlap'] = 'false'
+
+		labelType="labelText"
+
+	i = 1
+
+	for router in routers:
+
+		# Variables
+		router_name     = router[0][0]
+		router_function = get_attribute(router_name,"HWfunction",global_dict)
+		router_int      = get_attribute(router_name,"Integrado",global_dict)
+		router_ckt_id   = get_attribute(router_name,"ckt_id",global_dict)
+		router_color    = get_attribute(router_name,"color",global_dict)['graphviz']
+		router_label    = fnc_router_metadata(global_dict,router_name, labelType, router_function, router_ckt_id, router_mode)
+
+		if router_mode == '0':
+
+			# Parametrization
+			cluster_name = "cluster"+str(i)
+			c = gv.Graph(cluster_name)
+			c.body.append('label='+router_label)
+			c.body.append('shape=box')
+			c.body.append('style=filled')
+
+			# Color depending on function in network
+			c.body.append('fillcolor='+router_color)
+			c.node_attr.update(style='filled')
+
+			# Ports workout
+			for port in router:
+				node_id = port[1]
+				if ":" in node_id: 
+					node_id = node_id.replace(":","#")
+				port_id = port[2]['label']
+				c.node(node_id,label=port_id)
+
+			g0.subgraph(c)
+
+		elif router_mode in ['1','2','3']:
+
+			# Parametrization
+			struct_name = "struct"+str(i)
+
+			# Color depending on function in network
+			color = 'fillcolor='+router_color
+
+			# Ports workout
+			p=1
+			port_string=""
+			for port in router:
+
+				node_id=port[1]
+				if ":" in node_id: node_id=node_id.replace(":","#")
+				port_id=port[2]['label']
+
+				port_string=port_string+"|<f"+str(p)+">"+port_id
+				dict_key = str(i)+"_"+str(p)
+				port_dict[node_id]=dict_key
+
+				p=p+1
+
+			node_string = fnc_port_string(router_label, port_string, color, router_mode, router_function)
+
+			g0.body.append(struct_name+node_string)			
+
+		i=i+1
+
+	for e in edges:
+
+		if router_mode == '0':
+
+			edgeA = e[0][0]
+			if ":" in edgeA:
+				edgeA = edgeA.replace(":","#")
+			edgeB = e[0][1]
+			if ":" in edgeB:
+				edgeB = edgeB.replace(":","#")
+			edgeLabel = e[1]['label']
+			edgeSpeed = e[2]
+
+		elif router_mode in ['1','2','3']:
+
+			tempA = e[0][0]
+			if ":" in tempA:
+				tempA=tempA.replace(":","#")
+			tempA = port_dict[tempA].split("_")
+
+			if router_mode =="3":
+				edgeA = "struct"+tempA[0]
+			else:
+				edgeA = "struct"+tempA[0]+":f"+tempA[1]
+
+			tempB = e[0][1]
+			if ":" in tempB:
+				tempB=tempB.replace(":","#")
+			tempB = port_dict[tempB].split("_")
+
+			if router_mode == "3":
+				edgeB = "struct"+tempB[0]
+			else:
+				edgeB = "struct"+tempB[0]+":f"+tempB[1]
+
+			edgeLabel=e[1]['label']
+			edgeSpeed=e[2]
+
+		g0.edge_attr['fontsize']='9'
+		g0.edge(edgeA,edgeB,label=edgeLabel, color=fnc_edge_format(edgeLabel, "color", edgeSpeed), penwidth=fnc_edge_format(edgeLabel,"width",edgeSpeed))
+
+	#print filename + "." + format_dict[output_format]
+	print(filename+".dot")
+	g0.render(filename+".dot")
+	sys.exit(0)
+
 def fnc_build_graphml(routers,edges,global_dict,router_mode,filename):
 
 	if router_mode in ['1','2','3','4']:
@@ -655,8 +800,9 @@ def fnc_build_graphml(routers,edges,global_dict,router_mode,filename):
 			edgeLabel = link.cableID
 			G.add_edge(link.routerA,link.routerB, arrowhead='none',arrowfoot='none',label=edgeLabel)
 
-		G.write_graph(filename+'.graphml')			
-
+		print(filename)
+		G.write_graph(filename+'.graphml')
+		sys.exit(4)
 
 	elif router_mode in ['0']:
 
@@ -691,4 +837,74 @@ def fnc_build_graphml(routers,edges,global_dict,router_mode,filename):
 
 			G.add_edge(edgeA,edgeB, arrowhead='none',arrowfoot='none',label=edgeLabel)
 
+		print(filename)
 		G.write_graph(filename+'.graphml')
+		sys.exit(4)
+
+def fnc_build_graphnx(df_system,dfConnFinal,global_dict,router_mode,filename,format,engine,):
+
+	import matplotlib.pyplot as plt
+	import pygraphviz
+
+	plt.figure(figsize=(15,15))
+
+	G = nx.Graph()
+
+	for i in df_system.itertuples():
+		router_name   = i[1]
+		id            = i[2]
+		ip_system     = i[3]
+		G.add_node(router_name)
+		nx.set_node_attributes(G,{router_name:{
+										'router_name':str(router_name),
+										'ip':str(ip_system),
+										'name_ip':str(router_name) + "\n" + str(ip_system),
+										'chassis':global_dict[router_name]['HWtype'],
+										'isAbr':'-1',
+										'virtual':'-1',
+										}
+									}
+								)
+
+	for i in dfConnFinal.itertuples():
+
+		router_name_A = i[1]
+		port_name_A   = i[2]
+		ip_A          = i[12]
+		ip_system_A   = global_dict[router_name_A]['system'] 
+
+		router_name_B = i[5]
+		port_name_B   = i[4]
+		ip_B          = i[13]
+		ip_system_B   = global_dict[router_name_B]['system']
+
+		cable_id      = i[3]
+
+		data = {
+				'pA':router_name_A +':'+port_name_A, 
+				'pB':router_name_B+':'+port_name_B, 
+				'ipA':ip_A,
+				'ipB':ip_B,
+				'cable_id':cable_id,
+				}
+
+		#print(i)
+
+		G.add_edge(router_name_A,router_name_B)
+		nx.set_edge_attributes(G, {(router_name_A,router_name_B):data})
+
+
+	pos = nx.nx_agraph.graphviz_layout(G, prog=engine)
+
+	nx.draw_networkx_nodes(G, pos, node_size=15)
+	nx.draw_networkx_edges(G, pos,)
+	nx.draw_networkx_labels(G, pos, 
+	labels={node:G.nodes[node]['name_ip'] for node in G.nodes()},
+	font_size=8,
+	)
+	
+
+	print(filename+"."+format)
+	plt.savefig(filename+"."+format, format=format, dpi=500, bbox_inches='tight')
+	#plt.savefig(filename+"."+format, format=format, dpi=500)
+	sys.exit(5)
