@@ -42,11 +42,18 @@ sudo cp js/ /var/www/racktables/plugins/ -r
 sudo cp css/ /var/www/racktables/plugins/ -r
 ```
 
-#### Set permissiones
+#### Set permissions
 This is needed for topologies storage
 ```bash
 cd /var/www/racktables/wwwroot/
 sudo chown www-data:www-data pix/ -R
+```
+
+#### Link 
+This is needed so the `graph.php` file can access the `topoGen.bin`.
+```bash
+cd /var/www/racktables/wwwroot/
+sudo sudo ln ../plugins/ . -s
 ```
 
 #### SQL ReadOnly User
@@ -60,4 +67,4 @@ grant select,lock tables,show view on racktables.* to 'viewRT'@'%';
 
 1. Implement the new RackTables plugin-architecture in the file `graph.php`.
 2. Get rid of `graphviz` and try to manage all the topologies natively through `networkx`. This will make the code a lot cleaner.
-3. Use OpenStreetMap
+3. Use OpenStreetMap to visualize topologies on a Map.
