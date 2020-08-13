@@ -22,7 +22,7 @@ sudo pip3 install nuitka
 sudo pip3 install mysqldb
 ```
 
-### Versions of libraries
+##### Versions of libraries
 
 See the file `versions.txt` for the versions of libraries that I'm using in my production installation.
 
