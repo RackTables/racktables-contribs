@@ -42,6 +42,7 @@ def get_attribute(key, attribute, global_dict):
     return "N/A"
 
 def setFinalValue(row):
+	#print(row)
 	
 	rtrName 	 = row['name']
 	attrName     = row['attrName'].replace(" ","")
@@ -55,9 +56,11 @@ def setFinalValue(row):
 		finalValue = string_value
 	else:
 		finalValue = "N/A"
-	row['finalValue'] = finalValue
+	#row['finalValue'] = finalValue
+
+	#print('\n')
 	
-	return row
+	return finalValue
 
 def fnc_chains_ring(vector):
 	topoString = ""

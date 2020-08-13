@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 
 graph_lag=graph_hp=graph_cpam='n'
 router_mode='3'
-topos_names=['co008_016']
+topos_names=['rn001_001']
 
 ########################################################################
 # Globals
@@ -140,7 +140,7 @@ dfConnFinal = dfConnFinal.drop_duplicates()
 # It also brings de system IP of the router.
 query15 = fnc_build_query_attributes(df_object_list)
 df_attr_list = pd.read_sql(query15, db)
-df_attr_list = df_attr_list.apply(setFinalValue, axis=1)
+df_attr_list['finalValue'] = df_attr_list.apply(setFinalValue, axis=1)
 df_attr_list = df_attr_list.drop(['string_value','dict_value'], axis=1)
 df_attr_list = df_attr_list.pivot(index='name',columns='attrName',values='finalValue').reset_index()
 df_attr_list.columns = [x.replace(" ","") for x in df_attr_list.columns]

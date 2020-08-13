@@ -11,20 +11,21 @@ sudo apt install graphviz
 sudo apt install python3-mysqldb
 sudo apt install libgraphviz-dev 
 
-sudo pip3 install pandas
-sudo pip3 install graphviz
-sudo pip3 install networkx
-sudo pip3 install pydot
-sudo pip3 install pyyed
-sudo pip3 install pygraphviz
-sudo pip3 install matplotlib
 sudo pip3 install nuitka
-sudo pip3 install mysqldb
+sudo pip3 install mysql
+sudo pip3 install graphviz
+sudo pip3 install pydot
+sudo pip3 install pandas
+sudo pip3 install networkx
+sudo pip3 install pyyed
+sudo pip3 install matplotlib
+
+sudo pip3 install pygraphviz
 ```
 
 ##### Versions of libraries
 
-See the file `versions.txt` for the versions of libraries that I'm using in my production installation.
+See the file `versions.txt` for the versions of libraries that I'm using in my production installation. There is a bug with version `1.1.0` of Pandas, which is bypassed in here. If possible, try to respect the versions inside `versions.txt`. If you face issues, let me know.
 
 #### Compile the python code
 
