@@ -1,9 +1,11 @@
 ##########################################################
 # Name: draw_topo_02.py
-# Version: 2.7
+# Version: 2.8
 # Author: Lucas Aimaretto
 # email: laimaretto@gmail.com
 # Date: 04-jul-2020
+
+- 2.8: A workaround in the function setFinalValue() because of a bug with Pandas 1.1.0.
 
 - 2.8: migrated to python3
 - 2.7: separation of graph functions into fnc_build_graphviz(), fnc_build_graphml(), fnc_build_graphnx()
