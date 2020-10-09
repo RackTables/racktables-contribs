@@ -518,7 +518,7 @@ function sl_getsnmp(&$object, $debug = false)
 		return False;
 	}
 
-	/* SNMP prerequisites successfull */
+	/* SNMP prerequisites successful */
 
 	$s = new sl_ifxsnmp($snmpconfig[2], $ipv4, $snmpconfig[3], $snmpconfig, $breed);
 

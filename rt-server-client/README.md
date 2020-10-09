@@ -27,7 +27,7 @@ Script support following infromation
     * Virtual server recognition (Xen 4.x)
     * Link Virtual server with hypervisor as container in Racktables
     * Racktables logging - when change ip addresses or virtual link with hypervisor
-    * Interface Connection (LLDPD needed for this feature. System automaticly link server interfaces with switch ports in RackTables)
+    * Interface Connection (LLDPD needed for this feature. System automatically link server interfaces with switch ports in RackTables)
 
 TODO
 

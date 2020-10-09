@@ -1,6 +1,6 @@
 <?php
 //
-// This extension for RackTables is used to mass connect ports (usefull for connecting back ends of patch panels)
+// This extension for RackTables is used to mass connect ports (useful for connecting back ends of patch panels)
 //
 // Version 2.0
 //
@@ -64,7 +64,7 @@ N1-37           S1-42
 N2-37           S1-42
 S1-42           N1-37 N2-37
 
-Notice that the label for S1-42 has 2 names seperated by a space. This means that the ports of S1-42 will be split evenly. Because there are
+Notice that the label for S1-42 has 2 names separated by a space. This means that the ports of S1-42 will be split evenly. Because there are
 2 destinations, the number of ports will be divided by 2. Half the number of ports (12) will go to one and the other will go to other. In this
 example, the FIRST half of ports will go to N1-37 and the SECOND half of ports will go to N2-37
 For the network racks all ports will go to S1-42 so no need for anything else in the label.

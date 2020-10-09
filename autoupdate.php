@@ -89,7 +89,7 @@ function lookup() {
 	
 	global $object_id;				//$object_id is set after a successful object lookup
 	global $object_name;			//used to lookup master object
-	global $master_object_id;		//$master_object_id is set after a successfull master object lookup (ie, C6100 chassis)
+	global $master_object_id;		//$master_object_id is set after a successful master object lookup (ie, C6100 chassis)
 	global $master_object_name;		//used for master object update where the name ties the object to the master object (ie, r5288 is tied to the master object name "r5285 r5286 r5287 r5288")
 	global $unique_value;
 	global $attribute_unique_id;
@@ -337,10 +337,10 @@ lookup();
 if (authenticate()==0)
 	exit("incorrect username and/or password");
 
-if ($object_id)	//if lookup() set $object_id, there was a successfull object lookup
+if ($object_id)	//if lookup() set $object_id, there was a successful object lookup
 	update_object($object_id);
 
-if ($master_object_id)	//if lookup() set $master_object_id, there was a successfull master object lookup
+if ($master_object_id)	//if lookup() set $master_object_id, there was a successful master object lookup
 	update_master_object($master_object_id);
 
 mysql_close();

@@ -34,7 +34,7 @@
       var side_bar_html = "";
     
       // arrays to hold copies of the markers used by the side_bar
-      // because the function closure trick doesnt work there
+      // because the function closure trick doesn't work there
       var gmarkers = [];
 
       // A function to create the marker and set up the event window

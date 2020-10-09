@@ -33,7 +33,7 @@
 * - added VM auto adding to Parent
 *
 * 2015-02-10 modified by Gjermund Jensvoll <gjerjens@gmail.com>
-* - RackTables >= 0.20.8 compatability (Fixing error "Argument 'port_type_id' of value NULL is invalid (format error)")
+* - RackTables >= 0.20.8 compatibility (Fixing error "Argument 'port_type_id' of value NULL is invalid (format error)")
 *
 */
 
@@ -292,7 +292,7 @@ function Update()
 		// We generally don't monitor sit interfaces.
 		// We don't do this for lo interfaces, too
 		// 2011-08-31 <neil.scholten@gamigo.com>
-		// * Only Document real interfaces, dont do bridges, bonds, vlan-interfaces
+		// * Only Document real interfaces, don't do bridges, bonds, vlan-interfaces
 		//   when they have no IP defined.
 		if ( preg_match('/(_|^(docker|lo|sit|vnet|virbr|veth|peth))/',$nics[$i]) != 0 ) {
 			// do nothing

@@ -532,7 +532,7 @@ sub getIfConfig
 
 # save this to yaml
 # $yaml->[0]->{parameters}->{interfaces} is a list
-# other network parameters are {interfaces} dependant
+# other network parameters are {interfaces} dependent
   foreach my $i (0 .. $#ifname)
   {
     $ifTlist = "$ifTlist"."${ifname[$i]},";

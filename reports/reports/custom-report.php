@@ -761,7 +761,7 @@ function getResult ( $post ) {
 /**
  * validateColums Function
  *
- * If user doesn't select any colum to display this function preselect the name colum
+ * If user doesn't select any column to display this function preselect the name column
  * to display the results
  *
  * @param array $_POST

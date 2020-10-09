@@ -23,7 +23,7 @@ The way it works is easy. A new table is created which holds the definition per 
 If there already is a definition for a specific hardware type the ports that will be generated is shown. With one click those ports are
 generated. You can also chose to update the definition (or create one if the object type or hardware type does not already have one.
 
-A definition consists of one or more semicolon seperated port definitions. Each definition has 4 or optionally 5 parts which are seperated by a |
+A definition consists of one or more semicolon separated port definitions. Each definition has 4 or optionally 5 parts which are separated by a |
 The 5 parts are:
 Start number : at which number should the range start. If there is only 1 port this can be set at anything
 Count        : the number of ports of this type (this is where you can use %n for the value of the attribute number of ports)
@@ -285,7 +285,7 @@ function localverify_PortGenerator($object) {
       //
       // $portOrders array will be filled with individual port generation schemes
       // <start port #>|<port count, use %n for number of ports>|<port name, use %u for number>|<port type id>[|<port label, use %u for number>]
-      // The configuration contains a semicolon seperated list of the schemes
+      // The configuration contains a semicolon separated list of the schemes
       //
       // An example of this would be:
       // 1|2|pwr%u|16;1|%n|eth%u|24|%u
@@ -334,7 +334,7 @@ function localverify_PortGenerator($object) {
               $errorText = "Config part {$orderCnt} refers to <i>HW Number of Ports</i> but that is not defined or 0.";
             }
           } else {
-            $errorText = "Config part {$orderCnt} does not have 4 parts seperated by a |";
+            $errorText = "Config part {$orderCnt} does not have 4 parts separated by a |";
           }
         }
         if (!isset($errorText)) {
@@ -405,12 +405,12 @@ function localfunc_PortGenerator()
     print "<b>EXPLANATION (for AC-in ports)</b><br><br> <b>1</b> = starting number,
     <b>2</b> = number of generated ports,  
     <b>AC%u</b> = will begin with <b>starting number</b> and create up to the <b>number of generated ports</b>, 
-    <b>16</b> = the value displayed on the chart below <b>in bold</b> (Notice: Default innerinterface ID is 1 /hardwired/, so the realy value is <b>1-16</b>)<br><br>"; //explains example
+    <b>16</b> = the value displayed on the chart below <b>in bold</b> (Notice: Default innerinterface ID is 1 /hardwired/, so the real value is <b>1-16</b>)<br><br>"; //explains example
     print "<b>PLEASE NOTE</b><br><br> If you do not add the port that is selected <b>(dictionary value)</b> to the default list in the <b>Ports</b> Tab,  
-    you will get a <b>foriegn key violation</b> error. 
+    you will get a <b>foreign key violation</b> error. 
     You must go to the <b>Configuration</b> area on the main page, go to <b>Enable port types</b>
     and hit the <b>Edit</b> tab to place the selected port in either <b>GBIC</b>, <b>hardwired</b>, or any other configuration 
-    on the page so that the error is not recieved.<br><br><br>"; //Very important to have a sucessful implementation of port generator 
+    on the page so that the error is not received.<br><br><br>"; //Very important to have a successful implementation of port generator 
     //
     // The form that can update the configuration
     // On top of the table of ports avialabe instead of beneath it
@@ -446,7 +446,7 @@ function localfunc_PortGenerator()
       } else {
       $isfirst = false;
       }
-      print "<td><b>{$row4[0]}</b><br>";//seperated values to make them easier to read
+      print "<td><b>{$row4[0]}</b><br>";//separated values to make them easier to read
       print "{$row4[1]}\n</td>"; 
       $i++;
     }

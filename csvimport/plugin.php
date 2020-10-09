@@ -48,7 +48,7 @@ Usage:
  Value 6, Port array: This is an optional field where you can create ports for the objects, separated by a comma. When you use this , you also need to add the Port type array
  An individual port field can be a range of ports. Eg. 'eth[0-9]' creates ten ports ranging from eth0 to eth9.
  Value 7, Port type array: This is an array which maps to the previous port array. This allows you to specify the interface type of the ports. It takes the form 'a-b'. Where a is the inner interface type, and b the outer interface type. Both a and b are numeric values.
- New inner / outer interface pair types can be linked using the configuration -> Enabled port types page. When the 'a-' value is ommited, the inner port type defaults to 'hardwire'.
+ New inner / outer interface pair types can be linked using the configuration -> Enabled port types page. When the 'a-' value is omitted, the inner port type defaults to 'hardwire'.
  Examples:
 
  OBJECT;SERVER;myServer;www.server.com;SRV001;IPMI,eth[0-2];1-24,3-24
@@ -111,7 +111,7 @@ Usage:
  Value 1, VLAN
  Value 2, VLAN domain: Specifies the name of the VLAN domain where the VLAN is to be added. If the domain does not exist, it will be created.
  Value 3, VLAN name: Specifies the name of the to be created VLAN.
- Value 4, Propagation: Sets the Racktables propagation feature for the VLAN, options are ondemand or compulsory. When ommitted the value defaults to compulsory.
+ Value 4, Propagation: Sets the Racktables propagation feature for the VLAN, options are ondemand or compulsory. When omitted the value defaults to compulsory.
  Value 5, Attached IP: This is an optional list of existing IPv4/IPv6 networks which can be assigned to the VLAN. The ranges should not have netmasks, and each range is separated by a comma.
 
  Examples:
@@ -538,7 +538,7 @@ function addRackImport($csvdata,$row_number)
 				showError("Line $row_number: Location Child " . $location_child . " already exists as another Objecttype, Import FAILED.");
 				return FALSE;
 			}
-			if ($db_location_child['parent_entity_id'] != $location_id) { // The child Location id doesnt not match with the parent location ID
+			if ($db_location_child['parent_entity_id'] != $location_id) { // The child Location id does not match with the parent location ID
 				showError("Line $row_number: Location Child " . $location_child . " mismatch with parent location_id, Import FAILED.");
 				return FALSE;
 			}
@@ -570,7 +570,7 @@ function addRackImport($csvdata,$row_number)
 				showError("Line $row_number: Row " . $rackrow. $db_rackrow['objtype_id'] . " already exists as another Objecttype, Import FAILED.");
 				return FALSE;
 			}
-			// The Row doesnt not match with the parent or child location ID
+			// The Row does not match with the parent or child location ID
 			if (($db_rackrow['parent_entity_id'] != $location_id) & ($db_rackrow['parent_entity_id'] != $location_child_id))
 			{
 				showError("Line $row_number: Row " . $rackrow . " mismatch with parent location_id, Import FAILED.". $db_rackrow['parent_entity_id']. " , " . $location_id . " , " . $location_child_id);

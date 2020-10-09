@@ -1,6 +1,6 @@
 <?php
 // Custom Racktables Report v.0.3.3
-// Libary file
+// Library file
 
 // 2016-02-04 - Mogilowski Sebastian <sebastian@mogilowski.net>
 

@@ -46,7 +46,7 @@
 
 	function renderGraphTopo()
 	{
-		//variables intialization:
+		//variables initialization:
 		$topo = $router_mode = $format = "";
 		$algo = $rankdir = $lines = $aggr = $lag = "";
 		//$nodesep = $ranksep = "";

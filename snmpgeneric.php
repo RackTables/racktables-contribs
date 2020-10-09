@@ -118,7 +118,7 @@ $sg_ifType2oif_id = array(
 	 *					a foreign key constraint fails
 	 */
 	//  '1' => 440,	/* other => unknown 440 */
-	  '1' => 1469,	/* other => virutal port 1469 */
+	  '1' => 1469,	/* other => virtual port 1469 */
 	  '6' => 24,	/* ethernetCsmacd => 1000BASE-T 24 */
 	 '24' => 1469,	/* softwareLoopback => virtual port 1469 */
 	 '33' => 1469,	/*  rs232 => RS-232 (DB-9) 681 */
@@ -1222,9 +1222,9 @@ function snmpgeneric_list($object_id) {
 		return;
 	}
 
-	/* SNMP connect successfull */
+	/* SNMP connect successful */
 
-	showSuccess("SNMP ".$snmpconfig['version']." connect to ${snmpconfig['host']} successfull");
+	showSuccess("SNMP ".$snmpconfig['version']." connect to ${snmpconfig['host']} successful");
 
 	echo '<form name=CreatePorts method=post action='.$_SERVER['REQUEST_URI'].'&module=redirect&op=create>';
 
