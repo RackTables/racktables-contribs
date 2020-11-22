@@ -73,15 +73,7 @@ G2 of inner Type 4 and outer type 1077 (SFP-1000 with empty SFP-1000 inside)
 
 //
 // It also depends on  a new table which contains all the autoport configurations
-//
-// SQL statement to create this:
-/*
-CREATE TABLE IF NOT EXISTS `AutoPort` (
-  `dict_key` int(11) NOT NULL,
-  `autoportconfig` text NOT NULL,
-  UNIQUE KEY `dict_key` (`dict_key`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
-*/
+// (the plugin creates the table automatically).
 //
 
 //
@@ -147,6 +139,11 @@ CREATE TABLE IF NOT EXISTS `AutoPort` (
 //*** Port listing with InnerInterface ID (Example: 10-1588	QSFP+ => empty QSFP+)
 //*** some HTML Tags bugfixed
 //
+/*
+Version 1.6
+Revised by Denis Ovsienko 2020-11-22
+Changes: see the git commit message.
+*/
 
 $tab['object']['portgenerator'] = 'Port generator';
 $trigger['object']['portgenerator'] = 'localtrigger_PortGenerator';
@@ -198,16 +195,10 @@ function checkForTable ()
 function localtrigger_PortGenerator()
 {
   global $noPortGenerator;
-	assertUIntArg ('object_id', __FUNCTION__);
-	$object = spotEntity ('object', $_REQUEST['object_id']);
-  $record = getObjectPortsAndLinks ($object['id']);
-  if (count($record)==0 && !in_array($object['objtype_id'],$noPortGenerator)) 
-		//return 1;
-                return 'std';
-	else
-	{
-		return '';
-	}
+  $object = spotEntity ('object', getBypassValue());
+  if ($object['nports'] == 0 && ! in_array ($object['objtype_id'], $noPortGenerator))
+    return 'std';
+  return '';
 }
 
 //
@@ -218,6 +209,7 @@ function localverify_PortGenerator($object) {
   checkForTable();
   $foundError = true;
   $record = getObjectPortsAndLinks ($object['id']);
+  $object['objtype_name'] = decodeObjectType ($object['objtype_id']);
   //
   // Make sure that there are no ports configured
   //
@@ -460,9 +452,6 @@ function localfunc_PortGenerator()
 //
 // The actual port generator
 //
-//$msgcode['localexecute_PortGenerator']['OK'] = 0;
-//$msgcode['localexecute_PortGenerator']['ERR'] = 100;
-
 function localexecute_PortGenerator()
 {
   global $errorText, $portList;
@@ -481,21 +470,15 @@ function localexecute_PortGenerator()
     $errorText = "Port generator not allowed";
   }
   if ($linkok) {
-    //return buildRedirectURL (__FUNCTION__, 'OK', array ("Successfully added {$cnt} ports"));
-    return setMessage ('success', $message="Successfully added {$cnt} ports");
+    showSuccess ("Successfully added {$cnt} ports");
   } else {
-    //return buildRedirectURL (__FUNCTION__, 'ERR', array ("Error adding the ports ({$errorText})"));
-    return setMessage ('error', $message="Error adding the ports ({$errorText})");
+    showError ("Error adding the ports ({$errorText})");
   }
 }
 
 //
 // Update the configuration scheme
 //
-//$msgcode['updateconfig_PortGenerator']['OK'] = 0;
-//$msgcode['updateconfig_PortGenerator']['ERR'] = 100;
-
-
 function updateconfig_PortGenerator()
 {
   global $tablePortGenerator;
@@ -510,10 +493,5 @@ function updateconfig_PortGenerator()
   }
   $result = usePreparedSelectBlade ($q);
   if ($result==NULL) { print_r($dbxlink->errorInfo()); die(); }
-  if (true) {
-    return setMessage('success',$message="Successfully updated auto port configuration");
-  } else {
-     print "false";
-    return setMessage ('error', $message="Error in update to auto port configuration");
-  }
+  showSuccess ('Successfully updated auto port configuration');
 }
