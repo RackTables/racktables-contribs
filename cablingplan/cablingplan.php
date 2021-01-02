@@ -29,19 +29,38 @@ $image['cablingplan']['path'] = 'pix/cablingplan.png';
 $image['cablingplan']['width'] = 218;
 $image['cablingplan']['height'] = 200;
 
+registerHook ('dispatchImageRequest_hook', 'plugin_cablingplan_dispatchImageRequest');
+
 function showCablingPlan()
 {
 	// Show cabling plan image
-	echo "<img hspace='10' vspace='10' src='?module=rendercablingplan&format=png' />\n";
+	echo "<img hspace='10' vspace='10' src='?module=image&img=plugin_cablingplan&format=png' />\n";
 }
 
 function showCablingPlanSvg()
 {
 	// Show cabling plan image
-	echo "<img hspace='10' vspace='10' src='?module=rendercablingplan&format=svg' />\n";
+	echo "<img hspace='10' vspace='10' src='?module=image&img=plugin_cablingplan&format=svg' />\n";
 }
 
-function renderCablingPlan()
+function plugin_cablingplan_dispatchImageRequest()
+{
+	global $pageno;
+
+	if ('plugin_cablingplan' == genericAssertion ('img', 'string'))
+	{
+		$format = genericAssertion ('format', 'string');
+		if (! in_array ($format, array ('png', 'svg')))
+			throw new InvalidRequestArgException ('format', $format);
+		$pageno = 'depot';
+		fixContext();
+		assertPermission();
+		renderCablingPlan ($format);
+		return TRUE;
+	}
+}
+
+function renderCablingPlan ($format)
 {
 	// Build cabling plan
 
@@ -110,6 +129,5 @@ function renderCablingPlan()
 			)
 		);
 
-	if (in_array ($_REQUEST['format'], array ('svg', 'png')))
-		$graph->image ($_REQUEST['format']);
+	$graph->image ($format);
 }
