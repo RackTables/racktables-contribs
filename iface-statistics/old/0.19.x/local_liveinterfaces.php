@@ -68,7 +68,8 @@ function renderInterfacesStats($object_id)
                         $last_reboot = time_convert($uptime);
 
                         echo "<td";
-                        echo $last_reboot < $port_use_age?" class='text_red'>":$last_reboot > 262080?" class='text_green'>":">";                        
+                        echo $last_reboot < $port_use_age ? " class='text_red'>" :
+                        ($last_reboot > 262080 ? " class='text_green'>" : ">");
                         echo $uptime . "</tr>";
 
                         echo "<table width='80%' class='widetable' cellspacing=0 cellpadding='5px' align='center'><tr><th>Port<th>Link status<th>Last input<th>Last clear<th>Input packets<th>Output packets<th>Description</tr>";

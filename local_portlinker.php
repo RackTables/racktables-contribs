@@ -203,9 +203,9 @@ function str2int ($xIn) {
   $i = 0;
   while ($i<strlen($xIn)) {
     if ($allowedToAdd) {
-      if (is_numeric($xIn{$i})) {
+      if (is_numeric($xIn[$i])) {
         $inNumber = true;
-        $theNumber .= $xIn{$i};
+        $theNumber .= $xIn[$i];
       } else {
         if ($inNumber) {
           $inNumber = false;

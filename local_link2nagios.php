@@ -66,7 +66,7 @@ function getLiveStatusQuery ($xQuery) {
   $allLiveStatusResults = array();
   $theCommand = "echo -e \"{$xQuery}\" | netcat {$livestatusServer} {$livestatusServerPort}";
   $temp = exec($theCommand,$allLiveStatusResults,$a1);
-  if (strlen($temp)>0 && $temp{0}=="-") {
+  if (strlen($temp)>0 && $temp[0]=="-") {
     $temp = "";
   }
   return $temp;
