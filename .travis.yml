@@ -1,0 +1,16 @@
+git:
+  quiet: true
+  depth: 3
+
+os: linux
+dist: bionic # Ubuntu 18.04 with PHP 7.1, 7.2, 7.3 and 7.4
+language: php
+
+matrix:
+  include:
+  - php: 7.1
+  - php: 7.2
+  - php: 7.3
+  - php: 7.4
+
+script: ./test_ci.sh
