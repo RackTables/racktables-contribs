@@ -73,6 +73,7 @@ def fnc_chains_ring(vector):
 	    'Cadena_TX':     re.compile(r'^(\w{5}_\w{5})_(\d{3})_(\D{1,6})$'),
 	    'Area':          re.compile(r'^(0.0.\d{1}.\d{1,2})$'),
 	    'Region':        re.compile(r'(.*0.0.\d{1}.\d{1,2}.+)'),
+		'General':       re.compile(r'(.*)')
 	    # ...
 	}
 
@@ -92,8 +93,6 @@ def fnc_chains_ring(vector):
 def fnc_build_filename(vector):
 	info = fnc_chains_ring(vector)
 	len_vector= len(vector)
-
-	#print info
 
 	if len_vector == 1:
 
