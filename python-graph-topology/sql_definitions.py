@@ -92,7 +92,7 @@ def fnc_build_query_attributes(df):
 	"join AttributeValue as av on (ob.id=av.object_id) "
 	"join Attribute as a on (av.attr_id=a.id) "
 	"left join Dictionary as d on (d.dict_key=av.uint_value) "
-	"where (a.name = 'Integrado' or a.name = 'Int_Type' or a.name = 'HW type' or a.name = 'HW function' or a.name = 'TxType_CKT_ID' or a.name like '%Ref%') "
+	"where (a.name = 'Int_Status' or a.name = 'Int_Type' or a.name = 'HW type' or a.name = 'HW function' or a.name = 'Int_LAT_LON' or a.name = 'TxType_CKT_ID' or a.name like '%Ref%') "
 	"and ("
 	)
 	i=1

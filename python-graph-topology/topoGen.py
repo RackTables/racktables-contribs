@@ -8,6 +8,8 @@ import time
 import sys
 import functools
 import datetime
+import yaml
+
 import pandas as pd 
 import networkx as nx
 from sql_definitions import *
@@ -31,15 +33,18 @@ topos_names=['rn001_001']
 # Globals
 ########################################################################
 
-ipran_tx = ["LAG_Y","HAIRPIN_Y","SDH","RADIO","DWDM","CDWM","FO",""]
-version_script="21"
+settings = yaml.safe_load(open('plugins/settings.yml'))
 
 ########################################################################
 # Program
 ########################################################################
 
-db = MySQLdb.connect(host="127.0.0.1", port=3306, user="viewRT", passwd="viewRT", db="racktables")
-
+db = MySQLdb.connect(host   = settings['mysql']['host'],
+					 port   = settings['mysql']['port'],
+					 user   = settings['mysql']['username'],
+					 passwd = settings['mysql']['password'],
+					 db     = settings['mysql']['database'],
+					 )
 posProg 	= 0
 posTopo 	= 1
 posMode		= 2
@@ -140,18 +145,19 @@ dfConnFinal = dfConnFinal.drop_duplicates()
 # It also brings de system IP of the router.
 query15 = fnc_build_query_attributes(df_object_list)
 df_attr_list = pd.read_sql(query15, db)
-df_attr_list['finalValue'] = df_attr_list.apply(setFinalValue, axis=1)
-df_attr_list = df_attr_list.drop(['string_value','dict_value'], axis=1)
-df_attr_list = df_attr_list.pivot(index='name',columns='attrName',values='finalValue').reset_index()
-df_attr_list.columns = [x.replace(" ","") for x in df_attr_list.columns]
-df_attr_list = pd.merge(df_system, df_attr_list, on=['name'], how='left')
-df_attr_list = df_attr_list.fillna("N/A")
+
+if len(df_attr_list) > 0:
+	df_attr_list = df_attr_list.apply(setFinalValue, axis=1)
+	df_attr_list = df_attr_list.drop(['string_value','dict_value'], axis=1)
+	df_attr_list = df_attr_list.pivot(index='name',columns='attrName',values='finalValue').reset_index()
+	df_attr_list.columns = [x.replace(" ","") for x in df_attr_list.columns]
+	df_attr_list = pd.merge(df_system, df_attr_list, on=['name'], how='left')
+	df_attr_list = df_attr_list.fillna("N/A")
 
 #==================================================================
 #==================================================================
 # BUild global dictionaries
-global_dict = fnc_add_atributes_to_dic_global(df_attr_list)
-
+global_dict = fnc_add_atributes_to_dic_global(df_system,df_attr_list)
 
 #==================================================================
 # The graph is created.
@@ -192,13 +198,14 @@ if router_mode  in ['0','1','2','3']:
 	edges   = fnc_edge_list(dfConnFinal, graph_lag, graph_hp, graph_cpam, router_mode)
 	routers = fnc_node_list(dfConnFinal, global_dict, router_mode, graph_hp, graph_lag, graph_cpam)
 	fnc_build_graphviz(routers,edges,global_dict,router_mode,filename,input_string,format_dict[output_format],algo_dict[output_algo],rankdir_dict[output_direction],lines_dict[output_line])
+	sys.exit(0)
 
 elif router_mode in ['4']:
 
-	edges   = fnc_edge_list(dfConnFinal, graph_lag, graph_hp, graph_cpam, router_mode)
-	routers = fnc_node_list(dfConnFinal, global_dict, router_mode, graph_hp, graph_lag, graph_cpam)
-	fnc_build_graphml(routers,edges,global_dict,router_mode,filename)
+	fnc_build_graphml(df_system, dfConnFinal, global_dict, router_mode, filename)
+	sys.exit(4)
 
 elif router_mode in ['5']:
 
-	fnc_build_graphnx(df_system,dfConnFinal,global_dict,router_mode,filename,format_dict[output_format],algo_dict[output_algo])
+	fnc_build_graphnx(df_system, dfConnFinal, global_dict, router_mode, filename)
+	sys.exit(5)

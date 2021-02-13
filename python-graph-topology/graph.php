@@ -92,11 +92,11 @@
 							<label class="ginput" for="router_mode">Router mode:</label>
 							<select class="ginput" name="router_mode">
 								<option <?php if ($router_mode == "0") {?>selected="true" <?php }; ?>value="0">gvCluster</option>
-								<option <?php if ($router_mode == "1" || $router_mode == "") {?>selected="true" <?php }; ?>value="1">gvOne-line</option>
+								<option <?php if ($router_mode == "1") {?>selected="true" <?php }; ?>value="1">gvOne-line</option>
 								<option <?php if ($router_mode == "2") {?>selected="true" <?php }; ?>value="2">gvTwo-line</option>
 								<option <?php if ($router_mode == "3") {?>selected="true" <?php }; ?>value="3">gvOnly-name</option>
 								<option <?php if ($router_mode == "4") {?>selected="true" <?php }; ?>value="4">yedOnly-name</option>
-								<option <?php if ($router_mode == "5") {?>selected="true" <?php }; ?>value="5">nxOnly-name</option>
+								<option <?php if ($router_mode == "5" || $router_mode == "") {?>selected="true" <?php }; ?>value="5">nxOnly-name</option>
 							</select>
 							</div>
 
@@ -186,7 +186,7 @@
 
 							case 5:
 
-								{echo "<img class=\"topo\" src=\"" . $scriptOutput[count($scriptOutput)-1] . "\">";}
+								include("plugins/topo.html");
 								break;
 
 							case 0:

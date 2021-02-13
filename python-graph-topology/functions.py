@@ -42,7 +42,6 @@ def get_attribute(key, attribute, global_dict):
     return "N/A"
 
 def setFinalValue(row):
-	#print(row)
 	
 	rtrName 	 = row['name']
 	attrName     = row['attrName'].replace(" ","")
@@ -50,17 +49,15 @@ def setFinalValue(row):
 	string_value = row['string_value']
 	finalValue   = 'N/A'
 
-	if attrName in ['Integrado','HWtype','Sync_Ref_Order','HWfunction','Int_Type']:
+	if attrName in ['Int_Status','HWtype','Sync_Ref_Order','HWfunction','Int_Type']:
 		finalValue = dict_value
-	elif attrName in ['Sync_Ref1','Sync_Ref2',]:
+	elif attrName in ['Sync_Ref1','Sync_Ref2','Int_LAT_LON']:
 		finalValue = string_value
 	else:
 		finalValue = "N/A"
-	#row['finalValue'] = finalValue
-
-	#print('\n')
+	row['finalValue'] = finalValue
 	
-	return finalValue
+	return row
 
 def fnc_chains_ring(vector):
 	topoString = ""
@@ -206,7 +203,7 @@ def fnc_port_sfp(port_string):
 		return sfp_type
 
 # Function that creates a dictionary with global attributes
-def fnc_add_atributes_to_dic_global(df):
+def fnc_add_atributes_to_dic_global(df_systems, df):
 	#                   name HWfunction            HWtype Integrado Sync_Ref1 Sync_Ref2      Sync_Ref_Order
 	# 0     C1026_SF270_SARX        NaN    ALU%GPASS%SARX        si     1/2/6     1/3/6  ref1 ref2 external
 	# 1     C1406_ND270_SARX        NaN    ALU%GPASS%SARX        si     1/3/7     1/2/7  ref2 ref1 external
@@ -223,6 +220,24 @@ def fnc_add_atributes_to_dic_global(df):
 
 	dict_global = {}
 
+	# Default dictionary for all items ...
+	for system in df_systems.itertuples():
+		router_name = system.name
+		dict_global[router_name] = {}
+		dict_global[router_name]['system']         = "N/A" 
+		dict_global[router_name]['HWfunction']     = "N/A"
+		dict_global[router_name]['Int_Status']     = "N/A"
+		dict_global[router_name]['Sync_Ref1']      = "N/A"
+		dict_global[router_name]['Sync_Ref2']      = "N/A"
+		dict_global[router_name]['Sync_Ref_Order'] = "N/A"
+		dict_global[router_name]['Int_Type']       = "N/A"
+		dict_global[router_name]['color']          = {'yEd':'#c0c0c0','graphviz':'grey'}
+		dict_global[router_name]['HWtype']         = "N/A"
+		dict_global[router_name]['weight']         = "N/A"
+		dict_global[router_name]['lat']            = "0"
+		dict_global[router_name]['lon']            = "0"		
+
+	# We verify if columns exist in DF ... not sure if this is needed.
 	if 'HWfunction' not in df.columns:
 		df['HWfunction'] = "N/A"
 
@@ -238,13 +253,14 @@ def fnc_add_atributes_to_dic_global(df):
 	if 'Sync_Ref_Order' not in df.columns:
 		df['Sync_Ref_Order'] = "N/A"
 
-	if 'Integrado' not in df.columns:
-		df['Integrado'] = "N/A"
+	if 'Int_Status' not in df.columns:
+		df['Int_Status'] = "N/A"
 
 	if "Int_Type" not in df.columns:
 		df['Int_Type'] = "N/A"
 
-	#print df
+	if "Int_LAT_LON" not in df.columns:
+		df['Int_LAT_LON'] = "0:0"
 
 	for attrib in df.itertuples():
 
@@ -261,24 +277,33 @@ def fnc_add_atributes_to_dic_global(df):
 				except:
 					HWtype = "N/A"
 
-		Integrado      = attrib.Integrado
+		Int_Status     = attrib.Int_Status
 		Sync_Ref1      = attrib.Sync_Ref1
 		Sync_Ref2      = attrib.Sync_Ref2
 		Sync_Ref_Order = attrib.Sync_Ref_Order
 		system         = attrib.ip
 		Int_Type       = attrib.Int_Type
 
-		dict_global[router_name] = {}
+		Int_LAT_LON    = attrib.Int_LAT_LON
+
+		if Int_LAT_LON != "N/A":
+			Int_LAT_LON = Int_LAT_LON.replace(" ","")
+		else:
+			Int_LAT_LON = "0:0"
+
+		#dict_global[router_name] = {}
 		dict_global[router_name]['system']         = system
 		dict_global[router_name]['HWfunction']     = HWfunction
-		dict_global[router_name]['Integrado']      = Integrado
+		dict_global[router_name]['Int_Status']     = Int_Status
 		dict_global[router_name]['Sync_Ref1']      = Sync_Ref1
 		dict_global[router_name]['Sync_Ref2']      = Sync_Ref2
 		dict_global[router_name]['Sync_Ref_Order'] = Sync_Ref_Order
 		dict_global[router_name]['Int_Type']       = Int_Type 
-		dict_global[router_name]['color']          = fnc_router_color(HWfunction, Integrado, Int_Type)
+		dict_global[router_name]['color']          = fnc_router_color(HWfunction, Int_Status, Int_Type)
 		dict_global[router_name]['HWtype']         = HWtype
 		dict_global[router_name]['weight']         = fnc_router_weight(HWtype)
+		dict_global[router_name]['lat']            = Int_LAT_LON.split(":")[0]
+		dict_global[router_name]['lon']            = Int_LAT_LON.split(":")[1]
 
 		if Sync_Ref1: 
 			dict_global[router_name][Sync_Ref1] = 'Sync_Ref1'
@@ -414,7 +439,7 @@ def fnc_router_weight(HWtype):
 
 # Function that returns the color of the router depending on its
 # situation
-def fnc_router_color(HWfunction, intStatus, Int_Type):
+def fnc_router_color(HWfunction, Int_Status, Int_Type):
 
 	# Color depending on function
 	functionDict = {
@@ -424,6 +449,7 @@ def fnc_router_color(HWfunction, intStatus, Int_Type):
 		'AggEthernet':	{'yEd':'#33ff33','graphviz':'limegreen'},
 		'FronteraPE':	{'yEd':'#cccc00','graphviz':'darkgoldenrod'},
 		'TX':			{'yEd':'#ffff00','graphviz':'yellow'},
+		'CSR':			{'yEd':'#99ccff','graphviz':'lightblue3'},
 	}
 
 	intStatusDict = {
@@ -443,14 +469,15 @@ def fnc_router_color(HWfunction, intStatus, Int_Type):
 		'ref2 ref1':{'yEd':'#ccffff','graphviz':'lightblue1'}
 	}
 
+	# Default Color if nothing is matched ...
 	color = {'yEd':'#c0c0c0','graphviz':'grey'}
 
 	####
 
-	if intStatus == 'no':
-		color = intStatusDict.get(intStatus,color)
+	if Int_Status == 'no':
+		color = intStatusDict.get(Int_Status,color)
 
-	elif intStatus == 'si':
+	elif Int_Status == 'si':
 
 		if HWfunction != "N/A":
 			color = functionDict.get(HWfunction,color)
@@ -773,101 +800,102 @@ def fnc_build_graphviz(routers,edges,global_dict,router_mode,filename,input_stri
 	g0.render(filename+".dot")
 	sys.exit(0)
 
-def fnc_build_graphml(routers,edges,global_dict,router_mode,filename):
+def fnc_build_graphml(df_system, dfConnFinal, global_dict, router_mode, filename):
 
 	if router_mode in ['1','2','3','4']:
 
 		G = pyyed.Graph()
 
-		nodes = pd.DataFrame(routers)
-
-		nodes.columns=['router_name','port','label']
-		nodes = nodes[['router_name']]
-		nodes = nodes.drop_duplicates()
-
-		links = pd.DataFrame(edges)
-		links.columns=['routerA','routerB','cableID']		
-
-		for router in nodes.itertuples():
-			router_name   	= router.router_name
+		for router in df_system.itertuples():
+			router_name   	= router.name
 			router_function = get_attribute(router_name,"HWfunction",global_dict)
-			router_int      = get_attribute(router_name,"Integrado",global_dict)
+			router_int      = get_attribute(router_name,"Int_Status",global_dict)
 			router_ckt_id   = get_attribute(router_name,"ckt_id",global_dict)
 			router_color    = get_attribute(router_name,"color",global_dict)['yEd']
 			router_label    = fnc_router_metadata(global_dict, router_name, 'labelHtml', router_function, router_ckt_id, router_mode)
 			router_system   = get_attribute(router_name,"system",global_dict)
 
-			G.add_node(router_name,label=router_name + "\n" + router_system, shape_fill=router_color)
+			G.add_node(router_name, label=router_name + "\n" + router_system, shape_fill=router_color)
 
-		for link in links.itertuples():
-			edgeLabel = link.cableID
-			G.add_edge(link.routerA,link.routerB, arrowhead='none',arrowfoot='none',label=edgeLabel)
-
-		print(filename)
-		G.write_graph(filename+'.graphml')
-		sys.exit(4)
-
-	elif router_mode in ['0']:
-
-		G = pyyed.Graph()
-		
-		for router in routers:
-
-			# Variables
-			router_name     = router[0][0]
-			router_function = get_attribute(router_name,"HWfunction",global_dict)
-			router_int      = get_attribute(router_name,"Integrado",global_dict)
-			router_ckt_id   = get_attribute(router_name,"ckt_id",global_dict)
-			router_color    = get_attribute(router_name,"color",global_dict)['yEd']
-			router_label    = fnc_router_metadata(global_dict, router_name, 'labelHtml', router_function, router_ckt_id, router_mode)
-			router_system   = get_attribute(router_name,"system",global_dict)
-
-			grupo = G.add_group(router_name,label=router_name + "\n" + router_system, fill=router_color)
-
-			for port in router:
-				node_id = port[1]
-				port_id = port[2]['label']
-				port_id = port_id.replace('<BR />','\n')
-				port_id = port_id.replace('<','')
-				port_id = port_id.replace('>','')
-				grupo.add_node(node_id, label=port_id)
-
-		for e in edges:
-
-			edgeA     = e[0][0]
-			edgeB     = e[0][1]
-			edgeLabel = e[1]['label']
-
-			G.add_edge(edgeA,edgeB, arrowhead='none',arrowfoot='none',label=edgeLabel)
+		for link in dfConnFinal.itertuples():
+			edgeLabel = link.port1 + "--" + link.port2
+			if link.cable != "N/A":
+				G.add_edge(link.name1, link.name2, arrowhead='none',arrowfoot='none', label= link.cable + "\n" + edgeLabel)
+			else:
+				G.add_edge(link.name1, link.name2, arrowhead='none',arrowfoot='none', label= edgeLabel)
 
 		print(filename)
 		G.write_graph(filename+'.graphml')
 		sys.exit(4)
 
-def fnc_build_graphnx(df_system,dfConnFinal,global_dict,router_mode,filename,format,engine,):
+def fnc_build_graphnx(df_system, dfConnFinal, global_dict, router_mode, filename):
 
-	import matplotlib.pyplot as plt
-	import pygraphviz
+	from pyvis.network import Network
 
-	plt.figure(figsize=(15,15))
+	phyList = ['High-Ran','High-Ran-ABR','FronteraPE','Mid-Ran','AggEthernet','FronteraSDH','BBIP']
 
-	G = nx.Graph()
+	#plt.figure(figsize=(15,15))
+
+	#G = nx.Graph()
+	G = Network("800px", "1300px", heading="")
+
+	#G.set_edge_smooth('dynamic')
+
+	G.set_options("""
+		var options = {
+			"nodes": {
+				"size":13,
+			  	"font": {
+			    	"size": 11
+			  	}
+			},
+			"edges": {
+				"arrowStrikethrough": false,
+				"color": {
+				"inherit": false
+				},
+				"font": {
+				"size": 10,
+				"align": "top"
+				},
+				"smooth": false
+			},
+			"manipulation": {
+				"enabled": true,
+				"initiallyActive": true
+			},
+			"physics": {
+				"barnesHut": {
+					"centralGravity": 0.2,
+					"springLength": 100,
+					"springConstant": 0.01,
+					"damping": 0.7,
+					"avoidOverlap": 1
+				},
+			"maxVelocity": 5,
+			"minVelocity": 0.47,
+			"solver": "barnesHut"
+			}
+		}
+		""")
 
 	for i in df_system.itertuples():
 		router_name   = i[1]
 		id            = i[2]
 		ip_system     = i[3]
-		G.add_node(router_name)
-		nx.set_node_attributes(G,{router_name:{
-										'router_name':str(router_name),
-										'ip':str(ip_system),
-										'name_ip':str(router_name) + "\n" + str(ip_system),
-										'chassis':global_dict[router_name]['HWtype'],
-										'isAbr':'-1',
-										'virtual':'-1',
-										}
-									}
-								)
+
+		if global_dict[router_name]['HWfunction'] in phyList:
+			physics = False
+		else:
+			physics = True
+
+		G.add_node(router_name,
+					label   = str(router_name) + "\n" + str(ip_system),
+					chassis = global_dict[router_name]['HWtype'],
+					ip      = str(ip_system),
+					color   = get_attribute(router_name,"color",global_dict)['yEd'],
+					physics = physics,
+					)
 
 	for i in dfConnFinal.itertuples():
 
@@ -883,31 +911,20 @@ def fnc_build_graphnx(df_system,dfConnFinal,global_dict,router_mode,filename,for
 
 		cable_id      = i[3]
 
-		data = {
-				'pA':router_name_A +':'+port_name_A, 
-				'pB':router_name_B+':'+port_name_B, 
-				'ipA':ip_A,
-				'ipB':ip_B,
-				'cable_id':cable_id,
-				}
+		if global_dict[router_name_A]['HWfunction'] in phyList and global_dict[router_name_B]['HWfunction'] in phyList:
+			physics = False
+		else:
+			physics = True
 
-		#print(i)
+		edgeLabel = port_name_A + "--" + port_name_B
 
-		G.add_edge(router_name_A,router_name_B)
-		nx.set_edge_attributes(G, {(router_name_A,router_name_B):data})
+		if cable_id in ["N/A",None]:
+			G.add_edge(source=router_name_A, to=router_name_B, label=edgeLabel, physics=physics)
+		else:
+			G.add_edge(source=router_name_A, to=router_name_B, label=cable_id + "\n" + edgeLabel, physics=physics)
 
 
-	pos = nx.nx_agraph.graphviz_layout(G, prog=engine)
-
-	nx.draw_networkx_nodes(G, pos, node_size=15)
-	nx.draw_networkx_edges(G, pos,)
-	nx.draw_networkx_labels(G, pos, 
-	labels={node:G.nodes[node]['name_ip'] for node in G.nodes()},
-	font_size=8,
-	)
-	
-
-	print(filename+"."+format)
-	plt.savefig(filename+"."+format, format=format, dpi=500, bbox_inches='tight')
-	#plt.savefig(filename+"."+format, format=format, dpi=500)
-	sys.exit(5)
+	#G.barnes_hut(overlap=1)
+	#G.force_atlas_2based(overlap=1)
+	#G.show_buttons()
+	G.save_graph("plugins/topo.html")
