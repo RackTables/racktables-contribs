@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # This shell script reloads a RackTables demo database. It requires:
 # 1. unpacked RackTables release tarball in home directory
@@ -23,27 +23,26 @@ do_version_20()
 		exit 2
 	}
 	if [ "$DODEMO" = "yes" ]; then
-		[ -s $HOME/RackTables-$V/scripts/init-sample-racks.sql ] || {
-			echo "Dump file $HOME/RackTables-$V/scripts/init-sample-racks.sql doesn't exist"
+		[ -s ~/"RackTables-$V/scripts/init-sample-racks.sql" ] || {
+			echo "Dump file ~/RackTables-$V/scripts/init-sample-racks.sql doesn't exist"
 			exit 7
 		}
 	fi
-	SQLFILE=`mktemp /tmp/demoreload.XXXXXX`
+	SQLFILE=$(mktemp --tmpdir demoreload.XXXXXX)
 	echo 'SET NAMES "utf8", @@SQL_MODE = REPLACE(@@SQL_MODE, "NO_ZERO_DATE", "");' > "$SQLFILE"
 	cat "$MYDIR/init-full-$V.sql" >> "$SQLFILE"
-	[ "$DODEMO" = "yes" ] && cat $HOME/RackTables-$V/scripts/init-sample-racks.sql >> "$SQLFILE"
+	[ "$DODEMO" = "yes" ] && cat ~/"RackTables-$V/scripts/init-sample-racks.sql" >> "$SQLFILE"
 	echo "DROP DATABASE IF EXISTS $DB; CREATE DATABASE $DB CHARACTER SET utf8 COLLATE utf8_general_ci;" | mysql information_schema
-	mysql $DB < "$SQLFILE"
+	mysql "$DB" < "$SQLFILE"
 	rm -f "$SQLFILE"
 }
 
 [ $# -eq 3 ] || usage
 
-V=$1
-DB=$2
-DODEMO=$3
-MYNAME=`readlink -f $0`
-MYDIR=`dirname $MYNAME`
+V=${1:?}
+DB=${2:?}
+DODEMO=${3:?}
+MYDIR=$(dirname "$(realpath "$0")")
 
 case $V in
 	0.2[01].*)
