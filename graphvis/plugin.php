@@ -18,7 +18,7 @@
 		return array(
 			"name" => "graphvis",
 			"longname" => "graphvis : network topology",
-			"version" => "1.0",
+			"version" => "1.1",
 			"home_url" => "https://github.com/Breloc/graphvis",
 		);
 	}
@@ -55,6 +55,7 @@
 		addConfigVar('GRAPHVIS_DEFLT_LOGICAL_TAGFILTER', '', 'string', 'yes', 'no', 'yes', 'Default tag ID to display on graphvis logical tab. Ie. "24" for tag id 24');
 		addConfigVar('GRAPHVIS_LOGICAL_TAGS_ROOT', '', 'string', 'yes', 'no', 'yes', 'Children of this tag will be offered as tag filter for devices in Logical view');
 		addConfigVar('GRAPHVIS_PHYSICAL_ROWSTOEXCLUDE', '', 'string', 'yes', 'no', 'yes', 'Comma-separated list of row IDs to hide on physical tab');
+		addConfigVar('GRAPHVIS_HIDE_CHILDREN_OBJECTS', 'yes', 'string', 'yes', 'no', 'yes', 'Boolean indicating if container\'s children must be hidden in logical topology. "yes" for TRUE, all other values are FALSE');
 		return TRUE;
 	}
 
@@ -62,19 +63,75 @@
 		deleteConfigVar('GRAPHVIS_DEFLT_LOGICAL_TAGFILTER');
 		deleteConfigVar('GRAPHVIS_LOGICAL_TAGS_ROOT');
 		deleteConfigVar('GRAPHVIS_PHYSICAL_ROWSTOEXCLUDE');
+		deleteConfigVar('GRAPHVIS_HIDE_CHILDREN_OBJECTS');
 		return TRUE;
 	}
 
 	function plugin_graphvis_upgrade() {
+		$db_info = getPlugin('graphvis');
+		$v1 = $db_info['db_version'];
+		$code_info = plugin_graphvis_info ();
+		$v2 = $code_info['version'];
+
+		if ($v1 == $v2)
+			throw new RackTablesError ('Versions are identical', RackTablesError::INTERNAL);
+
+		// find the upgrade path to be taken
+		$versionhistory = array
+		(
+			'1.0',
+			'1.1',
+		);
+		$skip = TRUE;
+		$path = NULL;
+		foreach ($versionhistory as $v)	{
+			if ($skip and $v == $v1) {
+				$skip = FALSE;
+				$path = array();
+				continue;
+			}
+			if ($skip)
+				continue;
+
+			$path[] = $v;
+			if ($v == $v2)
+				break;
+		}
+		if ($path === NULL or !count ($path))
+			throw new RackTablesError ('Unable to determine upgrade path', RackTablesError::INTERNAL);
+
+		// Run update
+		foreach ($path as $batchid) {
+			switch ($batchid) {
+				case '1.1':
+					addConfigVar('GRAPHVIS_HIDE_CHILDREN_OBJECTS', 'yes', 'string', 'yes', 'no', 'yes', 'Boolean indicating if container\'s hierarchy must be merged in root parent in logical topology. "yes" for TRUE, all other values are FALSE');
+					break;
+				default:
+					throw new RackTablesError ("Preparing to upgrade to $batchid failed", RackTablesError::INTERNAL);
+			}
+		}
+
 		return TRUE;
 	}
 
 	
 	
+	function getObjectRootParentID($objid, &$objlist) {
+		if (!array_key_exists($objid, $objlist))
+			return $objid;
+		$curobj = &$objlist[$objid];
+		while(!is_null($curobj['container_id']))
+			$curobj = &$objlist[$curobj['container_id']];
+		return $curobj['id'];
+	}
+
+
 	function graphVisGetLogicalData() {
 		$racks = getRackSearchResult('%');
 		$netobjs = graphvisGetNetObjects();
+		$netobjs_children = array();
 		$links = array();
+		$hideChildren = (strtolower(getConfigVar('GRAPHVIS_HIDE_CHILDREN_OBJECTS')) == 'yes');
 
 		// Register network tags
 		$networktags = Array("-1" => ""); // Filled with "no tag filter"
@@ -89,6 +146,10 @@
 			$netobj['rack_name'] = $racks[$netobj['rack_id']]['name'];
 			$netobj['row_name'] = $racks[$netobj['rack_id']]['row_name'];
 			$netobj['location_name'] = $racks[$netobj['rack_id']]['location_name'];
+
+			// Register objects in a container to hide them
+			if (!is_null($netobj['container_id']))
+				$netobjs_children[$netobj['id']] = 'hide me !';
 
 			// Register tags in netobj
 			$netobj['tags'] = Array();
@@ -105,9 +166,18 @@
 				$portA = $linkchain->getport($linkchain->first);
 				$portB = $linkchain->getport($linkchain->last);
 				
-				$objIdA = min($portA['object_id'], $portB['object_id']);
-				$objIdB = max($portA['object_id'], $portB['object_id']);
-				if ($objIdA != $portA['object_id']) {
+				if ($hideChildren) {
+					$portARootObjId = getObjectRootParentID($portA['object_id'], $netobjs);
+					$portBRootObjId = getObjectRootParentID($portB['object_id'], $netobjs);
+				}
+				else {
+					$portARootObjId = $portA['object_id'];
+					$portBRootObjId = $portB['object_id'];
+				}
+
+				$objIdA = min($portARootObjId, $portBRootObjId);
+				$objIdB = max($portARootObjId, $portBRootObjId);
+				if ($objIdA != $portARootObjId) {
 					// Swap portA and portB
 					$tmp = $portA;
 					$portA = $portB;
@@ -140,6 +210,8 @@
 			}
 		}
 
+		if ($hideChildren)
+			$netobjs = array_diff_key($netobjs, $netobjs_children);
 		return Array('netobjs' => $netobjs, 'links' => $links, 'tags' => json_encode($networktags));
 	}
 

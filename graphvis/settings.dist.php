@@ -23,6 +23,7 @@
 	// GRAPHVIS_DEFLT_LOGICAL_TAGFILTER : Default tag ID to display on graphvis logical tab. Ie. "24" for tag id 24
 	// GRAPHVIS_LOGICAL_TAGS_ROOT : Children of this tag will be offered as tag filter for devices in Logical view
 	// GRAPHVIS_PHYSICAL_ROWSTOEXCLUDE : Comma-separated list of row IDs to hide by default on physical tab
+	// GRAPHVIS_HIDE_CHILDREN_OBJECTS : Boolean indicating if container's hierarchy must be merged in root parent in logical topology. "yes" for TRUE, all other values are FALSE
 
 	
 	// All link types used in your logical network, and their display settings
