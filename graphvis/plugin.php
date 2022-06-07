@@ -55,7 +55,7 @@
 		addConfigVar('GRAPHVIS_DEFLT_LOGICAL_TAGFILTER', '', 'string', 'yes', 'no', 'yes', 'Default tag ID to display on graphvis logical tab. Ie. "24" for tag id 24');
 		addConfigVar('GRAPHVIS_LOGICAL_TAGS_ROOT', '', 'string', 'yes', 'no', 'yes', 'Children of this tag will be offered as tag filter for devices in Logical view');
 		addConfigVar('GRAPHVIS_PHYSICAL_ROWSTOEXCLUDE', '', 'string', 'yes', 'no', 'yes', 'Comma-separated list of row IDs to hide on physical tab');
-		addConfigVar('GRAPHVIS_HIDE_CHILDREN_OBJECTS', 'yes', 'string', 'yes', 'no', 'yes', 'Boolean indicating if container\'s children must be hidden in logical topology. "yes" for TRUE, all other values are FALSE');
+		addConfigVar('GRAPHVIS_HIDE_CHILDREN_OBJECTS', 'yes', 'string', 'yes', 'no', 'yes', 'Boolean indicating if container\'s hierarchy must be merged in root parent in logical topology. "yes" for TRUE, all other values are FALSE');
 		return TRUE;
 	}
 
