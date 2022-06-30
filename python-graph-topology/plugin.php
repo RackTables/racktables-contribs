@@ -115,10 +115,12 @@ function renderGraphTopo()
 						<div class="gdiv">
 						<label class="ginput" for="router_mode">Router mode:</label>
 						<select class="ginput" name="router_mode">
+						<!--
 							<option <?php if ($router_mode == "0") {?>selected="true" <?php }; ?>value="0">gvCluster</option>
 							<option <?php if ($router_mode == "1") {?>selected="true" <?php }; ?>value="1">gvOne-line</option>
 							<option <?php if ($router_mode == "2") {?>selected="true" <?php }; ?>value="2">gvTwo-line</option>
 							<option <?php if ($router_mode == "3") {?>selected="true" <?php }; ?>value="3">gvOnly-name</option>
+						-->
 							<option <?php if ($router_mode == "5" || $router_mode == "") {?>selected="true" <?php }; ?>value="5">nxOnly-name</option>
 							<option <?php if ($router_mode == "4") {?>selected="true" <?php }; ?>value="4">yedOnly-name</option>
 							<option <?php if ($router_mode == "6") {?>selected="true" <?php }; ?>value="6">osmOnly-name</option>
@@ -127,6 +129,7 @@ function renderGraphTopo()
 						</select>
 						</div>
 
+					<!--
 						<div class="gdiv">
 						<label class="ginput" for="algo">Algorithm:</label>
 						<select class="ginput" name="algo">
@@ -180,6 +183,8 @@ function renderGraphTopo()
 						</select>
 						</div>
 
+					-->
+
 					</fieldset>
 					</form>
 				</div>
@@ -197,7 +202,8 @@ function renderGraphTopo()
 				} else
 				{
 					$topo = preg_replace('/\s+/', '', $topo);
-					exec("python3 plugins/topoGen/topoGen.py ".$topo." ".$router_mode." ".$format." ".$algo." ".$rankdir." ".$lines." ".$aggr." ".$lag, $scriptOutput, $exitCode); //PHP waits until the called program is done
+					//exec("python3 plugins/topoGen/topoGen.py ".$topo." ".$router_mode." ".$format." ".$algo." ".$rankdir." ".$lines." ".$aggr." ".$lag, $scriptOutput, $exitCode); //PHP waits until the called program is done
+					exec("python3 plugins/topoGen/topoGen.py ".$topo." ".$router_mode." 0 0 0 0 0 0", $scriptOutput, $exitCode); //PHP waits until the called program is done
 
 					switch($exitCode)
 					{
