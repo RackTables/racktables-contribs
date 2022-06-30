@@ -15,8 +15,6 @@ import networkx as nx
 from sql_definitions import *
 from functions import *
 
-#  python -m nuitka draw_topo_26_estable.py --nofollow-import-to=MySQLdb --nofollow-import-to=graphviz --nofollow-import-to=pydot --nofollow-import-to=time --nofollow-import-to=sys --nofollow-import-to=functools --nofollow-import-to=datetime --nofollow-import-to=pandas --nofollow-import-to=networkx --nofollow-import-to=operator --nofollow-import-to=itertools --nofollow-import-to=re --nofollow-import-to=matplotlib --follow-imports
-#
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
@@ -71,7 +69,7 @@ topos_names,routers_names,attrib_names = fnc_input_string_type(input_string)
 
 #print(topos_names,routers_names,attrib_names)
 
-# In this list wwe'll save the object_id's
+# In this list we'll save the object_id's
 object_list            = []
 object_list_topos      = []
 object_list_routers    = []
@@ -199,25 +197,11 @@ graph_cpam			= "n"
 ## Obtain the filename for the topology
 filename = fnc_build_filename(topos_names,routers_names,attrib_names)
 
-#if len(topos_names) > 0:
-#	filename = fnc_build_filename(topos_names)
-#elif len(attrib_names) > 0:
-#	filename = fnc_build_filename(["ATTRIB"])
-#elif len(routers_names) > 0:
-#	filename = fnc_build_filename(["ROUTERS"])
-
 #===================================================================
 #===================================================================
 #print "router-mode ", router_mode, "format ", format_dict[output_format], "algo ", algo_dict[output_algo], sys.argv[posNodeSep], sys.argv[posRankSep]
 # Gegin the plot
-if router_mode  in ['0','1','2','3']:
-
-	edges   = fnc_edge_list(dfConnFinal, graph_lag, graph_hp, graph_cpam, router_mode)
-	routers = fnc_node_list(dfConnFinal, global_dict, router_mode, graph_hp, graph_lag, graph_cpam)
-	fnc_build_graphviz(routers,edges,global_dict,router_mode,filename,input_string,format_dict[output_format],algo_dict[output_algo],rankdir_dict[output_direction],lines_dict[output_line])
-	sys.exit(0)
-
-elif router_mode in ['4']:
+if router_mode in ['4']:
 
 	fnc_build_graphml(df_system, dfConnFinal, global_dict, router_mode, filename)
 	sys.exit(4)
