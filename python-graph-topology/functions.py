@@ -258,61 +258,6 @@ def fnc_router_color(HWfunction, Int_Status, Int_Type):
 	
 	return color
 
-# Function that returns metadata of the router
-def fnc_router_metadata(global_dict, router_name, what, router_function, router_ckt_id, router_mode):
-
-	router_sync_order  = get_attribute(router_name, "Sync_Ref_Order", global_dict)
-	router_ip          = get_attribute(router_name, "system", global_dict)
-
-	if "TX" in router_function:
-
-		if what=="labelHtml":
-
-			router_label=(
-				"<"+
-				"<font point-size=\"10\">"+router_ckt_id+"</font>"+"<BR />"
-				+">"
-				)
-			return router_label
-
-		elif what=="labelText":
-
-			router_label = router_ckt_id
-			return router_label
-
-	else:
-
-		if what=="labelHtml":
-
-			if router_mode == "3":
-				router_label=(
-					"<"+
-					"<font point-size=\"10\">"+router_name+"</font>"+"<BR />"+
-					"<font point-size=\"9\">" +router_ip+"</font>"+"<BR />"
-					+">"
-					)
-				return router_label
-
-			else:
-				router_label=(
-					"<"+
-					"<font point-size=\"10\">"+router_name+"</font>"+"<BR />"+
-					"<font point-size=\"9\">" +router_ip+"</font>"+"<BR />"+
-					"<font point-size=\"9\">" +router_sync_order+"</font>"
-					+">"
-					)
-				return router_label
-
-		elif what=="labelText":
-
-			if router_mode=="3":
-				router_label = router_name + "&#92;n" + router_ip
-				return router_label
-			else:
-				router_label = router_name + "&#92;n" + router_ip + "&#92;n" + router_sync_order
-				return router_label
-
-
 def fnc_build_graphml(df_system, dfConnFinal, global_dict, router_mode, filename):
 
 	if router_mode in ['1','2','3','4']:
@@ -321,11 +266,7 @@ def fnc_build_graphml(df_system, dfConnFinal, global_dict, router_mode, filename
 
 		for router in df_system.itertuples():
 			router_name   	= router.name
-			router_function = get_attribute(router_name,"HWfunction",global_dict)
-			router_int      = get_attribute(router_name,"Int_Status",global_dict)
-			router_ckt_id   = get_attribute(router_name,"ckt_id",global_dict)
 			router_color    = get_attribute(router_name,"color",global_dict)['yEd']
-			router_label    = fnc_router_metadata(global_dict, router_name, 'labelHtml', router_function, router_ckt_id, router_mode)
 			router_system   = get_attribute(router_name,"system",global_dict)
 
 			G.add_node(router_name, label=router_name + "\n" + router_system, shape_fill=router_color)
