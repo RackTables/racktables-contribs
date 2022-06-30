@@ -13,28 +13,6 @@ import pyyed
 import sys
 from pathlib import Path
 
-# This function converts M,G,T capacity into Kbps
-# If no unit, return -1
-# If problems, return 0
-def fnc_aux_convert_speed(capacity, outUnit=None):
-
-	dictUnit = {'K':1E3, 'M':1E6, 'G':1E9, 'T':1E12}
-
-	if capacity == 'vPort':
-		unit  = "G"
-		value = 20
-	else:
-		unit  = str(capacity[-1:])
-		value = int(capacity[:-1])
-	
-
-	if outUnit not in dictUnit.keys() or unit not in dictUnit.keys():
-		return 0
-	else:
-		value = value*dictUnit[unit] / dictUnit[outUnit]
-
-	return value
-
 def get_attribute(key, attribute, global_dict):
   try:
     return global_dict[key][attribute]
@@ -58,36 +36,6 @@ def setFinalValue(row):
 	row['finalValue'] = finalValue
 	
 	return row
-
-def fnc_chains_ring(vector):
-	topoString = ""
-	tempList   = []
-	len_vector = len(vector)
-	i=1
-
-	regexp = {
-	    'Anillo':        re.compile(r'^(\w{5})_(\d{3})$'),
-	    'Anillo_TX':     re.compile(r'^(\w{5})_(\d{3})_(\D{1,6})$'),
-	    'Cadena':        re.compile(r'^(\w{5}_\w{5})_(\d{3})$'),
-	    'Cadena_Radial': re.compile(r'^(\w{5}_\w{5})_(\D{1,6})$'),
-	    'Cadena_TX':     re.compile(r'^(\w{5}_\w{5})_(\d{3})_(\D{1,6})$'),
-	    'Area':          re.compile(r'^(0.0.\d{1}.\d{1,2})$'),
-	    'Region':        re.compile(r'(.*0.0.\d{1}.\d{1,2}.+)'),
-		'General':       re.compile(r'(.*)')
-	    # ...
-	}
-
-	# We can have many topos inside vector
-	for topo in vector:
-
-		for key, pattern in regexp.items():
-			match = pattern.match(topo)
-			if match:
-				name   = match.groups()[0]
-				tot    = match.group()
-				tempList.append( (key, name, tot) )
-
-	return tempList
 
 # Function that builds the filename
 def fnc_build_filename(topos_names,routers_names,attrib_names):
@@ -119,20 +67,6 @@ def fnc_input_string_type(vector):
 
 	return(listTopo,listRouter,listAttrib)
 
-# Funcion que organiza los puertos de cada nodo
-def fnc_port_list(routers):
-	router_list=[]
-	port_list=[]
-	for router in routers:
-		#print router[0]
-		router_id = router[0][0]
-		for port in router:
-			port_list.append(port[1])
-		router_list.append((router_id,port_list))
-		port_list=[]
-
-	return router_list
-
 # Function that returns de speed of the port
 def fnc_port_speed(port_string):
 
@@ -152,34 +86,7 @@ def fnc_port_speed(port_string):
 		"virtual port"  :"vPort",		
 	}
 
-	return speedDict.get(speed,"N/A")
-
-# Function to compare speeds for egressRate in vPorts
-def fnc_speed_compare(strSpeed):
-
-	#print strSpeed
-
-	speed = strSpeed.split(":")[0]
-	unit  = speed[-1:]
-	value = float(speed[:-1])
-	if unit == "G":
-		return value
-	elif unit == "M":
-		return float(value/1000)
-
-# Function that returns the SFP type
-def fnc_port_sfp(port_string):
-
-	if port_string == "virtual port":
-		return "LAG"
-	elif port_string == "spoke-sdp":
-		return "VLL"
-	elif port_string == "SFP-CES" or port_string == "SFP-ATM" or port_string == "SFP-ASAP":
-		return port_string.split('-')[1]
-	else:
-		sfp_type = port_string.split('-')
-		sfp_type = sfp_type[1]
-		return sfp_type
+	return speedDict.get(speed,"N/A")	
 
 # Function that creates a dictionary with global attributes
 def fnc_add_atributes_to_dic_global(df_systems, df):
@@ -291,19 +198,6 @@ def fnc_add_atributes_to_dic_global(df_systems, df):
 
 	return dict_global
 
-# Function to obtain topology name
-def fnc_build_topo_name(vector):
-	topo_name=""
-	len_vector= len(vector)
-	i=1
-	for tn in vector:
-		if i < len_vector:
-			topo_name=topo_name+tn+"-"
-		else:
-			topo_name=topo_name+tn
-		i=i+1
-
-	return topo_name
 
 def fnc_router_weight(HWtype):
 
@@ -364,83 +258,6 @@ def fnc_router_color(HWfunction, Int_Status, Int_Type):
 	
 	return color
 
-
-# Function to process label of edges
-def fnc_edge_format(labelText, what, portSpeed):
-	
-	# LAG3:1G:DWDM:10172
-	# 10G:-1:DWDM:10265
-	# 296M:-1:MW
-	# 3G:-1:2
-
-	stringLen = len(labelText.split(":"))
-	portSpeed = portSpeed[0]
-
-	if portSpeed[:3] != "LAG":
-
-		if  stringLen == 4:
-
-			egressRate  = labelText.split(":")[0]
-			metOspef	= labelText.split(":")[1]
-			TxType		= labelText.split(":")[2]
-			txTypeCkt	= labelText.split(":")[3]
-
-		elif stringLen == 3:
-
-			egressRate  = labelText.split(":")[0]
-			metOspef	= labelText.split(":")[1]
-			TxType		= labelText.split(":")[2]
-			txTypeCkt	= "NA"
-
-		elif stringLen == 2:
-
-			egressRate  = labelText.split(":")[0]
-			metOspef	= labelText.split(":")[1]
-			TxType		= "FO"
-			txTypeCkt	= "NA"
-
-		elif stringLen == 1:
-
-			egressRate  = portSpeed
-			metOspef	= "-1"
-			TxType		= "FO"
-			txTypeCkt	= "NA"
-
-		else:
-
-			egressRate  = "1G"
-			metOspef	= "-1"
-			TxType		= "FO"
-			txTypeCkt	= "NA"
-
-	colorDict = {
-		"CWDM" :"red",
-		"DWDM" :"blue",
-		"FO"   :"black",
-		"SDH"  :"green",
-		"MW"   :"pink",
-		"ARSAT":"navy",
-		"DATCO":"purple",
-	}
-
-	widthDict = {
-		0.1     :"0.5",
-		1       :"1.0",
-		10      :"2.5",
-		50      :"5.0",
-		100     :"10.0",
-	}
-
-	#print("labelText: ", labelText, "what: ", what, "portSpede: ", portSpeed, "ER: ", egressRate)
-
-	egressRate = int(fnc_aux_convert_speed(egressRate,'G'))
-	egressRate = min([x for x in widthDict.keys() if egressRate <= x])
-
-	if what == "color":
-		return colorDict.get(TxType,'yellow')
-	elif what == "width":
-		return widthDict.get(egressRate, '50.0')
-
 # Function that returns metadata of the router
 def fnc_router_metadata(global_dict, router_name, what, router_function, router_ckt_id, router_mode):
 
@@ -495,46 +312,6 @@ def fnc_router_metadata(global_dict, router_name, what, router_function, router_
 				router_label = router_name + "&#92;n" + router_ip + "&#92;n" + router_sync_order
 				return router_label
 
-# Function that returns port_string when router as a node
-def fnc_port_string(router_label, port_string, color, router_mode, router_function):
-
-	port_string=port_string[1:]
-	temp_port = port_string.split("|")
-
-	if "TX" in router_function:
-
-		if router_function == "TX_MIX":
-
-			temp_string=""
-
-			for port in port_string.split("|"):
-				temp_string = temp_string + port.split("\n")[0] + "|"
-
-			port_string = temp_string[:-1]
-
-			temp_string = "{" + port_string + "}"
-			temp_string = " [" + color + ",label=\"" + temp_string + "\"]"
-			return temp_string
-
-		elif router_function == "TX_ARSAT":
-
-			#print router_label
-
-			temp_string = "{" + router_label + "}"
-			temp_string = " [" + color + ",label=\"" + temp_string + "\"]"
-			return temp_string
-
-	else:
-
-		if router_mode=="1":
-			temp_string = "{" + router_label + "|" + port_string + "}"
-		elif router_mode=="2":
-			temp_string = "{" + router_label + "|" + "{" + port_string + "}" + "}"
-		elif router_mode=="3":
-			temp_string = router_label
-
-		temp_string = " [" + color + ",label=\"" + temp_string + "\"]"
-		return temp_string
 
 def fnc_build_graphml(df_system, dfConnFinal, global_dict, router_mode, filename):
 
