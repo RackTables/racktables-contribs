@@ -2,12 +2,12 @@
 #!/usr/bin/python
 
 import MySQLdb
-import graphviz as gv
-import pydot
-import time
+#import graphviz as gv
+#import pydot
+#import time
 import sys
-import functools
-import datetime
+#import functools
+#import datetime
 import yaml
 
 import pandas as pd 

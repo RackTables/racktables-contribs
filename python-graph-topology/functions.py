@@ -2,15 +2,15 @@
 # Functions
 ########################################################################
 
-from operator import itemgetter
-from itertools import groupby
-import re
-import datetime
+#from operator import itemgetter
+#from itertools import groupby
+#import re
+#import datetime
 import networkx as nx
-import graphviz as gv
+#import graphviz as gv
 import pandas as pd 
 import pyyed
-import sys
+#import sys
 from pathlib import Path
 
 def get_attribute(key, attribute, global_dict):

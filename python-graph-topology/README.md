@@ -89,4 +89,4 @@ functionDict = {
 
 ## TODO
 
-Get rid of `graphviz` and try to manage all the topologies natively through `networkx`. This will make the code a lot cleaner.
+- Easier way of setting color scheme (may be yml)
