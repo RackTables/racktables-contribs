@@ -184,18 +184,18 @@ def fnc_port_sfp(port_string):
 # Function that creates a dictionary with global attributes
 def fnc_add_atributes_to_dic_global(df_systems, df):
 	#                   name HWfunction            HWtype Integrado Sync_Ref1 Sync_Ref2      Sync_Ref_Order
-	# 0     C1026_SF270_SARX        NaN    ALU%GPASS%SARX        si     1/2/6     1/3/6  ref1 ref2 external
-	# 1     C1406_ND270_SARX        NaN    ALU%GPASS%SARX        si     1/3/7     1/2/7  ref2 ref1 external
-	# 2     C1708_ND470_SARX        NaN    ALU%GPASS%SARX        si     1/2/7     1/3/6  ref2 ref1 external
-	# 3     C2155_SND70_SARA        NaN    ALU%GPASS%SARA        si     1/1/5     1/1/6  ref1 ref2 external
-	# 4     C3110_CTG70_SARM        NaN    ALU%GPASS%SARM       NaN     1/1/2     1/1/1  ref1 ref2 external
-	# 5    CF145_TGR70_SAR28        NaN   ALU%GPASS%SAR28        no     1/1/5     1/1/4  ref1 ref2 external
-	# 6     CF145_TGR70_SAR8        NaN    ALU%GPASS%SAR8        si       NaN       NaN                 NaN
-	# 7     CF181_R2770_SARA        NaN    ALU%GPASS%SARA        si     1/1/5     1/1/6  ref1 ref2 external
-	# 8     CF352_GR270_SARX        NaN    ALU%GPASS%SARX        si     1/3/7     1/2/6  ref1 ref2 external
-	# 9   CFR17_TOT70_IXR-R6    Mid-Ran  ALU%GPASS%IXR-R6        si     3/1/1     3/2/1  ref1 ref2 bits ptp
-	# 10  CFR17_TOT71_IXR-R6    Mid-Ran  ALU%GPASS%IXR-R6        si     3/2/1     3/1/1  ref1 ref2 bits ptp
-	# 11   TC3067_HMT70_SARX        NaN    ALU%GPASS%SARX        si     1/2/6     1/3/6  ref1 ref2 external
+	# 0               router    NaN    ALU%GPASS%SARX        si     1/2/6     1/3/6  ref1 ref2 external
+	# 1               router    NaN    ALU%GPASS%SARX        si     1/3/7     1/2/7  ref2 ref1 external
+	# 2               router    NaN    ALU%GPASS%SARX        si     1/2/7     1/3/6  ref2 ref1 external
+	# 3               router    NaN    ALU%GPASS%SARA        si     1/1/5     1/1/6  ref1 ref2 external
+	# 4               router    NaN    ALU%GPASS%SARM       NaN     1/1/2     1/1/1  ref1 ref2 external
+	# 5               router    NaN   ALU%GPASS%SAR28        no     1/1/5     1/1/4  ref1 ref2 external
+	# 6               router    NaN    ALU%GPASS%SAR8        si       NaN       NaN                 NaN
+	# 7               router    NaN    ALU%GPASS%SARA        si     1/1/5     1/1/6  ref1 ref2 external
+	# 8               router    NaN    ALU%GPASS%SARX        si     1/3/7     1/2/6  ref1 ref2 external
+	# 9               router  Mid-Ran  ALU%GPASS%IXR-R6        si     3/1/1     3/2/1  ref1 ref2 bits ptp
+	# 10              router  Mid-Ran  ALU%GPASS%IXR-R6        si     3/2/1     3/1/1  ref1 ref2 bits ptp
+	# 11              router    NaN    ALU%GPASS%SARX        si     1/2/6     1/3/6  ref1 ref2 external
 
 	dict_global = {}
 
