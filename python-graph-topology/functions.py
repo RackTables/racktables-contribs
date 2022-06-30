@@ -90,54 +90,34 @@ def fnc_chains_ring(vector):
 	return tempList
 
 # Function that builds the filename
-def fnc_build_filename(vector):
-	info = fnc_chains_ring(vector)
-	len_vector= len(vector)
+def fnc_build_filename(topos_names,routers_names,attrib_names):
+	
+	prefixTopo = "".join(topos_names)
+	prefixRtrs = "".join(routers_names)
+	prefixAttr = "".join(attrib_names)
 
-	if len_vector == 1:
+	filename     = prefixTopo + prefixRtrs + prefixAttr
 
-		tipoTopo  = info[0][0]
-		agregador = info[0][1]
-		topologia = info[0][2]
+	Path("plugins/topoGen/topos/").mkdir(parents=True, exist_ok=True)
 
-		topoName1 = "Topologia"
-		topoName2 = tipoTopo
-		topoName3 = "-MRLR-"
-		topoName4 = topologia
-		filename  = "pix/topo/" + agregador + "/" + topoName1 + topoName2 + topoName3 + topoName4
-
-	elif len_vector >1:
-
-		tipoTopo  = "-".join(list(set([name[0] for name in info])))
-		agregador = "-".join(list(set([name[1] for name in info])))
-		topologia = "-".join(list(set([name[2] for name in info])))
-
-		topoName1 = "Topologia"
-		topoName2 = tipoTopo
-		topoName3 = "-MRLR-"
-		topoName4 = topologia
-		filename  = "pix/topo/" + agregador + "/" + topoName1 + topoName2 + topoName3 + topoName4
-
-	#filename=filename + "_" + version_script + "_" +now.strftime("%Y-%m-%d")+".dot"
-	#return filename + ".dot"
-
-	Path("pix/topo/" + agregador).mkdir(parents=True, exist_ok=True)
-
-	return filename
+	return "plugins/topoGen/topos/" + filename
 
 # Function that returns whether we have a input_string or router_name
 def fnc_input_string_type(vector):
 
 	listTopo   = []
 	listRouter = []
+	listAttrib = []
 
 	for name in vector:
-		if name[:2] == 'R:':
-			listRouter.append(name[2:])
+		if name[:2] in ['r:','R:']:
+			listRouter.append(name[2:].upper())
+		elif name[:3] in ['av:','AV:']:
+			listAttrib.append(name[3:])
 		else:
-			listTopo.append(name)
+			listTopo.append(name.upper())
 
-	return(listTopo,listRouter)
+	return(listTopo,listRouter,listAttrib)
 
 # Funcion que organiza los puertos de cada nodo
 def fnc_port_list(routers):
@@ -553,6 +533,8 @@ def fnc_edge_format(labelText, what, portSpeed):
 		100     :"10.0",
 	}
 
+	#print("labelText: ", labelText, "what: ", what, "portSpede: ", portSpeed, "ER: ", egressRate)
+
 	egressRate = int(fnc_aux_convert_speed(egressRate,'G'))
 	egressRate = min([x for x in widthDict.keys() if egressRate <= x])
 
@@ -656,7 +638,6 @@ def fnc_port_string(router_label, port_string, color, router_mode, router_functi
 		temp_string = " [" + color + ",label=\"" + temp_string + "\"]"
 		return temp_string
 
-
 def fnc_build_graphviz(routers,edges,global_dict,router_mode,filename,input_string,format,engine,rankdir,lines_dict):
 
 	port_dict = {}
@@ -696,7 +677,7 @@ def fnc_build_graphviz(routers,edges,global_dict,router_mode,filename,input_stri
 		# Variables
 		router_name     = router[0][0]
 		router_function = get_attribute(router_name,"HWfunction",global_dict)
-		router_int      = get_attribute(router_name,"Integrado",global_dict)
+		router_int      = get_attribute(router_name,"Int_Status",global_dict)
 		router_ckt_id   = get_attribute(router_name,"ckt_id",global_dict)
 		router_color    = get_attribute(router_name,"color",global_dict)['graphviz']
 		router_label    = fnc_router_metadata(global_dict,router_name, labelType, router_function, router_ckt_id, router_mode)
@@ -792,12 +773,11 @@ def fnc_build_graphviz(routers,edges,global_dict,router_mode,filename,input_stri
 			edgeSpeed=e[2]
 
 		g0.edge_attr['fontsize']='9'
-		g0.edge(edgeA,edgeB,label=edgeLabel, color=fnc_edge_format(edgeLabel, "color", edgeSpeed), penwidth=fnc_edge_format(edgeLabel,"width",edgeSpeed))
+		#print(edgeA,edgeB,edgeLabel,edgeSpeed)
+		g0.edge(edgeA, edgeB, label=edgeLabel, color=fnc_edge_format(edgeLabel, "color", edgeSpeed), penwidth=fnc_edge_format(edgeLabel,"width",edgeSpeed))
 
-	#print filename + "." + format_dict[output_format]
-	print(filename+".dot")
-	g0.render(filename+".dot")
-	sys.exit(0)
+	print(filename + ".dot")
+	g0.render(filename + ".dot")
 
 def fnc_build_graphml(df_system, dfConnFinal, global_dict, router_mode, filename):
 
@@ -823,9 +803,8 @@ def fnc_build_graphml(df_system, dfConnFinal, global_dict, router_mode, filename
 			else:
 				G.add_edge(link.name1, link.name2, arrowhead='none',arrowfoot='none', label= edgeLabel)
 
-		print(filename)
-		G.write_graph(filename+'.graphml')
-		sys.exit(4)
+		print(filename + '.graphml')
+		G.write_graph(filename + '.graphml')
 
 def fnc_build_graphnx(df_system, dfConnFinal, global_dict, router_mode, filename):
 
@@ -926,4 +905,73 @@ def fnc_build_graphnx(df_system, dfConnFinal, global_dict, router_mode, filename
 	#G.barnes_hut(overlap=1)
 	#G.force_atlas_2based(overlap=1)
 	#G.show_buttons()
-	G.save_graph("plugins/topo.html")
+	#G.save_graph("plugins/topoGen/topo.html")
+
+	print(filename + "_nx.html")
+	G.save_graph(filename + "_nx.html")
+
+def fnc_build_osm(global_dict, dfConnFinal, router_mode, filename):
+
+	import json
+	import geopy.distance
+	import folium
+
+	dfConn       = dfConnFinal[['name1','name2']]
+	df_attribute = pd.DataFrame(global_dict).T.reset_index()
+
+	dfConn = pd.merge(dfConn,df_attribute,left_on='name1', right_on='index')[['name1','name2','lat','lon']]
+	dfConn.rename(columns={'lat':'lat1','lon':'lon1'}, inplace=True)
+	dfConn = pd.merge(dfConn,df_attribute,left_on='name2', right_on='index')[['name1','name2','lat1','lon1','lat','lon']]
+	dfConn.rename(columns={'lat':'lat2','lon':'lon2'}, inplace=True)
+	dfConn = dfConn[['lat1','lon1','lat2','lon2']]
+	dfConn['d'] = dfConn.apply(lambda x: geopy.distance.distance( (x.lat1, x.lon1), (x.lat2, x.lon2) ).km , axis=1).round(2)
+
+	dictNodes = { x:{'name':x, 'system':global_dict[x]['system'], 'lat':global_dict[x]['lat'], 'lon':global_dict[x]['lon'] } for x in global_dict.keys() }
+	dictLinks = dfConn.to_dict('index')
+
+	### Rendering Map
+	firstNode = list(dictNodes.keys())[0]
+	m = folium.Map(location=[ dictNodes[firstNode]['lat'], dictNodes[firstNode]['lon']] )
+
+	for key in dictNodes.keys():
+		folium.Marker( 
+	 		[dictNodes[key]['lat'],dictNodes[key]['lon']], 
+	 		popup=folium.Popup("<b>" +  dictNodes[key]['name'] + "</b>\n" + dictNodes[key]['system'],sticky=True)
+	 	).add_to(m)
+
+	if router_mode == '7':
+
+		for key in dictLinks.keys(): 
+			folium.vector_layers.PolyLine( 
+				[ 
+					( float(dictLinks[key]['lat1']), float(dictLinks[key]['lon1']) ), 
+					( float(dictLinks[key]['lat2']), float(dictLinks[key]['lon2']) ) 
+				],
+				popup=folium.Popup(str(dictLinks[key]['d']) + 'km', sticky=True),
+			).add_to(m)
+
+	print(filename  + '_map.html')
+	m.save(filename + '_map.html')
+
+def fnc_build_excel(df_system, dfConnFinal, global_dict, router_mode, filename):
+
+	from pandas import ExcelWriter
+
+	def save_xls(list_dfs, xls_path):
+		with ExcelWriter(xls_path) as writer:
+			for df, name in list_dfs:
+				df.to_excel(writer, name)
+			writer.save()
+
+	dfSummary1 = dfConnFinal[['name1','obj1type','intName1','ip_x','port1','port1Speed','cable']]
+	dfSummary1 = dfSummary1.rename(columns={'name1':'name','obj1type':'objType','intName1':'intName','ip_x':'ip','port1':'port','port1Speed':'portSpeed'})
+	dfSummary2 = dfConnFinal[['name2','obj2type','intName2','ip_y','port2','port2Speed','cable']]
+	dfSummary2 = dfSummary2.rename(columns={'name2':'name','obj2type':'objType','intName2':'intName','ip_y':'ip','port2':'port','port2Speed':'portSpeed'})
+
+	dfSumm = pd.concat([dfSummary1,dfSummary2])
+	dfSumm = dfSumm.sort_values(by=['name','port'])
+
+	list_dfs = [(dfConnFinal,'Connections'),(dfSumm,'Summary'),(df_system,'system')]
+
+	print(filename + '.xlsx')
+	save_xls(list_dfs, filename + '.xlsx')

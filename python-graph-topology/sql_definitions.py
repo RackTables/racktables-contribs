@@ -1,3 +1,34 @@
+# Function that builds the SQL query to obtain the object Id based on the name of an attribute
+def fnc_build_query_attrib_name(vector):
+	query1 = ""
+	query2 = ""
+	len_vector = len(vector)
+	i = 1
+
+	query1 = (
+		"SELECT "
+		"o.name, "
+		"o.id "
+		"FROM Object AS o "
+		"JOIN AttributeValue AS av ON (av.object_id = o.id) "
+		"JOIN Attribute AS a ON (av.attr_id = a.id) "
+		"JOIN Dictionary AS d ON (av.uint_value =d.dict_key) "
+		"WHERE "
+	)
+
+	for row in vector:
+		atName  = row.split(":")[0]
+		atValue = row.split(":")[1]
+		if i < len_vector:
+			query2 = query2 + "(a.name = '" + atName + "' and d.dict_value like '" + atValue + "%') or "
+		else:
+			query2 = query2 + "(a.name = '" + atName + "' and d.dict_value like '" + atValue + "%');"
+		i = i + 1
+
+	query = query1 + query2
+
+	return query
+
 # Function that builds the SQL query to obtain the object Id based on name
 def fnc_build_query_objetos_name(vector):
 	query1 = ""
@@ -72,6 +103,18 @@ def fnc_build_query_topo_id(vector):
 	query = query1 + query2
 
 	return query
+
+# Function that builds the SQL query to obtain topologies
+def fnc_build_query_get_topos(parents):
+
+	query1 = ""
+	
+	ids = ','.join([str(x) for x in parents])
+
+	query1 = "SELECT * FROM TagTree where parent_id in (" + ids + ");"
+
+	return query1
+
 
 # Function that obtains the attributes values per object ID
 # It also brings the system IP of the router.
@@ -179,6 +222,6 @@ def fnc_build_query_connections(df):
 			query2 = query2 + "ro1.id = " + obj_id + " or ro2.id = " + obj_id
 		i=i+1
 
-	query = query1 + query2 + ")"
+	query = query1 + query2 + ");"
 
 	return query

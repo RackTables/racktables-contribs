@@ -27,13 +27,13 @@ import matplotlib.pyplot as plt
 
 graph_lag=graph_hp=graph_cpam='n'
 router_mode='3'
-topos_names=['rn001_001']
+topos_names=['sl003_003']
 
 ########################################################################
 # Globals
 ########################################################################
 
-settings = yaml.safe_load(open('plugins/settings.yml'))
+settings = yaml.safe_load(open('plugins/topoGen/settings.yml'))
 
 ########################################################################
 # Program
@@ -45,6 +45,7 @@ db = MySQLdb.connect(host   = settings['mysql']['host'],
 					 passwd = settings['mysql']['password'],
 					 db     = settings['mysql']['database'],
 					 )
+
 posProg 	= 0
 posTopo 	= 1
 posMode		= 2
@@ -62,36 +63,38 @@ if len(sys.argv)<9:
 
 # Getting topo and routers name
 input_string = sys.argv[posTopo]
-input_string = input_string.upper()
 input_string = input_string.split(",")
+#input_string = ['sl003_003']
 
 # We distinguis if we have topos and/or routers
-topos_names,routers_names = fnc_input_string_type(input_string)
-#print "topos: ",len(topos_names),"; routers: ",len(routers_names)
+topos_names,routers_names,attrib_names = fnc_input_string_type(input_string)
+
+#print(topos_names,routers_names,attrib_names)
 
 # In this list wwe'll save the object_id's
 object_list            = []
 object_list_topos      = []
 object_list_routers    = []
+object_list_attrib     = []
 df_object_list_topos   = pd.DataFrame()
 df_object_list_routers = pd.DataFrame()
+df_object_list_attrib  = pd.DataFrame()
 
 #==================================================================
 #==================================================================
-# query10 obtains the IDs of routers that have tag 'input_string'
+# query10 obtains the IDs of routers that have tag
 # The result is the following.
 if len(topos_names) > 0:
-
+	#print(topos_names)
 	# query0 obtains the Id of the tag_name.
 	query0 = fnc_build_query_topo_id(topos_names)
+	#print(query0)
 	cur    = db.cursor()
 	cur.execute(query0)
 	topo_id = list(cur.fetchall())
-
 	if len(topo_id) > 0:
 		query10 = fnc_build_query_objetos(topo_id)
 		df_object_list_topos = pd.read_sql(query10,db)
-
 	else:
 		sys.exit(-1)
 
@@ -103,11 +106,16 @@ if len(routers_names) > 0:
 	query11 = fnc_build_query_objetos_name(routers_names)
 	df_object_list_routers = pd.read_sql(query11,db)
 
+#==================================================================
+#==================================================================
+# query12 obtains the IDs of routers that have attribute
+# The result is the following.
+if len(attrib_names) > 0:
+	query12 = fnc_build_query_attrib_name(attrib_names)
+	df_object_list_attrib = pd.read_sql(query12,db)
 
 # We add together topos and routers
-#object_list    = object_list_topos + object_list_routers
-df_object_list = pd.concat([df_object_list_topos,df_object_list_routers])
-
+df_object_list = pd.concat([df_object_list_topos,df_object_list_routers,df_object_list_attrib]).drop_duplicates()
 
 #==================================================================
 #==================================================================
@@ -132,18 +140,23 @@ dfConn = pd.merge(df_system,df_object_connections,left_on=['name'],right_on=['na
 dfConn = pd.merge(df_system,dfConn,               left_on=['name'],right_on=['name2'])
 dfConn = dfConn[["name1","port1","cable","port2","name2","obj1type","obj2type","port1Speed","port2Speed","intName1","intName2"]]
 
-# We merge both connections and interfaces so we stay with informatino of routers with proper tag
+# We merge both connections and interfaces so we stay with information of routers with proper tag/attribute
+# This means that some routers alone, will be left outside
 dfConnFinal = pd.merge(dfConn,     df_object_interfaces, left_on=['name1','intName1'], right_on=['name','intName'], how='left')
 dfConnFinal = pd.merge(dfConnFinal,df_object_interfaces, left_on=['name2','intName2'], right_on=['name','intName'], how='left')
 dfConnFinal = dfConnFinal.fillna("N/A")
 dfConnFinal = dfConnFinal[["name1","port1","cable","port2","name2","obj1type","obj2type","port1Speed","port2Speed","intName1","intName2","ip_x","ip_y"]]
 dfConnFinal = dfConnFinal.drop_duplicates()
 
+dfConnFinal['topo'] = '-'.join(topos_names)
+dfConnFinal['cap']  = dfConnFinal.apply(lambda x: fnc_port_speed(x.port1Speed), axis=1)
+
 #==================================================================
 #==================================================================
 # query15 obtains the attributes of the routers whose Ids are in 'object_list'
 # It also brings de system IP of the router.
 query15 = fnc_build_query_attributes(df_object_list)
+
 df_attr_list = pd.read_sql(query15, db)
 
 if len(df_attr_list) > 0:
@@ -157,14 +170,14 @@ if len(df_attr_list) > 0:
 #==================================================================
 #==================================================================
 # BUild global dictionaries
-global_dict = fnc_add_atributes_to_dic_global(df_system,df_attr_list)
+global_dict = fnc_add_atributes_to_dic_global(df_system, df_attr_list)
 
 #==================================================================
 # The graph is created.
 #==================================================================
 
 # Format Dictionaries
-mode_dict 		= {"0":"gvCluster", "1":"gvOne-line", "2":"gvTwo-lines", "3":"gvOnly-names", "4":"yed", "5":"nx"}
+mode_dict 		= {"0":"gvCluster", "1":"gvOne-line", "2":"gvTwo-lines", "3":"gvOnly-names", "4":"yed", "5":"nx", "6":"osm"}
 format_dict 	= {"0":"png", 		"1":"svg"}
 algo_dict 		= {"0":"dot", 	    "1":"fdp",	    "2":"circo",	"3":"twopi",	"4":"neato"}
 rankdir_dict 	= {"0":"LR",		"1":"TB"}
@@ -184,10 +197,14 @@ graph_cpam			= "n"
 
 
 ## Obtain the filename for the topology
-if len(topos_names) > 0:
-	filename=fnc_build_filename(topos_names)
-elif len(routers_names) > 0:
-	filename=fnc_build_filename("ROUTERS")
+filename = fnc_build_filename(topos_names,routers_names,attrib_names)
+
+#if len(topos_names) > 0:
+#	filename = fnc_build_filename(topos_names)
+#elif len(attrib_names) > 0:
+#	filename = fnc_build_filename(["ATTRIB"])
+#elif len(routers_names) > 0:
+#	filename = fnc_build_filename(["ROUTERS"])
 
 #===================================================================
 #===================================================================
@@ -209,3 +226,13 @@ elif router_mode in ['5']:
 
 	fnc_build_graphnx(df_system, dfConnFinal, global_dict, router_mode, filename)
 	sys.exit(5)
+
+elif router_mode in ['6','7']:
+
+	fnc_build_osm(global_dict, dfConnFinal, router_mode, filename)
+	sys.exit(int(router_mode))
+
+elif router_mode in ['8']:
+
+	fnc_build_excel(df_system, dfConnFinal, global_dict, router_mode, filename)
+	sys.exit(8)
