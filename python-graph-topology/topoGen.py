@@ -2,12 +2,7 @@
 #!/usr/bin/python
 
 import MySQLdb
-#import graphviz as gv
-#import pydot
-#import time
 import sys
-#import functools
-#import datetime
 import yaml
 
 import pandas as pd 
@@ -22,10 +17,6 @@ pd.set_option('display.width', 1000)
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
-graph_lag=graph_hp=graph_cpam='n'
-router_mode='3'
-topos_names=['sl003_003']
 
 ########################################################################
 # Globals
@@ -122,7 +113,7 @@ query25=fnc_build_query_interfaces(df_object_list)
 df_object_interfaces = pd.read_sql(query25,db)
 
 # We grab routers with their system or loopback interfaces.
-df_system = df_object_interfaces[(df_object_interfaces.intName == 'system') | (df_object_interfaces.intName == 'System') | (df_object_interfaces.intName == 'loopback')]
+df_system = df_object_interfaces[df_object_interfaces.intName.isin(settings['loopInterfaces'])]
 df_system = df_system[['name','ip']]
 df_system = pd.merge(df_object_list,df_system,on=['name'],how='left')
 
@@ -147,7 +138,7 @@ dfConnFinal = dfConnFinal[["name1","port1","cable","port2","name2","obj1type","o
 dfConnFinal = dfConnFinal.drop_duplicates()
 
 dfConnFinal['topo'] = '-'.join(topos_names)
-dfConnFinal['cap']  = dfConnFinal.apply(lambda x: fnc_port_speed(x.port1Speed), axis=1)
+dfConnFinal['cap']  = dfConnFinal.apply(lambda x: fnc_port_speed(x.port1Speed, settings), axis=1)
 
 #==================================================================
 #==================================================================
@@ -168,7 +159,7 @@ if len(df_attr_list) > 0:
 #==================================================================
 #==================================================================
 # BUild global dictionaries
-global_dict = fnc_add_atributes_to_dic_global(df_system, df_attr_list)
+global_dict = fnc_add_atributes_to_dic_global(settings, df_system, df_attr_list)
 
 #==================================================================
 # The graph is created.

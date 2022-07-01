@@ -121,10 +121,10 @@ function renderGraphTopo()
 							<option <?php if ($router_mode == "2") {?>selected="true" <?php }; ?>value="2">gvTwo-line</option>
 							<option <?php if ($router_mode == "3") {?>selected="true" <?php }; ?>value="3">gvOnly-name</option>
 						-->
-							<option <?php if ($router_mode == "5" || $router_mode == "") {?>selected="true" <?php }; ?>value="5">nxOnly-name</option>
-							<option <?php if ($router_mode == "4") {?>selected="true" <?php }; ?>value="4">yedOnly-name</option>
-							<option <?php if ($router_mode == "6") {?>selected="true" <?php }; ?>value="6">osmOnly-name</option>
-							<option <?php if ($router_mode == "7") {?>selected="true" <?php }; ?>value="7">osmLinks</option>
+							<option <?php if ($router_mode == "5" || $router_mode == "") {?>selected="true" <?php }; ?>value="5">nx</option>
+							<option <?php if ($router_mode == "4") {?>selected="true" <?php }; ?>value="4">yEd</option>
+							<option <?php if ($router_mode == "6") {?>selected="true" <?php }; ?>value="6">MapName</option>
+							<option <?php if ($router_mode == "7") {?>selected="true" <?php }; ?>value="7">MapLinks</option>
 							<option <?php if ($router_mode == "8") {?>selected="true" <?php }; ?>value="8">Excel</option>
 						</select>
 						</div>

@@ -7,10 +7,7 @@ Follow these steps:
 ### System libraries
 
 ```bash
-sudo apt install graphviz 
 sudo apt install python3-mysqldb
-sudo apt install libgraphviz-dev 
-
 sudo pip3 install -r requirements.txt
 ```
 
@@ -58,7 +55,8 @@ create user 'viewRT'@'%' identified by 'viewRT';
 grant select,lock tables,show view on racktables.* to 'viewRT'@'%';
 ```
 
-#### Edit settings.yml
+##### Edit settings.yml
+Setup connection to DB in file `settings.yml`.
 ```yaml
 mysql:
   username: viewRT
@@ -72,21 +70,20 @@ mysql:
 
 - To enable the plugin, follow RackTables instructions on how to enable a plugin. Go to `Main Page : Configuration : Plugins`.
 - A topology is a group of nodes. In order to plot a topology, all nodes be must share the same `tag`. Create a `tag` and assign it to each and every node.
-- The colors of the nodes, is controlled by a custom attribute. Create a dictionary-type attribute called `HW function`. Inside of it add as many options as you wish. In the function `fnc_router_color()` of file `functions.py` you will see a dictionary where you can map the color and the HW function.
-```python
-# Color depending on function
-functionDict = {
-	'High-Ran':		{'yEd':'#3399ff','graphviz':'lightblue4'},
-	'High-Ran-ABR':	{'yEd':'#3399ff','graphviz':'lightblue4'},
-	'Mid-Ran':		{'yEd':'#ff99cc','graphviz':'lightpink4'},
-	'AggEthernet':	{'yEd':'#33ff33','graphviz':'limegreen'},
-	'FronteraPE':	{'yEd':'#cccc00','graphviz':'darkgoldenrod'},
-	'TX':			{'yEd':'#ffff00','graphviz':'yellow'},
-	'CSR':			{'yEd':'#99ccff','graphviz':'lightblue3'},
-}
-```
 - Latitude and longitude. In order to set LAT/LON for nodes, create a string-type attribute, called `Int_LAT_LON`. Document LAT and LON as `lat:lon`.
+- The colors of the nodes, is controlled by a custom attribute. Create a dictionary-type attribute called `HW function`. Inside of it add as many options as you wish. In the file `settings.yml` you will see a structure where you can map the color and the HW function.
+```yml
+colorScheme:
+  hwFunction:
+    High-Ran: '#3399ff'
+    High-Ran-ABR: '#3399ff'
+    Mid-Ran: '#ff99cc'
+    AggEthernet: '#33ff33'
+    FronteraPE: '#cccc00'
+    TX: '#ffff00'
+    CSR: '#99ccff'
+```
 
 ## TODO
 
-- Easier way of setting color scheme (may be yml)
+- Reorder code.

@@ -68,28 +68,16 @@ def fnc_input_string_type(vector):
 	return(listTopo,listRouter,listAttrib)
 
 # Function that returns de speed of the port
-def fnc_port_speed(port_string):
+def fnc_port_speed(port_string, settings):
 
 	speed = port_string.split('B')[0]
-	
-	speedDict = {
-		"100"  :"100Mb",
-		"1000" :"1G",
-		"10G"  :"10G",
-		"100G" :"100G",
 
-		"SFP-CES" :"n/ETH",
-		"SFP-ATM" :"n/ETH",
-		"SFP-ASAP":"n/ETH",
-		
-		"empty SFP-1000":"n/SFP",
-		"virtual port"  :"vPort",		
-	}
+	speedDict = settings['portSpeeds']
 
 	return speedDict.get(speed,"N/A")	
 
 # Function that creates a dictionary with global attributes
-def fnc_add_atributes_to_dic_global(df_systems, df):
+def fnc_add_atributes_to_dic_global(settings, df_systems, df):
 	#                   name HWfunction            HWtype Integrado Sync_Ref1 Sync_Ref2      Sync_Ref_Order
 	# 0               router    NaN    ALU%GPASS%SARX        si     1/2/6     1/3/6  ref1 ref2 external
 	# 1               router    NaN    ALU%GPASS%SARX        si     1/3/7     1/2/7  ref2 ref1 external
@@ -117,7 +105,8 @@ def fnc_add_atributes_to_dic_global(df_systems, df):
 		dict_global[router_name]['Sync_Ref2']      = "N/A"
 		dict_global[router_name]['Sync_Ref_Order'] = "N/A"
 		dict_global[router_name]['Int_Type']       = "N/A"
-		dict_global[router_name]['color']          = {'yEd':'#c0c0c0','graphviz':'grey'}
+		#dict_global[router_name]['color']          = {'yEd':'#c0c0c0','graphviz':'grey'}
+		dict_global[router_name]['color']          = settings['colorScheme']['default']
 		dict_global[router_name]['HWtype']         = "N/A"
 		dict_global[router_name]['weight']         = "N/A"
 		dict_global[router_name]['lat']            = "0"
@@ -185,7 +174,7 @@ def fnc_add_atributes_to_dic_global(df_systems, df):
 		dict_global[router_name]['Sync_Ref2']      = Sync_Ref2
 		dict_global[router_name]['Sync_Ref_Order'] = Sync_Ref_Order
 		dict_global[router_name]['Int_Type']       = Int_Type 
-		dict_global[router_name]['color']          = fnc_router_color(HWfunction, Int_Status, Int_Type)
+		dict_global[router_name]['color']          = fnc_router_color(settings, HWfunction, Int_Status, Int_Type)
 		dict_global[router_name]['HWtype']         = HWtype
 		dict_global[router_name]['weight']         = fnc_router_weight(HWtype)
 		dict_global[router_name]['lat']            = Int_LAT_LON.split(":")[0]
@@ -210,38 +199,12 @@ def fnc_router_weight(HWtype):
 
 # Function that returns the color of the router depending on its
 # situation
-def fnc_router_color(HWfunction, Int_Status, Int_Type):
+def fnc_router_color(settings, HWfunction, Int_Status, Int_Type):
 
-	# Color depending on function
-	functionDict = {
-		'High-Ran':		{'yEd':'#3399ff','graphviz':'lightblue4'},
-		'High-Ran-ABR':	{'yEd':'#3399ff','graphviz':'lightblue4'},
-		'Mid-Ran':		{'yEd':'#ff99cc','graphviz':'lightpink4'},
-		'AggEthernet':	{'yEd':'#33ff33','graphviz':'limegreen'},
-		'FronteraPE':	{'yEd':'#cccc00','graphviz':'darkgoldenrod'},
-		'TX':			{'yEd':'#ffff00','graphviz':'yellow'},
-		'CSR':			{'yEd':'#99ccff','graphviz':'lightblue3'},
-	}
-
-	intStatusDict = {
-		'no':{'yEd':'#ffcc00','graphviz':'orange'},
-	}
-
-	intTypeDict = {
-		'swap':				{'yEd':'#66ccff','graphviz':'lightblue2'},
-		'cambioArea':		{'yEd':'#808000','graphviz':'khaki'},
-		'integracion':		{'yEd':'#99ccff','graphviz':'lightblue3'},
-		'cambioTopologia':	{'yEd':'#ccffff','graphviz':'lightblue1'},
-		'reinsercion':		{'yEd':'#ff6600','graphviz':'red'},
-	}
-
-	refOrderDict = {
-		'ref1 ref2':{'yEd':'#99ccff','graphviz':'lightblue3'},
-		'ref2 ref1':{'yEd':'#ccffff','graphviz':'lightblue1'}
-	}
-
-	# Default Color if nothing is matched ...
-	color = {'yEd':'#c0c0c0','graphviz':'grey'}
+	functionDict  = settings['colorScheme']['hwFunction']
+	intStatusDict = settings['colorScheme']['status']
+	intTypeDict   = settings['colorScheme']['type']
+	color         = settings['colorScheme']['default']
 
 	####
 
@@ -266,7 +229,7 @@ def fnc_build_graphml(df_system, dfConnFinal, global_dict, router_mode, filename
 
 		for router in df_system.itertuples():
 			router_name   	= router.name
-			router_color    = get_attribute(router_name,"color",global_dict)['yEd']
+			router_color    = get_attribute(router_name,"color",global_dict)
 			router_system   = get_attribute(router_name,"system",global_dict)
 
 			G.add_node(router_name, label=router_name + "\n" + router_system, shape_fill=router_color)
@@ -346,7 +309,7 @@ def fnc_build_graphnx(df_system, dfConnFinal, global_dict, router_mode, filename
 					label   = str(router_name) + "\n" + str(ip_system),
 					chassis = global_dict[router_name]['HWtype'],
 					ip      = str(ip_system),
-					color   = get_attribute(router_name,"color",global_dict)['yEd'],
+					color   = get_attribute(router_name,"color",global_dict),
 					physics = physics,
 					)
 
@@ -401,18 +364,30 @@ def fnc_build_osm(global_dict, dfConnFinal, router_mode, filename):
 	dfConn = dfConn[['lat1','lon1','lat2','lon2']]
 	dfConn['d'] = dfConn.apply(lambda x: geopy.distance.distance( (x.lat1, x.lon1), (x.lat2, x.lon2) ).km , axis=1).round(2)
 
-	dictNodes = { x:{'name':x, 'system':global_dict[x]['system'], 'lat':global_dict[x]['lat'], 'lon':global_dict[x]['lon'] } for x in global_dict.keys() }
+	dictNodes = { 
+					x:{
+						'name':x, 
+						'system':global_dict[x]['system'], 
+						'lat':   global_dict[x]['lat'], 
+						'lon':   global_dict[x]['lon'],
+						'color': global_dict[x]['color'],
+					} for x in global_dict.keys() 
+				}
 	dictLinks = dfConn.to_dict('index')
 
 	### Rendering Map
 	firstNode = list(dictNodes.keys())[0]
-	m = folium.Map(location=[ dictNodes[firstNode]['lat'], dictNodes[firstNode]['lon']] )
+	m         = folium.Map(location=[ dictNodes[firstNode]['lat'], dictNodes[firstNode]['lon']] )
 
 	for key in dictNodes.keys():
-		folium.Marker( 
-	 		[dictNodes[key]['lat'],dictNodes[key]['lon']], 
-	 		popup=folium.Popup("<b>" +  dictNodes[key]['name'] + "</b>\n" + dictNodes[key]['system'],sticky=True)
+		folium.Marker(
+	 		location = [dictNodes[key]['lat'],dictNodes[key]['lon']],
+	 		popup    = folium.Popup("<b>" +  dictNodes[key]['name'] + "</b>\n" + dictNodes[key]['system'],sticky=True),
+			icon     = folium.Icon(icon_color=dictNodes[key]['color'], color='darkblue'),
 	 	).add_to(m)
+
+# {'darkblue', 'darkpurple', 'purple', 'red', 'lightred', 'pink', 'green', 'black', 'lightblue', 'lightgreen', 
+# 'beige', 'blue', 'lightgray', 'darkgreen', 'cadetblue', 'orange', 'gray', 'darkred', 'white'}
 
 	if router_mode == '7':
 
