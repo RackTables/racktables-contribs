@@ -71,8 +71,8 @@ function plugin_topoGen_upgrade()
 function renderGraphTopo()
 {
 	//variables intialization:
-	$topo = $router_mode = $format = "";
-	$algo = $rankdir = $lines = $aggr = $lag = "";
+	$topo = $router_mode = $format = NULL;
+	$algo = $rankdir = $lines = $aggr = $lag = NULL;
 	//$nodesep = $ranksep = "";
 	$svgName = "";
 	$exitCode= -2;
@@ -81,17 +81,99 @@ function renderGraphTopo()
 	//check if it's a POST method:
 	if ($_SERVER["REQUEST_METHOD"] == "POST") {
 		//take the arguments from HTML form:
-		$topo 			= $_POST["topo"];
-		$router_mode 	= $_POST["router_mode"];
-		$format 		= $_POST["format"];
-		$algo 			= $_POST["algo"];
-		$rankdir 		= $_POST["rankdir"];
-		$lines 			= $_POST["lines"];
-		$aggr 			= $_POST["aggr"];
-		$lag 			= $_POST["lag"];
-		//$nodesep		= $_POST["nodesep"];
-		//$ranksep		= $_POST["ranksep"];
+		$topo        = assertStringArg ('topo', TRUE);
+		$router_mode = assertUIntArg ('router_mode', TRUE);
+		$format      = 0;
+		$algo        = 0;
+		$rankdir     = 0;
+		$lines       = 0;
+		$aggr        = 0;
+		$lag         = 0;
 	}
+	$yesno_options = array
+	(
+		0 => 'No',
+		1 => 'Yes',
+	);
+	$selects = array
+	(
+		'router_mode' => array
+		(
+			'label' => 'Router mode',
+			'options' => array
+			(
+#				0 => 'gvCluster',
+#				1 => 'gvOne-line',
+#				2 => 'gvTwo-line',
+#				3 => 'gvOnly-name',
+				4 => 'yEd',
+				5 => 'nx',
+				6 => 'MapName',
+				7 => 'MapLinks',
+				8 => 'Excel',
+			),
+			'selected' => $router_mode ?? 5,
+		),
+/*
+		'algo' => array
+		(
+			'label' => 'Algorithm',
+			'options' => array
+			(
+				0 => 'gvDOT',
+				1 => 'gvFDP',
+				2 => 'gvCIRCO',
+				3 => 'gvTWOPI',
+				4 => 'gvNEATO',
+			),
+			'selected' => $algo ?? 3,
+		),
+		'format' => array
+		(
+			'label' => 'Format',
+			'options' => array
+			(
+				0 => 'PNG',
+				1 => 'SVG',
+			),
+			'selected' => $format ?? 1,
+		),
+		'rankdir' => array
+		(
+			'label' => 'Orientation',
+			'options' => array
+			(
+				0 => 'Left to Right',
+				1 => 'Top to Bottom',
+			),
+			'selected' => $rankdir ?? 1,
+		),
+		'lines' => array
+		(
+			'label' => 'Lines',
+			'options' => array
+			(
+				0 => 'Straight',
+				1 => 'Curve',
+				2 => 'Square',
+				3 => 'Polyline',
+			),
+			'selected' => $lines ?? 3,
+		),
+		'aggr' => array
+		(
+			'label' => 'Grouping',
+			'options' => $yesno_options,
+			'selected' => $aggr ?? 1,
+		),
+		'lag' => array
+		(
+			'label' => 'LAG',
+			'options' => $yesno_options,
+			'selected' => $lag ?? 1,
+		),
+*/
+	);
 	?>
 
 	<div class="settings">
@@ -111,80 +193,15 @@ function renderGraphTopo()
 
 						<!-- Fields for customizing output -->
 						<legend>Advanced:</legend>
-
-						<div class="gdiv">
-						<label class="ginput" for="router_mode">Router mode:</label>
-						<select class="ginput" name="router_mode">
-						<!--
-							<option <?php if ($router_mode == "0") {?>selected="true" <?php }; ?>value="0">gvCluster</option>
-							<option <?php if ($router_mode == "1") {?>selected="true" <?php }; ?>value="1">gvOne-line</option>
-							<option <?php if ($router_mode == "2") {?>selected="true" <?php }; ?>value="2">gvTwo-line</option>
-							<option <?php if ($router_mode == "3") {?>selected="true" <?php }; ?>value="3">gvOnly-name</option>
-						-->
-							<option <?php if ($router_mode == "5" || $router_mode == "") {?>selected="true" <?php }; ?>value="5">nx</option>
-							<option <?php if ($router_mode == "4") {?>selected="true" <?php }; ?>value="4">yEd</option>
-							<option <?php if ($router_mode == "6") {?>selected="true" <?php }; ?>value="6">MapName</option>
-							<option <?php if ($router_mode == "7") {?>selected="true" <?php }; ?>value="7">MapLinks</option>
-							<option <?php if ($router_mode == "8") {?>selected="true" <?php }; ?>value="8">Excel</option>
-						</select>
-						</div>
-
-					<!--
-						<div class="gdiv">
-						<label class="ginput" for="algo">Algorithm:</label>
-						<select class="ginput" name="algo">
-							<option <?php if ($algo == "0") {?>selected="true" <?php }; ?>value="0">gvDOT</option>
-							<option <?php if ($algo == "1") {?>selected="true" <?php }; ?>value="1">gvFDP</option>
-							<option <?php if ($algo == "2") {?>selected="true" <?php }; ?>value="2">gvCIRCO</option>
-							<option <?php if ($algo == "3" || $algo == "") {?>selected="true" <?php }; ?>value="3">gvTWOPI</option>
-							<option <?php if ($algo == "4") {?>selected="true" <?php }; ?>value="4">gvNEATO</option>
-						</select>
-						</div>
-
-						<div class="gdiv">
-						<label class="ginput" for="format">Format:</label>
-						<select class="ginput" name="format">
-							<option <?php if ($format == "0") {?>selected="true" <?php }; ?>value="0">PNG</option>
-							<option <?php if ($format == "1" || $format == "") {?>selected="true" <?php }; ?>value="1">SVG</option>
-						</select>
-						</div>
-
-						<div class="gdiv">
-						<label class="ginput" for="rankdir">Orientation:</label>
-						<select class="ginput" name="rankdir">
-							<option <?php if ($rankdir == "0" || $rankdir == "") {?>selected="true" <?php }; ?>value="0">Left to Right</option>
-							<option <?php if ($rankdir == "1") {?>selected="true" <?php }; ?>value="1">Top to Bottom</option>
-						</select>
-						</div>
-
-						<div class="gdiv">
-						<label class="ginput" for="lines">Lines:</label>
-						<select class="ginput" name="lines">
-							<option <?php if ($lines == "0") {?>selected="true" <?php }; ?>value="0">Straight</option>
-							<option <?php if ($lines == "1") {?>selected="true" <?php }; ?>value="1">Curve</option>
-							<option <?php if ($lines == "2") {?>selected="true" <?php }; ?>value="2">Square</option>
-							<option <?php if ($lines == "3" || $lines == "") {?>selected="true" <?php }; ?>value="3">Polyline</option>
-						</select>
-						</div>
-
-						<div class="gdiv">
-						<label class="ginput" for="aggr">Grouping:</label>
-						<select class="ginput" name="aggr">
-							<option <?php if ($aggr == "0" || $aggr == "") {?>selected="true" <?php }; ?>value="0">No</option>
-							<option <?php if ($aggr == "1") {?>selected="true" <?php }; ?>value="1">Yes</option>
-						</select>
-						</div>
-
-						<div class="gdiv">
-						<label class="ginput" for="lag">LAG:</label>
-						<select class="ginput" name="lag">
-							<option <?php if ($lag == "0" || $lag == "") {?>selected="true" <?php }; ?>value="0">No</option>
-							<option <?php if ($lag == "1") {?>selected="true" <?php }; ?>value="1">Yes</option>
-						</select>
-						</div>
-
-					-->
-
+<?php
+	foreach ($selects as $name => $each)
+	{
+		echo "<div class=gdiv>\n";
+		echo "<label class=ginput for=${name}>${each['label']}:</label>\n";
+		printSelect($each['options'], array ('name' => $name, 'class' => 'ginput'), $each['selected']);
+		echo "</div>\n";
+	}
+?>
 					</fieldset>
 					</form>
 				</div>
@@ -202,8 +219,7 @@ function renderGraphTopo()
 				} else
 				{
 					$topo = preg_replace('/\s+/', '', $topo);
-					//exec("python3 plugins/topoGen/topoGen.py ".$topo." ".$router_mode." ".$format." ".$algo." ".$rankdir." ".$lines." ".$aggr." ".$lag, $scriptOutput, $exitCode); //PHP waits until the called program is done
-					exec("python3 plugins/topoGen/topoGen.py ".$topo." ".$router_mode." 0 0 0 0 0 0", $scriptOutput, $exitCode); //PHP waits until the called program is done
+					exec("python3 plugins/topoGen/topoGen.py ".$topo." ".$router_mode." ".$format." ".$algo." ".$rankdir." ".$lines." ".$aggr." ".$lag, $scriptOutput, $exitCode); //PHP waits until the called program is done
 
 					switch($exitCode)
 					{
