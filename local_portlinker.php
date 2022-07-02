@@ -271,8 +271,7 @@ function execute_PortLinker () {
 function determine_PortLinker() {
   global $localSplit, $remoteSplit, $portLinkerObjectTypes;
   $errorText = "";
-  assertUIntArg ('object_id', __FUNCTION__);
-  $object = spotEntity ('object', $_REQUEST['object_id']);
+  $object = spotEntity ('object', getBypassValue());
   $linkok = localpretrigger_PortLinker();
   if ($linkok==2) {
     if (in_array($object['objtype_id'],$portLinkerObjectTypes)) {
@@ -392,8 +391,7 @@ function localpretrigger_PortLinker() {
 function localtrigger_PortLinker()
 {
   global $portLinkerObjectTypes;
-  assertUIntArg ('object_id', __FUNCTION__);
-  $object = spotEntity ('object', $_REQUEST['object_id']);
+  $object = spotEntity ('object', getBypassValue());
   if (in_array($object['objtype_id'],$portLinkerObjectTypes)) {
     $linkok = localpretrigger_PortLinker();
   } else {

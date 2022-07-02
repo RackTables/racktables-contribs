@@ -111,8 +111,7 @@ function ConfigTabHandler ()
 	//$display .= "<th class=tdleft>Comment</th>";
 	$display .= "<th>&nbsp;</th></tr>";
         
-	assertUIntArg ('object_id', __FUNCTION__);
-	$object = spotEntity ('object', $_REQUEST['object_id']);
+	$object = spotEntity ('object', getBypassValue());
 
 
 	// Existing configs
