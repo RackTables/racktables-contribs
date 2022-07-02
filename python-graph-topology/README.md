@@ -26,7 +26,6 @@ sudo cp functions.py /var/www/racktables/plugins/topoGen/
 sudo cp sql_definitions.py /var/www/racktables/plugins/topoGen/
 sudo cp settings.yml /var/www/racktables/plugins/topoGen/
 
-sudo cp logo.png /var/www/racktables/wwwroot/pix/
 sudo cp not.gif /var/www/racktables/wwwroot/pix/
 
 sudo cp js/ /var/www/racktables/plugins/topoGen/ -r

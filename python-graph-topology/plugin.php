@@ -16,6 +16,7 @@
 // *1.0: First implementation.
 //
 
+define ('TOPOGEN_BIN', 'topoGen.py');
 
 //Inserting plugin page into RackTables index
 
@@ -35,12 +36,9 @@ function plugin_topoGen_init()
 	global $indexlayout;
 	global $page;
 	global $tab;
-	global $tabHandler;
 	global $image;
 
 	array_push($indexlayout, array('graphtopo'));
-	addCSS('topoGen/css/gstyle.css');
-	addJS('topoGen/js/jquery-image.js');
 
 	$page['graphtopo']['title']  = 'Topology';
 	$page['graphtopo']['parent'] = 'index';
@@ -48,7 +46,8 @@ function plugin_topoGen_init()
 	$tab['graphtopo']['default'] = 'View';
 	registerTabHandler ('graphtopo', 'default', 'renderGraphTopo');
 
-	$image['graphtopo']['path']   = 'pix/logo.png';
+	$image['graphtopo']['srctype'] = 'dataurl';
+	$image['graphtopo']['data'] = 'image/png;base64,' . base64_encode (file_get_contents (dirname (__FILE__) . '/logo.png'));
 	$image['graphtopo']['width']  = 218;
 	$image['graphtopo']['height'] = 200;
 }
@@ -73,10 +72,6 @@ function renderGraphTopo()
 	//variables intialization:
 	$topo = $router_mode = $format = NULL;
 	$algo = $rankdir = $lines = $aggr = $lag = NULL;
-	//$nodesep = $ranksep = "";
-	$svgName = "";
-	$exitCode= -2;
-	$scriptOutput = array();
 
 	//check if it's a POST method:
 	if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -174,6 +169,8 @@ function renderGraphTopo()
 		),
 */
 	);
+	addCSS('topoGen/css/gstyle.css');
+	addJS('topoGen/js/jquery-image.js');
 	?>
 
 	<div class="settings">
@@ -208,66 +205,66 @@ function renderGraphTopo()
 	</div>
 	<div class="result">
 		<!-- Results display -->
-		<h2>Topology:</h2>
 		<?php
 
 			if ($_SERVER["REQUEST_METHOD"] == "POST") {
 				if (empty($topo)) //Python script needs this parameter in order to work
+					showError('Please specify the desired topology.');
+				else
 				{
-					{echo "<h3 class=\"warn\">Please, specify the desired topology.</h3>";}
-
-				} else
-				{
-					$topo = preg_replace('/\s+/', '', $topo);
-					exec("python3 plugins/topoGen/topoGen.py ".$topo." ".$router_mode." ".$format." ".$algo." ".$rankdir." ".$lines." ".$aggr." ".$lag, $scriptOutput, $exitCode); //PHP waits until the called program is done
-
+					$argv = array
+					(
+						dirname(__FILE__) . '/' . TOPOGEN_BIN,
+						escapeshellarg(preg_replace('/\s+/', '', $topo)),
+						$router_mode,
+						$format,
+						$algo,
+						$rankdir,
+						$lines,
+						$aggr,
+						$lag
+					);
+					exec (implode(' ', $argv), $scriptOutput, $exitCode); //PHP waits until the called program is done
+					switch ($exitCode)
+					{
+					case 1:
+						showError('Failed to run ' . TOPOGEN_BIN . ' (missing Python modules?)');
+						break;
+					case 127:
+						showError('Failed to run ' . TOPOGEN_BIN . ' (file not found)');
+						break;
+					default:
+						echo "<h2>Topology:</h2>\n";
+						$last_line = array_pop ($scriptOutput);
+					}
 					switch($exitCode)
 					{
 						case 255:
-							{echo "<h3 class=\"not\">Topology not found!</h3>";}
+							showError('Topology not found!');
 							{echo "<img class=\"not\" src=\"pix/not.gif\">";}
 							break;
-
 						case 4:
-
-							{echo "<a href=\"" . $scriptOutput[count($scriptOutput)-1] . "\" download>Download GRAPHML</a>";}
+							echo "<a href='${last_line}' download>Download GRAPHML</a>";
 							break;
-
 						case 5:
-
-							include($scriptOutput[count($scriptOutput)-1]);
-							
+							echo file_get_contents ($last_line);
 							break;
-
 						case 6:
-						
-							{echo "<iframe src=\"" . $scriptOutput[count($scriptOutput)-1] . "\" width=\"1150\" height=\"550\"></iframe>";}
-						
-							break;
-
 						case 7:
-
-							{echo "<iframe src=\"" . $scriptOutput[count($scriptOutput)-1] . "\" width=\"1150\" height=\"550\"></iframe>";}
-
+							echo "<iframe src='${last_line}' width=1150 height=550></iframe>";
 							break;
-
 						case 8:
-
-							echo "<a href=\"" . $scriptOutput[count($scriptOutput)-1] . "\" download>Download Excel</a>";
+							echo "<a href='${last_line}' download>Download Excel</a>";
 							break;
-
 						case 0:
-							
 							if ($format == "0")
-							{echo "<img class=\"topo\" src=\"" . $scriptOutput[count($scriptOutput)-1] . ".png\">";}
+								echo "<img class=topo src='${last_line}.png'>";
 							if ($format == "1")
-							{echo "<img class=\"topo\" src=\"" . $scriptOutput[count($scriptOutput)-1] . ".svg\">";}
-
+								echo "<img class=topo src='${last_line}.svg'>";
 							break;
 					}
-				}
-
-			}
+				} // if $topo is not empty
+			} // if POST
 		?>
 	</div>
 	<?php
