@@ -1,11 +1,10 @@
-# coding=utf-8
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import MySQLdb
 import sys
 import yaml
 
-import pandas as pd 
+import pandas as pd
 import networkx as nx
 from sql_definitions import *
 from functions import *
