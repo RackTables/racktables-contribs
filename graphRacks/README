@@ -1,0 +1,41 @@
+I have developed a plugin to be able to display a graphic rendering of the
+racks.
+
+The attachment contains two directories that you can place inside the "plugins"
+directory: a directory (graphRacks) for the plugin itself plus a "commodity"
+directory (rackimg) to produce and store the rack graphics (images are also
+loaded into the DB, but this directory works as a cache for html).
+
+If you want to try the plugin, after putting the code in place, try the
+following:
+1. create a new tag called "Front image" (Configuration -> Tag tree -> Edit
+   tree, put the name in "tag name" field, "assignable" must be "yes" then click
+   the button at the end of the row)
+2. load the images for each object in your racks (Files -> Manage -> set the tag
+   "Front image" -> choose and load the file)
+3. associate each object with the desired image (for each object, go to the
+   "Files" tab, and link the image; the images used must have the "Front image"
+   tag set or will be ignored)
+4. activate the plugin (Plugins -> Edit -> click on "+" to the right of the
+   "Graph Racks" plugin line)
+5. run the "graphRacks(0,0)" function from the plugin; you can associate this
+   with a button somewhere but I prefer to run it daily from crontab so that you
+   do not depend on people remembering to update the graphics after each change:
+   put this content in a file (I saved a "crontabGraphicUpdate.php" in "inc"
+   directory):
+<?php
+$script_mode = TRUE;
+include ('init.php');
+graphRacks(0, 1);
+?>
+and schedule its execution in crontab, for example:
+30 5 * * * /usr/bin/php [racktables_path]/inc/crontabGraphics.php >/tmp/crontabGraphics.log 2>&1
+
+After a correct execution, you can find rack graphics via RT interface here:
+a. Rackspace -> select a row -> tab "Graphics" for all the racks of the selected
+   row
+b. Rackspace -> select a rack -> tab "Graphics" (but also in tab "View") for the
+   single rack
+
+HTH
+Alberto
