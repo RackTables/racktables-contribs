@@ -16,13 +16,13 @@ RUN wget https://github.com/RackTables/racktables/archive/refs/tags/RackTables-0
 
 RUN tar -xvf /app/RackTables-0.22.0.tar.gz -C /app/
 
-RUN ln -s /app/RackTables-0.22.0/wwwroot /var/www/html/racktables
+RUN ln -s /app/racktables-RackTables-0.22.0/wwwroot /var/www/html/racktables
 
 RUN a2ensite racktables && a2dissite 000-default
 
 RUN apache2ctl -t && apache2ctl graceful
 
-RUN touch /app/RackTables-0.22.0/wwwroot/inc/secret.php && chown www-data:nogroup -R /app/RackTables-0.22.0/wwwroot && chmod -R 0700 /app/RackTables-0.22.0/wwwroot && chmod 600 /app/RackTables-0.22.0/wwwroot/inc/secret.php
+RUN touch /app/racktables-RackTables-0.22.0/wwwroot/inc/secret.php && chown www-data:nogroup -R /app/racktables-RackTables-0.22.0/wwwroot && chmod -R 0700 /app/racktables-RackTables-0.22.0/wwwroot && chmod 600 /app/racktables-RackTables-0.22.0/wwwroot/inc/secret.php
 
 EXPOSE 80
 
