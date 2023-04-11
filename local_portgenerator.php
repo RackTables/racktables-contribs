@@ -347,8 +347,7 @@ function localverify_PortGenerator($object) {
 function localfunc_PortGenerator()
 {
   global $errorText, $lookFor, $portList, $genText, $valueConfiguration, $searchIt;
-	assertUIntArg ('object_id', __FUNCTION__);
-	$object = spotEntity ('object', $_REQUEST['object_id']);
+  $object = spotEntity ('object', getBypassValue());
   startPortlet("Port generator");
   print "<center><br>";
   if (!localverify_PortGenerator($object)) {
@@ -457,8 +456,7 @@ function localexecute_PortGenerator()
   global $errorText, $portList;
   $linkok = localtrigger_PortGenerator();
   if ($linkok) {
-    assertUIntArg ('object_id', __FUNCTION__);
-    $object = spotEntity ('object', $_REQUEST['object_id']);
+    $object = spotEntity ('object', getBypassValue());
     if (localverify_PortGenerator($object)) {
       $cnt = 0;
       foreach ($portList as $aPort) {

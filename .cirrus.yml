@@ -12,7 +12,7 @@ task:
   env:
     DEBIAN_FRONTEND: noninteractive
   script:
-    - apt-get -qy update
-    - apt-get -qy install php-cli
+    - apt-get -qy update >/dev/null
+    - apt-get -qy install php-cli >/dev/null
     - php --version
     - ./test_ci.sh

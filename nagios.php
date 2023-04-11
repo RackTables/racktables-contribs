@@ -26,8 +26,7 @@ function NagiosTabHandler()
  global $nagios_user, $nagios_password, $nagios_url, $attribute_id;
 
  # Load object data
- assertUIntArg ('object_id', __FUNCTION__);
- $object = spotEntity ('object', $_REQUEST['object_id']);
+ $object = spotEntity ('object', getBypassValue());
  
  $attributes = getAttrValues ($_REQUEST['object_id']);
  if(@strlen($attributes[$attribute_id]['value'])) {

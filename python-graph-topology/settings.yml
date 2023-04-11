@@ -1,6 +1,45 @@
+# DataBase connection parameters
 mysql:
   username: viewRT
   password: viewRT
   host: 127.0.0.1
   port: 3306
   database: racktables
+
+# Color Scheme
+# The attributes in racktables will look for the top keys
+# Int_HW_Function -> hwFunction
+colorScheme:
+  hwFunction:
+    High-Ran: '#3399ff'
+    High-Ran-ABR: '#3399ff'
+    Mid-Ran: '#ff99cc'
+    AggEthernet: '#33ff33'
+    FronteraPE: '#cccc00'
+    TX: '#ffff00'
+    CSR: '#99ccff'
+  status:
+    no: '#ffcc00'
+  type:
+    swap: '#66ccff'
+    cambioArea: '#808000'
+    integracion: '#99ccff'
+    cambioTopologia: '#ccffff'
+    reinsercion: '#ff6600'
+  default: '#c0c0c0'
+
+routerType:
+  SR: ['SR12','SR12e','SR7','SRa8','SRa4']
+  IXR: ['IXR-R6']
+  SAR: ['SARX','SAR8','SAR28','SARA','SARM']
+
+loopInterfaces: ['system','System','loopback']
+
+portSpeeds:
+  '100': '100Mb'
+  '1000': '1G'
+  '10G': '10G'
+  '100G': '100G'
+  'empty SFP-1000': 'n/SFP'
+  'virtual port': 'vPort'
+

@@ -1,21 +1,18 @@
-##########################################################
-# Name: draw_topo_02.py
-# Version: 2.8
-# Author: Lucas Aimaretto
-# email: laimaretto@gmail.com
-# Date: 04-jul-2020
-
-- 2.8: A workaround in the function setFinalValue() because of a bug with Pandas 1.1.0.
-
+- 3.1:
+	- removed completely graphivz.
+	- topologies with folium updated to version 0.12.1
+	- renamed the options under `plugin.php`
+	- `settings.yml` improved with better settings, including `colorScheme`.
+- 3.0: implemented OSM with links and distance in KM.
+- 2.9: implemented OpenStreeMap on graph.php and the function fnc_build_osm(global_dict)
 - 2.8: migrated to python3
-- 2.7: separation of graph functions into fnc_build_graphviz(), fnc_build_graphml(), fnc_build_graphnx()
-	   rename to topoGen.py
+- 2.7: separation of graph functions into fnc_build_graphviz(), fnc_build_graphml(), fnc_build_graphnx(), rename to topoGen.py
 - 2.6: fnc_graphml()
 - 2.5: rewrite of functions, using Pandas to manipiulate data.
-- 2.4: full custimoization via argv[]
-	   Different color depending con Ref_Order
-- 2.3: implementing argv to pass parameters in line
-	   change \n to &#92;n in port an router when mode 1,2,3
+- 2.4:
+	- full custimoization via argv[].
+	- Different color depending con Ref_Order
+- 2.3: implementing argv to pass parameters in line. change \n to &#92;n in port an router when mode 1,2,3
 - 2.2: Option to graph nodes with the names, only.
 - 2.1: Bug regarding getting the system IP of router: fnc_build_query_attributes(.)
 	   TxType now considered when MIX TX is needed (ie: DWDM+MW)

@@ -61,8 +61,7 @@ $tabhandler['object']['DellWarranty'] = 'localfunc_DellWarranty';
 //Functions and triggers
 function localfunc_HPSysMan()
 {
-	assertUIntArg ('object_id', __FUNCTION__);
-	$object = spotEntity ('object', $_REQUEST['object_id']);
+	$object = spotEntity ('object', getBypassValue());
 	$alloclist = getObjectIPv4Allocations ($object['id']);
 	if (count ($alloclist))
 	{
@@ -77,8 +76,7 @@ function localfunc_HPSysMan()
 
 function localtrigger_HPServer()
 {
-	assertUIntArg ('object_id', __FUNCTION__);
-	$object = spotEntity ('object', $_REQUEST['object_id']);
+	$object = spotEntity ('object', getBypassValue());
 	$record = getAttrValues ($object['id'], TRUE);
 	if ($object['objtype_id'] == 4 && strstr($record[2][value],"HP"))
 		return 1;
@@ -90,8 +88,7 @@ function localtrigger_HPServer()
 
 function localfunc_HPWarranty()
 {
-	assertUIntArg ('object_id', __FUNCTION__);
-	$object = spotEntity ('object', $_REQUEST['object_id']);
+	$object = spotEntity ('object', getBypassValue());
 	foreach (getAttrValues ($object['id'], TRUE) as $record)
 		if (strlen ($record['value']) && $record['name'] == "Productnumber")
 			$hppn = $record['value'];
@@ -101,8 +98,7 @@ function localfunc_HPWarranty()
 
 function localtrigger_HPWarranty()
 {
-	assertUIntArg ('object_id', __FUNCTION__);
-	$object = spotEntity ('object', $_REQUEST['object_id']);
+	$object = spotEntity ('object', getBypassValue());
 	$record = getAttrValues ($object['id'], TRUE);
 	if (($object['objtype_id'] == 4 || $object['objtype_id'] == 5 || $object['objtype_id'] == 6)&& strstr($record[2][value],"HP"))
 		return 1;
@@ -114,8 +110,7 @@ function localtrigger_HPWarranty()
 
 function localfunc_IBMWarranty()
 {
-	assertUIntArg ('object_id', __FUNCTION__);
-	$object = spotEntity ('object', $_REQUEST['object_id']);
+	$object = spotEntity ('object', getBypassValue());
 	switch ($object['objtype_id']) {
 		case 4:
 		$ibmbrandid = 5000008; //System x
@@ -133,8 +128,7 @@ function localfunc_IBMWarranty()
 
 function localtrigger_IBMWarranty()
 {
-	assertUIntArg ('object_id', __FUNCTION__);
-	$object = spotEntity ('object', $_REQUEST['object_id']);
+	$object = spotEntity ('object', getBypassValue());
 	$record = getAttrValues ($object['id'], TRUE);
 	if (($object['objtype_id'] == 4 || $object['objtype_id'] == 5) && strstr($record[2][value],"IBM"))
 		return 1;
@@ -147,15 +141,13 @@ function localtrigger_IBMWarranty()
 
 function localfunc_NetAppWarranty()
 {
-	assertUIntArg ('object_id', __FUNCTION__);
-	$object = spotEntity ('object', $_REQUEST['object_id']);
+	$object = spotEntity ('object', getBypassValue());
 	renderIframeTabForEntity("NetApp warranty", "http://now.netapp.com/eservice/serviceSystemSearch.do?searchType=NA_WQS_PRODUCT&value=".$object['barcode']."&button.findbynumber=Go!&execQuery=Y&moduleName=SERVICE&sessionInfo=false");
 }
 
 function localtrigger_NetAppWarranty()
 {
-	assertUIntArg ('object_id', __FUNCTION__);
-	$object = spotEntity ('object', $_REQUEST['object_id']);
+	$object = spotEntity ('object', getBypassValue());
 	$record = getAttrValues ($object['id'], TRUE);
 	if (($object['objtype_id'] == 5 || $object['objtype_id'] == 6) && strstr($record[2][value],"NetApp"))
 		return 1;
@@ -167,15 +159,13 @@ function localtrigger_NetAppWarranty()
 
 function localfunc_DellWarranty()
 {
-	assertUIntArg ('object_id', __FUNCTION__);
-	$object = spotEntity ('object', $_REQUEST['object_id']);
+	$object = spotEntity ('object', getBypassValue());
 	renderIframeTabForEntity("Dell warranty", "http://support.dell.com/support/topics/global.aspx/support/my_systems_info/details?c=us&l=en&s=gen&ServiceTag=".$object['barcode']);
 }
 
 function localtrigger_DellWarranty()
 {
-	assertUIntArg ('object_id', __FUNCTION__);
-	$object = spotEntity ('object', $_REQUEST['object_id']);
+	$object = spotEntity ('object', getBypassValue());
 	$record = getAttrValues ($object['id'], TRUE);
 	if (($object['objtype_id'] == 4) && strstr($record[2][value],"Dell"))
 		return 1;

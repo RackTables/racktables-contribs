@@ -1,0 +1,75 @@
+/*
+This file is part of Graphvis.
+
+Graphvis is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option)
+any later version.
+
+Graphvis is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+Graphvis. If not, see <https://www.gnu.org/licenses/>.
+*/
+#graphvisLogicalNetwork, #graphvisPhysicalNetwork {
+	width: 1188px;
+	height: 840px;
+}
+
+.vis-network {
+	position: relative;
+	overflow: hidden;
+	touch-action: pan-y;
+	user-select: none;
+	width: 100%;
+	height: 100%;
+	border: 1px solid black;
+}
+
+
+.vis-network > canvas {
+	position: relative;
+	touch-action: none;
+	user-select: none;
+	width: 100%;
+	height: 100%;
+}
+
+
+
+@media print {
+	@page {
+		size: landscape;
+		margin: 0in;
+	}
+
+	body, div, #vis-canvas {
+		margin: 0;
+		padding: 0;
+	}
+
+	div.mainheader, .menubar, .tabbar, .msgbar, .pagebar>div:first-child {
+		display: none;
+	}
+	
+	.vis-network {
+		border: none;
+	}
+
+	.graphvisDate {
+		position: absolute;
+		top: 100px;
+		left: 100px;
+		font-size: 36pt;
+	}
+}
+
+
+@media screen {
+	.graphvisDate {
+		display: none;
+	}
+}
+

@@ -36,8 +36,7 @@ define("_statusNagiosUnknownText","unknown");
 function localfunc_Link2Nagios()
 {
   global $nagiosURL;
-	assertUIntArg('object_id',__FUNCTION__);
-	$object = spotEntity('object',$_REQUEST['object_id']);
+  $object = spotEntity ('object', getBypassValue());
   forwardToURL(str_replace(array("%objectname%"),array($object['name']),$nagiosURL));
 }
 
@@ -48,8 +47,7 @@ function localfunc_Link2Nagios()
 function localtrigger_Link2Nagios()
 {
   global $noNagiosCheck;
-	assertUIntArg('object_id',__FUNCTION__);
-	$object = spotEntity('object',$_REQUEST['object_id']);
+  $object = spotEntity ('object', getBypassValue());
   if (!in_array($object['objtype_id'],$noNagiosCheck)) {
     $trigger = getNagiosState($object['name']);
     return $trigger;

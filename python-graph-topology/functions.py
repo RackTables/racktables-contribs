@@ -2,38 +2,16 @@
 # Functions
 ########################################################################
 
-from operator import itemgetter
-from itertools import groupby
-import re
-import datetime
+#from operator import itemgetter
+#from itertools import groupby
+#import re
+#import datetime
 import networkx as nx
-import graphviz as gv
+#import graphviz as gv
 import pandas as pd 
 import pyyed
-import sys
+#import sys
 from pathlib import Path
-
-# This function converts M,G,T capacity into Kbps
-# If no unit, return -1
-# If problems, return 0
-def fnc_aux_convert_speed(capacity, outUnit=None):
-
-	dictUnit = {'K':1E3, 'M':1E6, 'G':1E9, 'T':1E12}
-
-	if capacity == 'vPort':
-		unit  = "G"
-		value = 20
-	else:
-		unit  = str(capacity[-1:])
-		value = int(capacity[:-1])
-	
-
-	if outUnit not in dictUnit.keys() or unit not in dictUnit.keys():
-		return 0
-	else:
-		value = value*dictUnit[unit] / dictUnit[outUnit]
-
-	return value
 
 def get_attribute(key, attribute, global_dict):
   try:
@@ -59,163 +37,60 @@ def setFinalValue(row):
 	
 	return row
 
-def fnc_chains_ring(vector):
-	topoString = ""
-	tempList   = []
-	len_vector = len(vector)
-	i=1
-
-	regexp = {
-	    'Anillo':        re.compile(r'^(\w{5})_(\d{3})$'),
-	    'Anillo_TX':     re.compile(r'^(\w{5})_(\d{3})_(\D{1,6})$'),
-	    'Cadena':        re.compile(r'^(\w{5}_\w{5})_(\d{3})$'),
-	    'Cadena_Radial': re.compile(r'^(\w{5}_\w{5})_(\D{1,6})$'),
-	    'Cadena_TX':     re.compile(r'^(\w{5}_\w{5})_(\d{3})_(\D{1,6})$'),
-	    'Area':          re.compile(r'^(0.0.\d{1}.\d{1,2})$'),
-	    'Region':        re.compile(r'(.*0.0.\d{1}.\d{1,2}.+)'),
-		'General':       re.compile(r'(.*)')
-	    # ...
-	}
-
-	# We can have many topos inside vector
-	for topo in vector:
-
-		for key, pattern in regexp.items():
-			match = pattern.match(topo)
-			if match:
-				name   = match.groups()[0]
-				tot    = match.group()
-				tempList.append( (key, name, tot) )
-
-	return tempList
-
 # Function that builds the filename
-def fnc_build_filename(vector):
-	info = fnc_chains_ring(vector)
-	len_vector= len(vector)
+def fnc_build_filename(topos_names,routers_names,attrib_names):
+	
+	prefixTopo = "".join(topos_names)
+	prefixRtrs = "".join(routers_names)
+	prefixAttr = "".join(attrib_names)
 
-	if len_vector == 1:
+	filename     = prefixTopo + prefixRtrs + prefixAttr
 
-		tipoTopo  = info[0][0]
-		agregador = info[0][1]
-		topologia = info[0][2]
+	Path("plugins/topoGen/topos/").mkdir(parents=True, exist_ok=True)
 
-		topoName1 = "Topologia"
-		topoName2 = tipoTopo
-		topoName3 = "-MRLR-"
-		topoName4 = topologia
-		filename  = "pix/topo/" + agregador + "/" + topoName1 + topoName2 + topoName3 + topoName4
-
-	elif len_vector >1:
-
-		tipoTopo  = "-".join(list(set([name[0] for name in info])))
-		agregador = "-".join(list(set([name[1] for name in info])))
-		topologia = "-".join(list(set([name[2] for name in info])))
-
-		topoName1 = "Topologia"
-		topoName2 = tipoTopo
-		topoName3 = "-MRLR-"
-		topoName4 = topologia
-		filename  = "pix/topo/" + agregador + "/" + topoName1 + topoName2 + topoName3 + topoName4
-
-	#filename=filename + "_" + version_script + "_" +now.strftime("%Y-%m-%d")+".dot"
-	#return filename + ".dot"
-
-	Path("pix/topo/" + agregador).mkdir(parents=True, exist_ok=True)
-
-	return filename
+	return "plugins/topoGen/topos/" + filename
 
 # Function that returns whether we have a input_string or router_name
 def fnc_input_string_type(vector):
 
 	listTopo   = []
 	listRouter = []
+	listAttrib = []
 
 	for name in vector:
-		if name[:2] == 'R:':
-			listRouter.append(name[2:])
+		if name[:2] in ['r:','R:']:
+			listRouter.append(name[2:].upper())
+		elif name[:3] in ['av:','AV:']:
+			listAttrib.append(name[3:])
 		else:
-			listTopo.append(name)
+			listTopo.append(name.upper())
 
-	return(listTopo,listRouter)
-
-# Funcion que organiza los puertos de cada nodo
-def fnc_port_list(routers):
-	router_list=[]
-	port_list=[]
-	for router in routers:
-		#print router[0]
-		router_id = router[0][0]
-		for port in router:
-			port_list.append(port[1])
-		router_list.append((router_id,port_list))
-		port_list=[]
-
-	return router_list
+	return(listTopo,listRouter,listAttrib)
 
 # Function that returns de speed of the port
-def fnc_port_speed(port_string):
+def fnc_port_speed(port_string, settings):
 
 	speed = port_string.split('B')[0]
-	
-	speedDict = {
-		"100"  :"100Mb",
-		"1000" :"1G",
-		"10G"  :"10G",
-		"100G" :"100G",
 
-		"SFP-CES" :"n/ETH",
-		"SFP-ATM" :"n/ETH",
-		"SFP-ASAP":"n/ETH",
-		
-		"empty SFP-1000":"n/SFP",
-		"virtual port"  :"vPort",		
-	}
+	speedDict = settings['portSpeeds']
 
-	return speedDict.get(speed,"N/A")
-
-# Function to compare speeds for egressRate in vPorts
-def fnc_speed_compare(strSpeed):
-
-	#print strSpeed
-
-	speed = strSpeed.split(":")[0]
-	unit  = speed[-1:]
-	value = float(speed[:-1])
-	if unit == "G":
-		return value
-	elif unit == "M":
-		return float(value/1000)
-
-# Function that returns the SFP type
-def fnc_port_sfp(port_string):
-
-	if port_string == "virtual port":
-		return "LAG"
-	elif port_string == "spoke-sdp":
-		return "VLL"
-	elif port_string == "SFP-CES" or port_string == "SFP-ATM" or port_string == "SFP-ASAP":
-		return port_string.split('-')[1]
-	else:
-		sfp_type = port_string.split('-')
-		sfp_type = sfp_type[1]
-		return sfp_type
+	return speedDict.get(speed,"N/A")	
 
 # Function that creates a dictionary with global attributes
-def fnc_add_atributes_to_dic_global(df_systems, df):
+def fnc_add_atributes_to_dic_global(settings, df_systems, df):
 	#                   name HWfunction            HWtype Integrado Sync_Ref1 Sync_Ref2      Sync_Ref_Order
-	# 0     C1026_SF270_SARX        NaN    ALU%GPASS%SARX        si     1/2/6     1/3/6  ref1 ref2 external
-	# 1     C1406_ND270_SARX        NaN    ALU%GPASS%SARX        si     1/3/7     1/2/7  ref2 ref1 external
-	# 2     C1708_ND470_SARX        NaN    ALU%GPASS%SARX        si     1/2/7     1/3/6  ref2 ref1 external
-	# 3     C2155_SND70_SARA        NaN    ALU%GPASS%SARA        si     1/1/5     1/1/6  ref1 ref2 external
-	# 4     C3110_CTG70_SARM        NaN    ALU%GPASS%SARM       NaN     1/1/2     1/1/1  ref1 ref2 external
-	# 5    CF145_TGR70_SAR28        NaN   ALU%GPASS%SAR28        no     1/1/5     1/1/4  ref1 ref2 external
-	# 6     CF145_TGR70_SAR8        NaN    ALU%GPASS%SAR8        si       NaN       NaN                 NaN
-	# 7     CF181_R2770_SARA        NaN    ALU%GPASS%SARA        si     1/1/5     1/1/6  ref1 ref2 external
-	# 8     CF352_GR270_SARX        NaN    ALU%GPASS%SARX        si     1/3/7     1/2/6  ref1 ref2 external
-	# 9   CFR17_TOT70_IXR-R6    Mid-Ran  ALU%GPASS%IXR-R6        si     3/1/1     3/2/1  ref1 ref2 bits ptp
-	# 10  CFR17_TOT71_IXR-R6    Mid-Ran  ALU%GPASS%IXR-R6        si     3/2/1     3/1/1  ref1 ref2 bits ptp
-	# 11   TC3067_HMT70_SARX        NaN    ALU%GPASS%SARX        si     1/2/6     1/3/6  ref1 ref2 external
+	# 0               router    NaN    ALU%GPASS%SARX        si     1/2/6     1/3/6  ref1 ref2 external
+	# 1               router    NaN    ALU%GPASS%SARX        si     1/3/7     1/2/7  ref2 ref1 external
+	# 2               router    NaN    ALU%GPASS%SARX        si     1/2/7     1/3/6  ref2 ref1 external
+	# 3               router    NaN    ALU%GPASS%SARA        si     1/1/5     1/1/6  ref1 ref2 external
+	# 4               router    NaN    ALU%GPASS%SARM       NaN     1/1/2     1/1/1  ref1 ref2 external
+	# 5               router    NaN   ALU%GPASS%SAR28        no     1/1/5     1/1/4  ref1 ref2 external
+	# 6               router    NaN    ALU%GPASS%SAR8        si       NaN       NaN                 NaN
+	# 7               router    NaN    ALU%GPASS%SARA        si     1/1/5     1/1/6  ref1 ref2 external
+	# 8               router    NaN    ALU%GPASS%SARX        si     1/3/7     1/2/6  ref1 ref2 external
+	# 9               router  Mid-Ran  ALU%GPASS%IXR-R6        si     3/1/1     3/2/1  ref1 ref2 bits ptp
+	# 10              router  Mid-Ran  ALU%GPASS%IXR-R6        si     3/2/1     3/1/1  ref1 ref2 bits ptp
+	# 11              router    NaN    ALU%GPASS%SARX        si     1/2/6     1/3/6  ref1 ref2 external
 
 	dict_global = {}
 
@@ -230,7 +105,8 @@ def fnc_add_atributes_to_dic_global(df_systems, df):
 		dict_global[router_name]['Sync_Ref2']      = "N/A"
 		dict_global[router_name]['Sync_Ref_Order'] = "N/A"
 		dict_global[router_name]['Int_Type']       = "N/A"
-		dict_global[router_name]['color']          = {'yEd':'#c0c0c0','graphviz':'grey'}
+		#dict_global[router_name]['color']          = {'yEd':'#c0c0c0','graphviz':'grey'}
+		dict_global[router_name]['color']          = settings['colorScheme']['default']
 		dict_global[router_name]['HWtype']         = "N/A"
 		dict_global[router_name]['weight']         = "N/A"
 		dict_global[router_name]['lat']            = "0"
@@ -298,7 +174,7 @@ def fnc_add_atributes_to_dic_global(df_systems, df):
 		dict_global[router_name]['Sync_Ref2']      = Sync_Ref2
 		dict_global[router_name]['Sync_Ref_Order'] = Sync_Ref_Order
 		dict_global[router_name]['Int_Type']       = Int_Type 
-		dict_global[router_name]['color']          = fnc_router_color(HWfunction, Int_Status, Int_Type)
+		dict_global[router_name]['color']          = fnc_router_color(settings, HWfunction, Int_Status, Int_Type)
 		dict_global[router_name]['HWtype']         = HWtype
 		dict_global[router_name]['weight']         = fnc_router_weight(HWtype)
 		dict_global[router_name]['lat']            = Int_LAT_LON.split(":")[0]
@@ -311,121 +187,6 @@ def fnc_add_atributes_to_dic_global(df_systems, df):
 
 	return dict_global
 
-# Function that creates a list which holds each router and all its ports.
-# Input: object_connections
-# [('Router1', '1/1/1'), ('Router1', '1/1/2')]
-# Output
-# ('Router1/1/1', {'label': '1/1/1'})
-# The output of this function is used as input to graphviz
-def fnc_node_list(df, global_dict, router_mode, graph_hp, graph_lag, graph_cpam):
-
-	temp_list=[]
-
-	subset = df[['name1','port1','name2','port2','cable','port1Speed','port2Speed','ip_x','ip_y']]
-
-	for row in subset.itertuples():
-
-		cableID = row.cable
-		if not cableID: cableID = ""
-
-		if ("LAG" in cableID.upper() and graph_lag=="n") or ("HAIRPIN" in cableID.upper() and graph_hp=="n") or ("CPAM" in cableID.upper() and graph_cpam=="n"):
-			pass 
-		else:
-
-			routerA    = row.name1
-			portA      = row.port1
-			portAspeed = fnc_port_speed(row.port1Speed)
-			portAtype  = fnc_port_sfp(row.port1Speed)
-			ipA        = row.ip_x
-			if not ipA:	ipA="N/A"
-			nodeA      = routerA + "_" + portA
-			ref1a      = get_attribute(routerA,portA,global_dict)
-
-			routerB    = row.name2
-			portB      = row.port2
-			portBspeed = fnc_port_speed(row.port2Speed)
-			portBtype  = fnc_port_sfp(row.port2Speed)
-			ipB        = row.ip_y
-			if not ipB: ipB="N/A"
-			nodeB      = routerB + "_" + portB
-			ref1b      = get_attribute(routerB,portB,global_dict)
-
-			if router_mode == "0":
-				labelA="<"+ portA + "<BR />" + portAtype + "-" +  portAspeed + "<BR />" + ipA + "<BR />" + ref1a +">"
-				labelB="<"+ portB + "<BR />" + portBtype + "-" +  portBspeed + "<BR />" + ipB + "<BR />" + ref1b +">"
-			elif router_mode in ["1","2"]:
-				labelA= portA + "&#92;n" + portAtype + "-" + portAspeed + "&#92;n" + ipA + "&#92;n" + ref1a
-				labelB= portB + "&#92;n" + portBtype + "-" + portBspeed + "&#92;n" + ipB + "&#92;n" + ref1b
-			elif router_mode in ["3","4"]:
-				labelA=""
-				labelB=""
-
-			temp_list.append((routerA,nodeA,{'label':labelA}))
-			temp_list.append((routerB,nodeB,{'label':labelB}))
-
-	# List will be ordered and sorted always by the first field
-	# which is the router name
-	if router_mode in ['0','1','2','3']:
-		lista_sorted  = sorted(temp_list, key=itemgetter(0))
-		lista_grouped = groupby(lista_sorted, key=itemgetter(0))
-
-		a = []
-		for i,rou in enumerate(lista_grouped):
-			a.append(list(rou[1]))
-
-		return a
-
-	elif router_mode in ['4']:
-		return temp_list
-
-# Function that builds a list which holds the connections among routers.
-# The output of this function is used as input to graphviz
-def fnc_edge_list(df, graph_lag, graph_hp, graph_cpam, router_mode):
-
-	subset = df[['name1','port1','name2','port2','cable','port1Speed','port2Speed','intName1','intName2']]
-
-	edge_list=[]
-
-	for row in subset.itertuples():
-		
-		routerA    = row.name1
-		portA      = row.port1
-		routerB    = row.name2
-		portB      = row.port2
-		cableID    = row.cable
-		portAspeed = fnc_port_speed(row.port1Speed)
-		portBspeed = fnc_port_speed(row.port2Speed)
-		intName1   = row.intName1
-		intName2   = row.intName2
-
-		nodeA = routerA + "_" + portA
-		nodeB = routerB + "_" + portB
-
-		if not cableID or cableID == "N/A": cableID = ""
-
-		if ("LAG" in cableID.upper() and graph_lag=="n") or ("HAIRPIN" in cableID.upper() and graph_hp=="n") or ("CPAM" in cableID.upper() and graph_cpam=="n"):
-			pass
-		else:
-			if router_mode in ['0','1','2','3']:
-				edge_list.append( ( (nodeA,nodeB),{'label':cableID},(portAspeed,portBspeed),(intName1,intName2) ) )
-			elif router_mode in ['4']:
-				edge_list.append( (routerA,routerB,cableID) )
-
-	return edge_list
-
-# Function to obtain topology name
-def fnc_build_topo_name(vector):
-	topo_name=""
-	len_vector= len(vector)
-	i=1
-	for tn in vector:
-		if i < len_vector:
-			topo_name=topo_name+tn+"-"
-		else:
-			topo_name=topo_name+tn
-		i=i+1
-
-	return topo_name
 
 def fnc_router_weight(HWtype):
 
@@ -438,38 +199,12 @@ def fnc_router_weight(HWtype):
 
 # Function that returns the color of the router depending on its
 # situation
-def fnc_router_color(HWfunction, Int_Status, Int_Type):
+def fnc_router_color(settings, HWfunction, Int_Status, Int_Type):
 
-	# Color depending on function
-	functionDict = {
-		'High-Ran':		{'yEd':'#3399ff','graphviz':'lightblue4'},
-		'High-Ran-ABR':	{'yEd':'#3399ff','graphviz':'lightblue4'},
-		'Mid-Ran':		{'yEd':'#ff99cc','graphviz':'lightpink4'},
-		'AggEthernet':	{'yEd':'#33ff33','graphviz':'limegreen'},
-		'FronteraPE':	{'yEd':'#cccc00','graphviz':'darkgoldenrod'},
-		'TX':			{'yEd':'#ffff00','graphviz':'yellow'},
-		'CSR':			{'yEd':'#99ccff','graphviz':'lightblue3'},
-	}
-
-	intStatusDict = {
-		'no':{'yEd':'#ffcc00','graphviz':'orange'},
-	}
-
-	intTypeDict = {
-		'swap':				{'yEd':'#66ccff','graphviz':'lightblue2'},
-		'cambioArea':		{'yEd':'#808000','graphviz':'khaki'},
-		'integracion':		{'yEd':'#99ccff','graphviz':'lightblue3'},
-		'cambioTopologia':	{'yEd':'#ccffff','graphviz':'lightblue1'},
-		'reinsercion':		{'yEd':'#ff6600','graphviz':'red'},
-	}
-
-	refOrderDict = {
-		'ref1 ref2':{'yEd':'#99ccff','graphviz':'lightblue3'},
-		'ref2 ref1':{'yEd':'#ccffff','graphviz':'lightblue1'}
-	}
-
-	# Default Color if nothing is matched ...
-	color = {'yEd':'#c0c0c0','graphviz':'grey'}
+	functionDict  = settings['colorScheme']['hwFunction']
+	intStatusDict = settings['colorScheme']['status']
+	intTypeDict   = settings['colorScheme']['type']
+	color         = settings['colorScheme']['default']
 
 	####
 
@@ -486,319 +221,6 @@ def fnc_router_color(HWfunction, Int_Status, Int_Type):
 	
 	return color
 
-
-# Function to process label of edges
-def fnc_edge_format(labelText, what, portSpeed):
-	
-	# LAG3:1G:DWDM:10172
-	# 10G:-1:DWDM:10265
-	# 296M:-1:MW
-	# 3G:-1:2
-
-	stringLen = len(labelText.split(":"))
-	portSpeed = portSpeed[0]
-
-	if portSpeed[:3] != "LAG":
-
-		if  stringLen == 4:
-
-			egressRate  = labelText.split(":")[0]
-			metOspef	= labelText.split(":")[1]
-			TxType		= labelText.split(":")[2]
-			txTypeCkt	= labelText.split(":")[3]
-
-		elif stringLen == 3:
-
-			egressRate  = labelText.split(":")[0]
-			metOspef	= labelText.split(":")[1]
-			TxType		= labelText.split(":")[2]
-			txTypeCkt	= "NA"
-
-		elif stringLen == 2:
-
-			egressRate  = labelText.split(":")[0]
-			metOspef	= labelText.split(":")[1]
-			TxType		= "FO"
-			txTypeCkt	= "NA"
-
-		elif stringLen == 1:
-
-			egressRate  = portSpeed
-			metOspef	= "-1"
-			TxType		= "FO"
-			txTypeCkt	= "NA"
-
-		else:
-
-			egressRate  = "1G"
-			metOspef	= "-1"
-			TxType		= "FO"
-			txTypeCkt	= "NA"
-
-	colorDict = {
-		"CWDM" :"red",
-		"DWDM" :"blue",
-		"FO"   :"black",
-		"SDH"  :"green",
-		"MW"   :"pink",
-		"ARSAT":"navy",
-		"DATCO":"purple",
-	}
-
-	widthDict = {
-		0.1     :"0.5",
-		1       :"1.0",
-		10      :"2.5",
-		50      :"5.0",
-		100     :"10.0",
-	}
-
-	egressRate = int(fnc_aux_convert_speed(egressRate,'G'))
-	egressRate = min([x for x in widthDict.keys() if egressRate <= x])
-
-	if what == "color":
-		return colorDict.get(TxType,'yellow')
-	elif what == "width":
-		return widthDict.get(egressRate, '50.0')
-
-# Function that returns metadata of the router
-def fnc_router_metadata(global_dict, router_name, what, router_function, router_ckt_id, router_mode):
-
-	router_sync_order  = get_attribute(router_name, "Sync_Ref_Order", global_dict)
-	router_ip          = get_attribute(router_name, "system", global_dict)
-
-	if "TX" in router_function:
-
-		if what=="labelHtml":
-
-			router_label=(
-				"<"+
-				"<font point-size=\"10\">"+router_ckt_id+"</font>"+"<BR />"
-				+">"
-				)
-			return router_label
-
-		elif what=="labelText":
-
-			router_label = router_ckt_id
-			return router_label
-
-	else:
-
-		if what=="labelHtml":
-
-			if router_mode == "3":
-				router_label=(
-					"<"+
-					"<font point-size=\"10\">"+router_name+"</font>"+"<BR />"+
-					"<font point-size=\"9\">" +router_ip+"</font>"+"<BR />"
-					+">"
-					)
-				return router_label
-
-			else:
-				router_label=(
-					"<"+
-					"<font point-size=\"10\">"+router_name+"</font>"+"<BR />"+
-					"<font point-size=\"9\">" +router_ip+"</font>"+"<BR />"+
-					"<font point-size=\"9\">" +router_sync_order+"</font>"
-					+">"
-					)
-				return router_label
-
-		elif what=="labelText":
-
-			if router_mode=="3":
-				router_label = router_name + "&#92;n" + router_ip
-				return router_label
-			else:
-				router_label = router_name + "&#92;n" + router_ip + "&#92;n" + router_sync_order
-				return router_label
-
-# Function that returns port_string when router as a node
-def fnc_port_string(router_label, port_string, color, router_mode, router_function):
-
-	port_string=port_string[1:]
-	temp_port = port_string.split("|")
-
-	if "TX" in router_function:
-
-		if router_function == "TX_MIX":
-
-			temp_string=""
-
-			for port in port_string.split("|"):
-				temp_string = temp_string + port.split("\n")[0] + "|"
-
-			port_string = temp_string[:-1]
-
-			temp_string = "{" + port_string + "}"
-			temp_string = " [" + color + ",label=\"" + temp_string + "\"]"
-			return temp_string
-
-		elif router_function == "TX_ARSAT":
-
-			#print router_label
-
-			temp_string = "{" + router_label + "}"
-			temp_string = " [" + color + ",label=\"" + temp_string + "\"]"
-			return temp_string
-
-	else:
-
-		if router_mode=="1":
-			temp_string = "{" + router_label + "|" + port_string + "}"
-		elif router_mode=="2":
-			temp_string = "{" + router_label + "|" + "{" + port_string + "}" + "}"
-		elif router_mode=="3":
-			temp_string = router_label
-
-		temp_string = " [" + color + ",label=\"" + temp_string + "\"]"
-		return temp_string
-
-
-def fnc_build_graphviz(routers,edges,global_dict,router_mode,filename,input_string,format,engine,rankdir,lines_dict):
-
-	port_dict = {}
-
-	g0 = gv.Graph(format=format, engine=engine)
-
-	topo = '\"'+fnc_build_topo_name(input_string)+'\"'
-
-	g0.body.append('label='  +topo)
-	g0.body.append('rankdir='+rankdir)
-	g0.body.append('splines='+lines_dict)
-
-	g0.node_attr['style']     = 'filled'
-	g0.node_attr['fixedsize'] = 'false'
-	g0.node_attr['fontsize']  = '9'
-
-	if router_mode == '0':
-
-		g0.node_attr['shape'] = 'box'
-		labelType="labelHtml"
-
-	elif router_mode in ['1','2','3']:
-
-		g0.body.append('overlap=false')
-		#g0.body.append('nodesep='+nodesep)
-		#g0.body.append('ranksep='+ranksep)
-
-		g0.node_attr['shape']   = 'Mrecord'
-		g0.node_attr['overlap'] = 'false'
-
-		labelType="labelText"
-
-	i = 1
-
-	for router in routers:
-
-		# Variables
-		router_name     = router[0][0]
-		router_function = get_attribute(router_name,"HWfunction",global_dict)
-		router_int      = get_attribute(router_name,"Integrado",global_dict)
-		router_ckt_id   = get_attribute(router_name,"ckt_id",global_dict)
-		router_color    = get_attribute(router_name,"color",global_dict)['graphviz']
-		router_label    = fnc_router_metadata(global_dict,router_name, labelType, router_function, router_ckt_id, router_mode)
-
-		if router_mode == '0':
-
-			# Parametrization
-			cluster_name = "cluster"+str(i)
-			c = gv.Graph(cluster_name)
-			c.body.append('label='+router_label)
-			c.body.append('shape=box')
-			c.body.append('style=filled')
-
-			# Color depending on function in network
-			c.body.append('fillcolor='+router_color)
-			c.node_attr.update(style='filled')
-
-			# Ports workout
-			for port in router:
-				node_id = port[1]
-				if ":" in node_id: 
-					node_id = node_id.replace(":","#")
-				port_id = port[2]['label']
-				c.node(node_id,label=port_id)
-
-			g0.subgraph(c)
-
-		elif router_mode in ['1','2','3']:
-
-			# Parametrization
-			struct_name = "struct"+str(i)
-
-			# Color depending on function in network
-			color = 'fillcolor='+router_color
-
-			# Ports workout
-			p=1
-			port_string=""
-			for port in router:
-
-				node_id=port[1]
-				if ":" in node_id: node_id=node_id.replace(":","#")
-				port_id=port[2]['label']
-
-				port_string=port_string+"|<f"+str(p)+">"+port_id
-				dict_key = str(i)+"_"+str(p)
-				port_dict[node_id]=dict_key
-
-				p=p+1
-
-			node_string = fnc_port_string(router_label, port_string, color, router_mode, router_function)
-
-			g0.body.append(struct_name+node_string)			
-
-		i=i+1
-
-	for e in edges:
-
-		if router_mode == '0':
-
-			edgeA = e[0][0]
-			if ":" in edgeA:
-				edgeA = edgeA.replace(":","#")
-			edgeB = e[0][1]
-			if ":" in edgeB:
-				edgeB = edgeB.replace(":","#")
-			edgeLabel = e[1]['label']
-			edgeSpeed = e[2]
-
-		elif router_mode in ['1','2','3']:
-
-			tempA = e[0][0]
-			if ":" in tempA:
-				tempA=tempA.replace(":","#")
-			tempA = port_dict[tempA].split("_")
-
-			if router_mode =="3":
-				edgeA = "struct"+tempA[0]
-			else:
-				edgeA = "struct"+tempA[0]+":f"+tempA[1]
-
-			tempB = e[0][1]
-			if ":" in tempB:
-				tempB=tempB.replace(":","#")
-			tempB = port_dict[tempB].split("_")
-
-			if router_mode == "3":
-				edgeB = "struct"+tempB[0]
-			else:
-				edgeB = "struct"+tempB[0]+":f"+tempB[1]
-
-			edgeLabel=e[1]['label']
-			edgeSpeed=e[2]
-
-		g0.edge_attr['fontsize']='9'
-		g0.edge(edgeA,edgeB,label=edgeLabel, color=fnc_edge_format(edgeLabel, "color", edgeSpeed), penwidth=fnc_edge_format(edgeLabel,"width",edgeSpeed))
-
-	#print filename + "." + format_dict[output_format]
-	print(filename+".dot")
-	g0.render(filename+".dot")
-	sys.exit(0)
-
 def fnc_build_graphml(df_system, dfConnFinal, global_dict, router_mode, filename):
 
 	if router_mode in ['1','2','3','4']:
@@ -807,11 +229,7 @@ def fnc_build_graphml(df_system, dfConnFinal, global_dict, router_mode, filename
 
 		for router in df_system.itertuples():
 			router_name   	= router.name
-			router_function = get_attribute(router_name,"HWfunction",global_dict)
-			router_int      = get_attribute(router_name,"Int_Status",global_dict)
-			router_ckt_id   = get_attribute(router_name,"ckt_id",global_dict)
-			router_color    = get_attribute(router_name,"color",global_dict)['yEd']
-			router_label    = fnc_router_metadata(global_dict, router_name, 'labelHtml', router_function, router_ckt_id, router_mode)
+			router_color    = get_attribute(router_name,"color",global_dict)
 			router_system   = get_attribute(router_name,"system",global_dict)
 
 			G.add_node(router_name, label=router_name + "\n" + router_system, shape_fill=router_color)
@@ -823,9 +241,8 @@ def fnc_build_graphml(df_system, dfConnFinal, global_dict, router_mode, filename
 			else:
 				G.add_edge(link.name1, link.name2, arrowhead='none',arrowfoot='none', label= edgeLabel)
 
-		print(filename)
-		G.write_graph(filename+'.graphml')
-		sys.exit(4)
+		print(filename + '.graphml')
+		G.write_graph(filename + '.graphml')
 
 def fnc_build_graphnx(df_system, dfConnFinal, global_dict, router_mode, filename):
 
@@ -892,7 +309,7 @@ def fnc_build_graphnx(df_system, dfConnFinal, global_dict, router_mode, filename
 					label   = str(router_name) + "\n" + str(ip_system),
 					chassis = global_dict[router_name]['HWtype'],
 					ip      = str(ip_system),
-					color   = get_attribute(router_name,"color",global_dict)['yEd'],
+					color   = get_attribute(router_name,"color",global_dict),
 					physics = physics,
 					)
 
@@ -926,4 +343,85 @@ def fnc_build_graphnx(df_system, dfConnFinal, global_dict, router_mode, filename
 	#G.barnes_hut(overlap=1)
 	#G.force_atlas_2based(overlap=1)
 	#G.show_buttons()
-	G.save_graph("plugins/topo.html")
+	#G.save_graph("plugins/topoGen/topo.html")
+
+	print(filename + "_nx.html")
+	G.save_graph(filename + "_nx.html")
+
+def fnc_build_osm(global_dict, dfConnFinal, router_mode, filename):
+
+	import json
+	import geopy.distance
+	import folium
+
+	dfConn       = dfConnFinal[['name1','name2']]
+	df_attribute = pd.DataFrame(global_dict).T.reset_index()
+
+	dfConn = pd.merge(dfConn,df_attribute,left_on='name1', right_on='index')[['name1','name2','lat','lon']]
+	dfConn.rename(columns={'lat':'lat1','lon':'lon1'}, inplace=True)
+	dfConn = pd.merge(dfConn,df_attribute,left_on='name2', right_on='index')[['name1','name2','lat1','lon1','lat','lon']]
+	dfConn.rename(columns={'lat':'lat2','lon':'lon2'}, inplace=True)
+	dfConn = dfConn[['lat1','lon1','lat2','lon2']]
+	dfConn['d'] = dfConn.apply(lambda x: geopy.distance.distance( (x.lat1, x.lon1), (x.lat2, x.lon2) ).km , axis=1).round(2)
+
+	dictNodes = { 
+					x:{
+						'name':x, 
+						'system':global_dict[x]['system'], 
+						'lat':   global_dict[x]['lat'], 
+						'lon':   global_dict[x]['lon'],
+						'color': global_dict[x]['color'],
+					} for x in global_dict.keys() 
+				}
+	dictLinks = dfConn.to_dict('index')
+
+	### Rendering Map
+	firstNode = list(dictNodes.keys())[0]
+	m         = folium.Map(location=[ dictNodes[firstNode]['lat'], dictNodes[firstNode]['lon']] )
+
+	for key in dictNodes.keys():
+		folium.Marker(
+	 		location = [dictNodes[key]['lat'],dictNodes[key]['lon']],
+	 		popup    = folium.Popup("<b>" +  dictNodes[key]['name'] + "</b>\n" + dictNodes[key]['system'],sticky=True),
+			icon     = folium.Icon(icon_color=dictNodes[key]['color'], color='darkblue'),
+	 	).add_to(m)
+
+# {'darkblue', 'darkpurple', 'purple', 'red', 'lightred', 'pink', 'green', 'black', 'lightblue', 'lightgreen', 
+# 'beige', 'blue', 'lightgray', 'darkgreen', 'cadetblue', 'orange', 'gray', 'darkred', 'white'}
+
+	if router_mode == '7':
+
+		for key in dictLinks.keys(): 
+			folium.vector_layers.PolyLine( 
+				[ 
+					( float(dictLinks[key]['lat1']), float(dictLinks[key]['lon1']) ), 
+					( float(dictLinks[key]['lat2']), float(dictLinks[key]['lon2']) ) 
+				],
+				popup=folium.Popup(str(dictLinks[key]['d']) + 'km', sticky=True),
+			).add_to(m)
+
+	print(filename  + '_map.html')
+	m.save(filename + '_map.html')
+
+def fnc_build_excel(df_system, dfConnFinal, global_dict, router_mode, filename):
+
+	from pandas import ExcelWriter
+
+	def save_xls(list_dfs, xls_path):
+		with ExcelWriter(xls_path) as writer:
+			for df, name in list_dfs:
+				df.to_excel(writer, name)
+			writer.save()
+
+	dfSummary1 = dfConnFinal[['name1','obj1type','intName1','ip_x','port1','port1Speed','cable']]
+	dfSummary1 = dfSummary1.rename(columns={'name1':'name','obj1type':'objType','intName1':'intName','ip_x':'ip','port1':'port','port1Speed':'portSpeed'})
+	dfSummary2 = dfConnFinal[['name2','obj2type','intName2','ip_y','port2','port2Speed','cable']]
+	dfSummary2 = dfSummary2.rename(columns={'name2':'name','obj2type':'objType','intName2':'intName','ip_y':'ip','port2':'port','port2Speed':'portSpeed'})
+
+	dfSumm = pd.concat([dfSummary1,dfSummary2])
+	dfSumm = dfSumm.sort_values(by=['name','port'])
+
+	list_dfs = [(dfConnFinal,'Connections'),(dfSumm,'Summary'),(df_system,'system')]
+
+	print(filename + '.xlsx')
+	save_xls(list_dfs, filename + '.xlsx')
