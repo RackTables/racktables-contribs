@@ -12,17 +12,17 @@ RUN cp /app/racktables.conf /etc/apache2/sites-available/racktables.conf
 
 RUN a2enmod dir
 
-RUN wget https://sourceforge.net/projects/racktables/files/RackTables-0.21.5.tar.gz/download -O /app/RackTables-0.21.5.tar.gz
+RUN wget https://github.com/RackTables/racktables/archive/refs/tags/RackTables-0.22.0.tar.gz -O /app/RackTables-0.22.0.tar.gz
 
-RUN tar -xvf /app/RackTables-0.21.5.tar.gz -C /app/
+RUN tar -xvf /app/RackTables-0.22.0.tar.gz -C /app/
 
-RUN ln -s /app/RackTables-0.21.5/wwwroot /var/www/html/racktables
+RUN ln -s /app/RackTables-0.22.0/wwwroot /var/www/html/racktables
 
 RUN a2ensite racktables && a2dissite 000-default
 
 RUN apache2ctl -t && apache2ctl graceful
 
-RUN touch /app/RackTables-0.21.5/wwwroot/inc/secret.php && chown www-data:nogroup -R /app/RackTables-0.21.5/wwwroot && chmod -R 0700 /app/RackTables-0.21.5/wwwroot && chmod 600 /app/RackTables-0.21.5/wwwroot/inc/secret.php
+RUN touch /app/RackTables-0.22.0/wwwroot/inc/secret.php && chown www-data:nogroup -R /app/RackTables-0.22.0/wwwroot && chmod -R 0700 /app/RackTables-0.22.0/wwwroot && chmod 600 /app/RackTables-0.22.0/wwwroot/inc/secret.php
 
 EXPOSE 80
 
