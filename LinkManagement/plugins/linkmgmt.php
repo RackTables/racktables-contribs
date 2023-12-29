@@ -1979,7 +1979,7 @@ class lm_Image_GraphViz extends Image_GraphViz {
 		$type = $_REQUEST['type'];
 	}
 	else
-		$type = 'gif';
+		$type = 'png';
 
 	/* highlight port */
 	if(!$hl && isset($_REQUEST['hl_port_id']))
