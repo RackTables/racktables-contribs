@@ -4,9 +4,9 @@ env:
 task:
   container:
     matrix:
-      - image: ubuntu:16.04 # PHP 7.0
       - image: ubuntu:18.04 # PHP 7.2
       - image: ubuntu:20.04 # PHP 7.4
+      - image: ubuntu:22.04 # PHP 8.1
     cpu: 1
     memory: 512M
   env:
