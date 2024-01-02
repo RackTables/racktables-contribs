@@ -2,16 +2,18 @@
 
 /********************************************
  *
- * RackTables 0.20.x snmp live extension
+ * RackTables 0.22.x snmp live extension
  *
  *	displays SNMP port status
  *
  *
- * needs PHP >= 5.4.0
+ * needs PHP >= 7.4.0
  *	saved SNMP settings ( see snmpgeneric.php extension )
  *	also RT port names and SNMP port names must be the same ( should work fine with snmpgeneric.php created ports )
  *
  * (c)2015 Maik Ehinger <github138@t-online.de>
+ * (c)2021 Yurii Yaranin <yranin@gmail.com>
+ 
  */
 
 /****
@@ -64,7 +66,7 @@ function snmplive_tabhandler($object_id)
 
         .port-column { display:table-cell;position:relative; }
 
-        .port { position:relative;width:42px;height:100px;border:2px solid #000;overflow:hidden; }
+        .port { position:relative;width:52px;height:100px;border:2px solid #000;overflow:hidden; }
         .port-pos-1 { margin-bottom:1px; }
         .port-pos-2 { }
         .port-pos-0 { margin-top:1px; }
@@ -73,7 +75,7 @@ function snmplive_tabhandler($object_id)
         .port-header-pos-1 { top:0px; }
         .port-header-pos-0 { bottom:0px; }
 
-        .port-status { position:absolute;min-width:42px;text-align:center;font-size:10pt; }
+        .port-status { position:absolute;min-width:52px;text-align:bottom;font-size:10pt; }
 
         .port-status-pos-1 { top:35px; }
         .port-status-pos-0 { bottom:35px; }
@@ -82,10 +84,10 @@ function snmplive_tabhandler($object_id)
         .port-info-pos-1 { top: 80px; }
         .port-info-pos-0 { bottom: 80px;}
 
-        .port-name {  font-size:10pt;margin:0px auto;width:40px;text-align:center; }
+        .port-name {  font-size:8pt;margin:0px auto;width:40px;text-align:center; }
         .port-number { font-size:8pt;color:#eee; }
 
-        .port-detail { position:fixed;z-index:1000;top:0px;right:0px;border:3px solid #000;background-color:#fff }
+        .port-detail { position:fixed;z-index:1000;top:0px;right:0px;border:8px solid #000;background-color:#fff }
         .port-detail-links { background-color:#ccc }
         .hidden { visibility:hidden; }
         .info-footer { }
@@ -118,7 +120,8 @@ ENDCSS
 	pl_layout_default($object, 0, false, $modules);
 
 	addJS(<<<ENDJS
-       function togglevisibility(elem, hide)
+	
+        function togglevisibility(elem, hide)
         {
                 if(hide)
                         elem.css('visibility', 'hidden');
@@ -155,9 +158,37 @@ ENDCSS
 
                 if(!detail)
                 {
+               let x = port.snmpinfos.operstatus;
+                
+                switch (x) {
+  case "1":
+    x = "Up";
+    break;
+  case "2":
+    x = "Down";
+    break;
+  case "3":
+     x = "testing";
+    break;
+   case "4":
+     x = "unknown";
+    break;
+    case "5":
+     x = "dormant";
+    break;
+    case "6":
+     x = "notPresent";
+    break;
+    case "7":
+     x = "notPresent";
+    break;
+  default:
+   
+}
                         $( "#port" + id + "-status" + tagidsuffix ).html("<table class=\"ifoperstatus-" + port.snmpinfos.
-operstatus + "\"><tr><td>"
-                                        +  port.snmpinfos.operstatus + "<br>" + port.snmpinfos.speed
+operstatus + "\"><tr><td>" 
+ 
+                                   +  x + "<br>" + port.snmpinfos.speed
 					+  ( port.snmpinfos.vlan ? "<br>" + port.snmpinfos.vlan : "" )
                                         + "</td></tr></table>");
                         return;
@@ -189,7 +220,7 @@ operstatus + "\"><tr><td>"
                 $( "#info" ).html($( "#info" ).html() + "<br>" + textStatus + " " + qXHR + " " + errorThrown);
         }
 
-	$.ajax({
+	   $.ajax({
 		dataType: "json",
 		url: "index.php",
 		data: {
@@ -204,6 +235,46 @@ operstatus + "\"><tr><td>"
 		error: ajaxerror,
 		success: setports
 	});
+	
+	
+	var timeReload = 1;//время в минутах
+timeReload = timeReload*20;
+var timenow=0;
+
+    function isReload()
+    {
+    timenow++;
+    if (timenow>=timeReload) {
+    timenow=0;
+
+   $.ajax({
+		dataType: "json",
+		url: "index.php",
+		data: {
+			page: "object",
+			tab: "snmplive",
+			module: "redirect",
+			op: "ajax",
+			json: "get",
+			object_id: "$object_id",
+			debug: $debug
+		},
+		error: ajaxerror,
+		success: setports
+		
+	});
+	
+	
+    }
+    }
+
+    var t=setInterval("isReload()",1000);
+
+        function MyEvent(event) {
+        event = event || window.event;
+         timenow=0;
+
+        }
 
 ENDJS
 , TRUE);
@@ -225,9 +296,8 @@ function snmplive_opajax()
 		$debug = $_GET['debug'];
 	else
 		$debug = 0;
-
+	
 	$object['iftable'] = sl_getsnmp($object, $debug);
-
 	if($object['iftable'])
 		foreach($object['ports'] as $key => &$port)
 		{
@@ -282,13 +352,16 @@ function pl_layout_default(&$object, $groupports = 8, $bottomstart = false, $mod
 
 		if($port['linked'])
 			$linkcount++;
-
+			
+			
+/*
 		if($module == "")
 		{
+	 
 			$nomodul[] = pl_layout_port($port, count($nomodul) + 1, 1);
 			continue;
 		}
-
+*/
 		if($modules)
 		{
 			// port modules
@@ -532,7 +605,7 @@ function sl_getsnmp(&$object, $debug = false)
 			echo $s->getError();
 
 		if($iftable)
-			return $iftable;
+			return $iftable; 
 		else
 		{
 
@@ -628,9 +701,10 @@ class sl_ifxsnmp extends SNMP
 
 		$ifname = $this->walk($oid_ifname, TRUE); //ifXtable
 
+		
 		if($ifname == false)
 			$ifname = $this->walk($oid_ifdescr, TRUE); //ifXtable
-
+		//ifalias get name port
 		$ifalias = $this->walk($oid_ifalias, TRUE); //ifXtable
 
 		$ifspeed = $this->walk($oid_ifspeed, TRUE); //iftable
@@ -638,13 +712,18 @@ class sl_ifxsnmp extends SNMP
 
 		$this->enum_print = false;
 		$ifoperstatus = $this->walk($oid_ifoperstatus, TRUE); //iftable
-
+if(0)
+sl_var_dump_html($ifname);
+		
+		
 		$retval = array();
 		foreach($ifindex as $index)
 		{
+				
+			$ifname[$index] = preg_replace('/^(\'(.*)\'|"(.*)")$/', '$2$3', $ifname[$index]);
 			$ifname[$index] = shortenIfName ($ifname[$index], $this->devicebreed);
-
-			$retval[$ifname[$index]]['ifindex'] = $index;
+		
+			$retval[$index]['ifindex'] = $index;
 
 			$retval[$ifname[$index]]['status'] = $ifoperstatus[$index];
 
@@ -661,14 +740,15 @@ class sl_ifxsnmp extends SNMP
 
 			$speed = ($speed >= 1000 ? ($speed / 1000)."Gb" : $speed."Mb" );
 
-			$retval[$ifname[$index]]['speed'] = "$speed";
+			$retval[$ifname[$index]]['speed'] = $speed;
 
 		}
 
 		$this->get8021qvlan($retval);
 
 		if(0)
-			sl_var_dump_html($retval);
+		sl_var_dump_html($retval);
+		
 
 		return $retval;
 	}
