@@ -9,50 +9,30 @@ import networkx as nx
 from sql_definitions import *
 from functions import *
 
-pd.set_option('display.max_rows', 500)
-pd.set_option('display.max_columns', 500)
-pd.set_option('display.width', 1000)
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-
-########################################################################
-# Globals
-########################################################################
-
-settings = yaml.safe_load(open('plugins/topoGen/settings.yml'))
+SETTINGS = yaml.safe_load(open('plugins/topoGen/settings.yml'))
+#SETTINGS = yaml.safe_load(open('settings.yml'))
 
 ########################################################################
 # Program
 ########################################################################
 
-db = MySQLdb.connect(host   = settings['mysql']['host'],
-					 port   = settings['mysql']['port'],
-					 user   = settings['mysql']['username'],
-					 passwd = settings['mysql']['password'],
-					 db     = settings['mysql']['database'],
-					 )
+db = MySQLdb.connect(
+					    host   = SETTINGS['mysql']['host'],
+					    port   = SETTINGS['mysql']['port'],
+					    user   = SETTINGS['mysql']['username'],
+					    passwd = SETTINGS['mysql']['password'],
+					    db     = SETTINGS['mysql']['database'],
+					)
 
 posProg 	= 0
 posTopo 	= 1
 posMode		= 2
-posFormat	= 3
-posAlgo		= 4
-posDirect	= 5
-posLine		= 6
-posAggreg	= 7
-posLag		= 8
-
-# Check for inline parameters
-if len(sys.argv)<9:
-	print("Not enough paramteres. Quitting...")
-	sys.exit(-1)
+router_mode = sys.argv[posMode]
 
 # Getting topo and routers name
 input_string = sys.argv[posTopo]
 input_string = input_string.split(",")
-#input_string = ['sl003_003']
 
 # We distinguis if we have topos and/or routers
 topos_names,routers_names,attrib_names = fnc_input_string_type(input_string)
@@ -112,7 +92,7 @@ query25=fnc_build_query_interfaces(df_object_list)
 df_object_interfaces = pd.read_sql(query25,db)
 
 # We grab routers with their system or loopback interfaces.
-df_system = df_object_interfaces[df_object_interfaces.intName.isin(settings['loopInterfaces'])]
+df_system = df_object_interfaces[df_object_interfaces.intName.isin(SETTINGS['loopInterfaces'])]
 df_system = df_system[['name','ip']]
 df_system = pd.merge(df_object_list,df_system,on=['name'],how='left')
 
@@ -137,7 +117,7 @@ dfConnFinal = dfConnFinal[["name1","port1","cable","port2","name2","obj1type","o
 dfConnFinal = dfConnFinal.drop_duplicates()
 
 dfConnFinal['topo'] = '-'.join(topos_names)
-dfConnFinal['cap']  = dfConnFinal.apply(lambda x: fnc_port_speed(x.port1Speed, settings), axis=1)
+dfConnFinal['cap']  = dfConnFinal.apply(lambda x: fnc_port_speed(x.port1Speed, SETTINGS), axis=1)
 
 #==================================================================
 #==================================================================
@@ -158,38 +138,15 @@ if len(df_attr_list) > 0:
 #==================================================================
 #==================================================================
 # BUild global dictionaries
-global_dict = fnc_add_atributes_to_dic_global(settings, df_system, df_attr_list)
+global_dict = fnc_add_atributes_to_dic_global(SETTINGS, df_system, df_attr_list)
 
 #==================================================================
 # The graph is created.
 #==================================================================
 
-# Format Dictionaries
-mode_dict 		= {"0":"gvCluster", "1":"gvOne-line", "2":"gvTwo-lines", "3":"gvOnly-names", "4":"yed", "5":"nx", "6":"osm"}
-format_dict 	= {"0":"png", 		"1":"svg"}
-algo_dict 		= {"0":"dot", 	    "1":"fdp",	    "2":"circo",	"3":"twopi",	"4":"neato"}
-rankdir_dict 	= {"0":"LR",		"1":"TB"}
-lines_dict 		= {"0":"line",		"1":"true",		"2":"ortho",	"3":"polyline"}
-aggr_dict 		= {"0":"n",			"1":"y"}
-lag_dict		= {"0":"n",			"1":"y"}
-
-router_mode 		= sys.argv[posMode]
-output_format 		= sys.argv[posFormat]
-output_algo			= sys.argv[posAlgo]
-output_direction	= sys.argv[posDirect]
-output_line			= sys.argv[posLine]
-aggregator			= sys.argv[posAggreg]
-graph_lag			= lag_dict[sys.argv[posLag]]
-graph_hp			= "n"
-graph_cpam			= "n"
-
-
 ## Obtain the filename for the topology
 filename = fnc_build_filename(topos_names,routers_names,attrib_names)
 
-#===================================================================
-#===================================================================
-#print "router-mode ", router_mode, "format ", format_dict[output_format], "algo ", algo_dict[output_algo], sys.argv[posNodeSep], sys.argv[posRankSep]
 # Gegin the plot
 if router_mode in ['4']:
 

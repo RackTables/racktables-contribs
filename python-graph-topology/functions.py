@@ -405,14 +405,6 @@ def fnc_build_osm(global_dict, dfConnFinal, router_mode, filename):
 
 def fnc_build_excel(df_system, dfConnFinal, global_dict, router_mode, filename):
 
-	from pandas import ExcelWriter
-
-	def save_xls(list_dfs, xls_path):
-		with ExcelWriter(xls_path) as writer:
-			for df, name in list_dfs:
-				df.to_excel(writer, name)
-			writer.save()
-
 	dfSummary1 = dfConnFinal[['name1','obj1type','intName1','ip_x','port1','port1Speed','cable']]
 	dfSummary1 = dfSummary1.rename(columns={'name1':'name','obj1type':'objType','intName1':'intName','ip_x':'ip','port1':'port','port1Speed':'portSpeed'})
 	dfSummary2 = dfConnFinal[['name2','obj2type','intName2','ip_y','port2','port2Speed','cable']]
@@ -421,7 +413,9 @@ def fnc_build_excel(df_system, dfConnFinal, global_dict, router_mode, filename):
 	dfSumm = pd.concat([dfSummary1,dfSummary2])
 	dfSumm = dfSumm.sort_values(by=['name','port'])
 
-	list_dfs = [(dfConnFinal,'Connections'),(dfSumm,'Summary'),(df_system,'system')]
+	with pd.ExcelWriter(filename + '.xlsx') as writer:
+		dfConnFinal.to_excel(writer, sheet_name='Connections', index=False)
+		dfSumm.to_excel(writer, sheet_name='Summary', index=False)
+		df_system.to_excel(writer, sheet_name='system', index=False)
 
 	print(filename + '.xlsx')
-	save_xls(list_dfs, filename + '.xlsx')
