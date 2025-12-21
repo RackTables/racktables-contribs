@@ -143,9 +143,16 @@
 
 		foreach($netobjs as &$netobj) {
 			// Register location, row and rack names in netobj
-			$netobj['rack_name'] = $racks[$netobj['rack_id']]['name'];
-			$netobj['row_name'] = $racks[$netobj['rack_id']]['row_name'];
-			$netobj['location_name'] = $racks[$netobj['rack_id']]['location_name'];
+			if (is_null($netobj['rack_id'])) {
+					$netobj['rack_name'] = 'Unmounted';
+					$netobj['row_name'] = 'Unmounted';
+					$netobj['location_name'] = 'Unmounted';
+			}
+			else {
+					$netobj['rack_name'] = $racks[$netobj['rack_id']]['name'];
+					$netobj['row_name'] = $racks[$netobj['rack_id']]['row_name'];
+					$netobj['location_name'] = $racks[$netobj['rack_id']]['location_name'];
+			}
 
 			// Register objects in a container to hide them
 			if (!is_null($netobj['container_id']))
